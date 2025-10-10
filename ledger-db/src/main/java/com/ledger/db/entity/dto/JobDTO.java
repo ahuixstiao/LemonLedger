@@ -78,4 +78,9 @@ public class JobDTO implements Serializable {
      */
     private BigDecimal salary;
 
+    /**
+     * 创建时间
+     */
+    private String createdTime;
+
 }

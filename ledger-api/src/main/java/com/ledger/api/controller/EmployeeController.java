@@ -1,5 +1,6 @@
 package com.ledger.api.controller;
 
+import com.ledger.common.result.Result;
 import com.ledger.db.entity.Employee;
 import com.ledger.db.service.IEmployeeService;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +23,11 @@ public class EmployeeController {
 
     private final IEmployeeService employeeService;
 
-    // 查询员工列表
-    @GetMapping("/list")
-    public List<Employee> queryEmployees() {
 
-        return employeeService.queryEmployees();
+    @GetMapping("/list")
+    public Result<Object> queryEmployees() {
+
+        return null;
     }
 
     //查询员工指定日期的工作信息，默认为当天。

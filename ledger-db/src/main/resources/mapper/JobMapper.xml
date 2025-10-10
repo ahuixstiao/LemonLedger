@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.db.mapper.JobMapper">
 
-    <!-- 根据员工ID查询工作信息集合 -->
-    <select id="selectJobListByEmployeeId" resultType="com.ledger.db.entity.dto.JobDTO">
+    <!-- 查询当天所有员工工作信息 -->
+    <select id="selectJobListByDefaultCurrentDay" resultType="jobDTO">
         select
         job.id,
         job.employee_id,
@@ -18,7 +18,35 @@
         job.quantity, <!-- 数量 -->
         job.mode_id,
         jm.mode, <!-- 工作方式 1压花、2刮胶 -->
-        job.salary <!-- 工资 -->
+        job.salary, <!-- 工资 -->
+        job.created_time
+        from job
+        left join employee emp on job.employee_id = emp.id
+        left join factory fac on job.factory_id = fac.id
+        left join job_category jc on job.category_id = jc.id
+        left join job_mode jm on job.mode_id = jm.id
+        where job.created_time = CURDATE()
+        and job.flag = #{flag}
+    </select>
+    
+    <!-- 根据员工ID查询工作信息集合 -->
+    <select id="selectJobListByEmployeeId" resultType="jobDTO">
+        select
+        job.id,
+        job.employee_id,
+        emp.name, <!-- 员工姓名 -->
+        job.factory_id,
+        fac.factory_name, <!-- 厂名 -->
+        job.number, <!-- 床号 -->
+        job.style_number, <!-- 井色号 -->
+        job.category_id,
+        jc.category, <!-- 工作类型 1小花、2大花、3裤页 -->
+        jc.price, <!-- 单价 -->
+        job.quantity, <!-- 数量 -->
+        job.mode_id,
+        jm.mode, <!-- 工作方式 1压花、2刮胶 -->
+        job.salary, <!-- 工资 -->
+        job.created_time
         from job
         left join employee emp on job.employee_id = emp.id
         left join factory fac on job.factory_id = fac.id

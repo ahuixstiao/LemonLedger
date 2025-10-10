@@ -21,6 +21,14 @@ import java.util.List;
 public interface JobMapper extends BaseMapper<Job> {
 
     /**
+     * 默认查询当天所有员工的工作信息
+     * @param page 分页参数
+     * @param flag 标志 0表示查询未删除的信息，1表示查询已删除的信息
+     * @return 以分页后的方式返回所有员工当天的工作信息列表
+     */
+    Page<JobDTO> selectJobListByDefaultCurrentDay(Page<JobDTO> page, @Param("flag") Integer flag);
+
+    /**
      * 根据员工ID查询员工工作信息
      *
      * @param page       分页参数

@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * <p>
@@ -35,9 +36,29 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobService {
 
-    private final IEmployeeService employeeService;
-
     private final JobMapper jobMapper;
+
+
+    /**
+     * 默认查询当天所有员工的工作信息
+     *
+     * @param currentPage 当前页
+     * @param pageSize    每页条数
+     * @return result
+     */
+    @Override
+    public Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize) {
+
+        // 构建分页对象
+        Page<JobDTO> page = new Page<>(
+                Optional.ofNullable(currentPage).orElse(1),
+                Optional.ofNullable(pageSize).orElse(5));
+
+        // 查询
+        page = jobMapper.selectJobListByDefaultCurrentDay(page, 0);
+
+        return Result.ok(page);
+    }
 
     /**
      * 查询员工当天或某天的工作信息
@@ -50,7 +71,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
-    public Result<Object> queryJobByDate(
+    public Result<Object> queryJobListByEmployeeIDAndDate(
             Integer employeeId,
             String startDate, String endDate,
             Integer currentPage, Integer pageSize) {
@@ -61,15 +82,18 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         }
         // 用户如果指定时间范围则按范围查询
         if (StrUtil.isNotBlank(startDate) & StrUtil.isNotBlank(endDate)) {
-            // 格式化前端传入的时间 yyyy-mm-dd
+            // 格式化前端传入的时间 YYYY-MM-DD
             startDate = LocalDateTime.parse(startDate).format(DateTimeFormatter.ISO_DATE);
             endDate = LocalDateTime.parse(endDate).format(DateTimeFormatter.ISO_DATE);
         }
 
         // 构建分页查询对象
-        Page<JobDTO> page = jobMapper.selectJobListByEmployeeId(
-                new Page<>(currentPage, pageSize), employeeId, startDate, endDate, 0
-        );
+        Page<JobDTO> page = new Page<>(
+                Optional.ofNullable(currentPage).orElse(1),
+                Optional.ofNullable(currentPage).orElse(5));
+
+        // 查询
+        page = jobMapper.selectJobListByEmployeeId(page, employeeId, startDate, endDate, 0);
 
         // 返回结果
         return Result.ok(page);

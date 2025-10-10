@@ -16,8 +16,26 @@ import java.time.LocalDateTime;
  */
 public interface IJobService extends IService<Job> {
 
-    // 查询员工 指定时间内的工作信息
-    Result<Object> queryJobByDate(Integer empId, String startTime, String endTime, Integer currentPage, Integer pageSize);
+    /**
+     * 默认查询当天所有员工的工作信息
+     *
+     * @param currentPage 当前页
+     * @param pageSize    每页条数
+     * @return result
+     */
+    Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize);
+
+    /**
+     * 查询指定员工当天或某天的工作信息
+     *
+     * @param empId       员工ID
+     * @param startTime   开始时间
+     * @param endTime     结束时间
+     * @param currentPage 当前页
+     * @param pageSize    每页条数
+     * @return result
+     */
+    Result<Object> queryJobListByEmployeeIDAndDate(Integer empId, String startTime, String endTime, Integer currentPage, Integer pageSize);
 
     // 员工添加工作记录
     Result<Object> addJobRecord(Job job);
