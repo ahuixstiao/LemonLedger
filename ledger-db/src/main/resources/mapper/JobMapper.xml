@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ledger.db.mapper.JobMapper">
+
+    <!-- 根据员工ID查询工作信息集合 -->
+    <select id="selectJobListByEmployeeId" resultType="com.ledger.db.entity.dto.JobDTO">
+        select
+        job.id,
+        job.employee_id,
+        emp.name, <!-- 员工姓名 -->
+        job.factory_id,
+        fac.factory_name, <!-- 厂名 -->
+        job.number, <!-- 床号 -->
+        job.style_number, <!-- 井色号 -->
+        job.category_id,
+        jc.category, <!-- 工作类型 1小花、2大花、3裤页 -->
+        jc.price, <!-- 单价 -->
+        job.quantity, <!-- 数量 -->
+        job.mode_id,
+        jm.mode, <!-- 工作方式 1压花、2刮胶 -->
+        job.salary <!-- 工资 -->
+        from job
+        left join employee emp on job.employee_id = emp.id
+        left join factory fac on job.factory_id = fac.id
+        left join job_category jc on job.category_id = jc.id
+        left join job_mode jm on job.mode_id = jm.id
+        <!-- 按员工ID 查找员工未处于删除状态下的工作记录 -->
+        where job.employee_id = #{employeeId}
+        and job.flag = #{flag}
+        <choose>
+            <!-- 如果员工指定了某个日期 则按指定日期查找工作记录 -->
+            <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
+                and job.created_time = #{startDate}
+            </when>
+            <!-- 如果员工只选了结束日期则默认当前日期为当天 -->
+            <when test="endDate != null and endDate != '' and (startDate == null or startDate == '') ">
+                and job.created_time between CURDATE() and #{endDate}
+            </when>
+            <!-- 如果员工指定了时间范围则按时间范围查找。-->
+            <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">
+                <!-- 由于<=在xml中会被错误解析所以需要使用实体编码来表示大于号>和小于号< -->
+                and job.created_time &gt;= #{startDate}
+                and job.created_time &lt;= #{endDate}
+            </when>
+            <!-- 如员工未指定日期则默认查找当天工作记录 CURDATE函数的作用是获取当天日期 格式为yyyy-MM-dd -->
+            <otherwise>
+                and job.created_time = CURDATE()
+            </otherwise>
+        </choose>
+        <!-- 按员工名称排序 -->
+        order by emp.name desc
+    </select>
+
+</mapper>

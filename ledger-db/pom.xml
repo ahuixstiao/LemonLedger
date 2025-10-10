@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 继承父工程 -->
+    <parent>
+        <groupId>com.ahui</groupId>
+        <artifactId>LemonLedger</artifactId>
+        <version>0.0.1</version>
+    </parent>
+
+    <artifactId>ledger-db</artifactId>
+    <version>0.0.1</version>
+    <name>ledger-db</name>
+
+    <dependencies>
+        <!-- 继承公共模块 -->
+        <dependency>
+            <groupId>com.ahui</groupId>
+            <artifactId>ledger-common</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+
+        <!-- mbp 代码生成器 根据SQL表逆向生成entity、mapper、service等-->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-generator</artifactId>
+            <version>${mybatisPlus.version}</version>
+        </dependency>
+        <!-- 模板引擎 二选一即可-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-freemarker</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- druid数据库连接池 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-starter</artifactId>
+            <version>${druid.version}</version>
+        </dependency>
+
+        <!-- 引入mysql数据库依赖 -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+
+
+    </dependencies>
+
+</project>

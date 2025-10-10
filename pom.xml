@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- spring-boot框架 父工程 -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.0</version>
+    </parent>
+
+    <!-- 程序信息 -->
+    <groupId>com.ahui</groupId> <!--程序所属组织或作者-->
+    <artifactId>LemonLedger</artifactId>
+    <version>0.0.1</version> <!-- 程序版本 -->
+    <name>LemonLedger</name> <!-- 程序名称 -->
+
+    <!--
+    父工程的打包方式必须为pom
+    父工程本身不包含具体的逻辑代码和资源
+    将父工程的packaging设为pom表示该项目为聚合项目
+    -->
+    <packaging>pom</packaging>
+
+    <!-- 子模块 -->
+    <modules>
+        <module>ledger-api</module>
+        <module>ledger-db</module>
+        <module>ledger-common</module>
+    </modules>
+
+    <!-- 版本信息配置 -->
+    <properties>
+        <java.version>17</java.version> <!-- 指定java版本 -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- mybatis-plus 版本 -->
+        <mybatisPlus.version>3.5.3.1</mybatisPlus.version>
+        <!-- druid数据库连接池 版本 -->
+        <druid.version>1.2.14</druid.version>
+        <!-- fastjson2 版本 -->
+        <fastjson2.version>2.0.16</fastjson2.version>
+        <!-- hutool 版本 -->
+        <hutool.version>5.8.18</hutool.version>
+
+        <!-- spring boot 版本 -->
+        <spring-boot.version>2.7.0</spring-boot.version>
+    </properties>
+
+    <!-- 全局依赖 2个及以上的子模块依赖的第三方组件就放在该处 -->
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- spring-boot框架整合的web模块依赖组 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+
+            <!-- mybatis-plus 依赖 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <version>${mybatisPlus.version}</version>
+            </dependency>
+            <!-- mybatis-plus 注解支持 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-annotation</artifactId>
+                <version>${mybatisPlus.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.mybatis</groupId>
+                        <artifactId>mybatis</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+</project>

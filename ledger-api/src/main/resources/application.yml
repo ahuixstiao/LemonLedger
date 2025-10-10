@@ -1,0 +1,19 @@
+# 配置程序名称 该配置的作用是在分布式中部署时通过该名称找到本程序，在分布式部署的场景下还可以通过该程序名称来调用该程序的接口。
+spring:
+  application:
+    name: LemonLedger
+
+# 配置全局日期格式化
+  mvc:
+    format:
+      date: yyyy-MM-dd
+  jackson:
+    date-format: yyyy-MM-dd
+    time-zone: GMT+8
+  # 表示启用指定配置文件 若不指定则其他配置文件的配置不生效。
+  profiles:
+    active: db, common
+
+# 配置程序访问端口
+server:
+  port: 8080
