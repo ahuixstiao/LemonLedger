@@ -4,9 +4,11 @@ import com.ledger.common.result.Result;
 import com.ledger.db.service.IJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
+import java.time.format.DateTimeFormatter;
 
 /**
  * @Author: ahui
@@ -45,7 +47,7 @@ public class JobController {
      * @return result
      */
     // localhost:8080/job/list/1?startDate=2025-10-01&endDate=2025-10-06
-    @GetMapping("/list/{employeeId}")
+    @GetMapping("/list/employee/{employeeId}")
     public Result<Object> queryJobListByIDAndDate(
             @PathVariable @NotNull Integer employeeId,
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,

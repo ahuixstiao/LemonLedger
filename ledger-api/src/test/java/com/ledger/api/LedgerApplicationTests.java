@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.http.HttpClient;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,19 +48,26 @@ class LedgerApplicationTests {
         //codeGenerator("factory");
 
         //System.out.println(LocalDateTime.parse("2025-10-05T08:21:26.663105").format(DateTimeFormatter.ISO_DATE));
-        System.out.println(LocalDate.now().toString());
+        //System.out.println(LocalDate.parse("2025-10-01").format(DateTimeFormatter.ISO_DATE));
+
+        Integer a = 1000;
+        BigDecimal b = new BigDecimal(0.05);
+        System.out.println(new BigDecimal(a).multiply(b).setScale(2, RoundingMode.HALF_UP));
 
         //根据员工ID查询员工工作信息
         /*Page<JobDTO> jobDTOList = jobMapper.selectJobListByEmployeeId(
                 new Page<>(1, 5),1,
-                LocalDateTime.parse("2025-10-01T08:21:26").format(DateTimeFormatter.ISO_DATE),
-                "2025-10-06", 0);
+               "2025-10-01 T08:21:26",
+                "2025-10-10", 0);
         jobDTOList.getRecords().forEach(System.out::println);*/
 
+
+
+
         // 查询所有员工当天的工作信息
-        Page<JobDTO> page = jobMapper.selectJobListByDefaultCurrentDay(
+        /*Page<JobDTO> page = jobMapper.selectJobListByDefaultCurrentDay(
                 new Page<>(1, 5),0);
-        page.getRecords().forEach(System.out::println);
+        page.getRecords().forEach(System.out::println);*/
         // 插入员工信息
 
 

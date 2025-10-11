@@ -1,5 +1,6 @@
 package com.ledger.db.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,6 +40,8 @@ import java.util.Optional;
 public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobService {
 
     private final JobMapper jobMapper;
+
+    private final IJobCategoryService jobCategoryService;
 
 
     /**
@@ -83,8 +88,8 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         // 用户如果指定时间范围则按范围查询
         if (StrUtil.isNotBlank(startDate) & StrUtil.isNotBlank(endDate)) {
             // 格式化前端传入的时间 YYYY-MM-DD
-            startDate = LocalDateTime.parse(startDate).format(DateTimeFormatter.ISO_DATE);
-            endDate = LocalDateTime.parse(endDate).format(DateTimeFormatter.ISO_DATE);
+            startDate = LocalDate.parse(startDate).format(DateTimeFormatter.ISO_DATE);
+            endDate = LocalDate.parse(endDate).format(DateTimeFormatter.ISO_DATE);
         }
 
         // 构建分页查询对象
@@ -107,6 +112,11 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      */
     @Override
     public Result<Object> addJobRecord(Job job) {
+        // 先区分 该员工是什么工种 再计算工作薪资
+        // 查工作类型表获取对应工种工价
+        BigDecimal price = jobCategoryService.lambdaQuery().eq(JobCategory::getModeId, job.getModeId()).one().getPrice();
+        // 计算本条工作记录的工资 数量 * 工作类型和工作方式的单价
+        job.setSalary(new BigDecimal(job.getQuantity()).multiply(price).setScale(2, RoundingMode.HALF_UP));
 
         if (save(job)) {
             return Result.ok();
@@ -121,6 +131,11 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      */
     @Override
     public Result<Object> updateJobRecord(Job job) {
+
+        // 判断是否修改数量或者工作类型和方式 如果有修改则需要重新计算工资
+        if (job.getModeId() != null || job.getQuantity() != null) {
+
+        }
 
         if (updateById(job)) {
             return Result.ok();

@@ -30,7 +30,7 @@ public class JobCategory extends ParentEntity {
     private String category;
 
     /**
-     * 工作类型价格
+     * 工作类型价格 根据工作方式来区分工作类型的工价
      */
     private BigDecimal price;
 

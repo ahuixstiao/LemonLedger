@@ -2,4 +2,21 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.db.mapper.JobCategoryMapper">
 
+    <!-- 查询工作类型列表 -->
+    <select id="queryCategoryList" resultType="jobCategoryDTO">
+        select jc.id,
+        jc.category,
+        jc.price,
+        jc.mode_id,
+        jm.mode
+        from job_category jc
+        left join job_mode jm on jc.mode_id = jm.id
+        where jc.flag = 0
+        and jm.flag = 0
+        <if test="category != null and category != ''">
+            and jc.category = #{category}
+        </if>
+        order by jc.category desc
+    </select>
+
 </mapper>
