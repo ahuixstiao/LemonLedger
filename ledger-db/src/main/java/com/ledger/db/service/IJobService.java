@@ -38,8 +38,8 @@ public interface IJobService extends IService<Job> {
     Result<Object> queryJobListByEmployeeIDAndDate(Integer empId, String startTime, String endTime, Integer currentPage, Integer pageSize);
 
     // 员工添加工作记录
-    Result<Object> addJobRecord(Job job);
+    Result<Object> saveJobInfo(Job job);
 
     // 员工修改工作记录
-    Result<Object> updateJobRecord(Job job);
+    Result<Object> updateJobInfo(Job job);
 }

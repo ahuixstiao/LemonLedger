@@ -111,10 +111,14 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
-    public Result<Object> addJobRecord(Job job) {
+    public Result<Object> saveJobInfo(Job job) {
         // 先区分 该员工是什么工种 再计算工作薪资
-        // 查工作类型表获取对应工种工价
-        BigDecimal price = jobCategoryService.lambdaQuery().eq(JobCategory::getModeId, job.getModeId()).one().getPrice();
+        // 按工作类型（小花、大花、裤页）和工作方式（压花、刮胶）查找对应的工价
+        BigDecimal price = jobCategoryService.lambdaQuery()
+                .eq(JobCategory::getModeId, job.getModeId())
+                .eq(JobCategory::getId, job.getCategoryId())
+                .one()
+                .getPrice();
         // 计算本条工作记录的工资 数量 * 工作类型和工作方式的单价
         job.setSalary(new BigDecimal(job.getQuantity()).multiply(price).setScale(2, RoundingMode.HALF_UP));
 
@@ -130,12 +134,14 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
-    public Result<Object> updateJobRecord(Job job) {
+    public Result<Object> updateJobInfo(Job job) {
 
-        // 判断是否修改数量或者工作类型和方式 如果有修改则需要重新计算工资
-        if (job.getModeId() != null || job.getQuantity() != null) {
-
+        if(job.getCategoryId() != 0 & job.getModeId() != 0) {
+            // 修改两者
         }
+
+        // 思考 工作类型和工作方式的关系
+        // 当员工想要单独修改工作类型或者工作方式再或者两者一起修改时该如何处理？
 
         if (updateById(job)) {
             return Result.ok();

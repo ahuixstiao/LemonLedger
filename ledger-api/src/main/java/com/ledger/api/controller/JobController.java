@@ -1,6 +1,7 @@
 package com.ledger.api.controller;
 
 import com.ledger.common.result.Result;
+import com.ledger.db.entity.Job;
 import com.ledger.db.service.IJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +58,18 @@ public class JobController {
 
 
         return jobService.queryJobListByEmployeeIDAndDate(employeeId, startDate, endDate, currentPage, pageSize);
+    }
+
+    /**
+     * 保存工作信息
+     * @param job 工作信息实体
+     * @return result
+     */
+    @PostMapping("/save")
+    public Result<Object> saveJobInfo(Job job) {
+
+        return jobService.saveJobInfo(job);
+
     }
 
 }
