@@ -6,7 +6,6 @@
     <select id="queryCategoryList" resultType="jobCategoryDTO">
         select jc.id,
         jc.category,
-        jc.price,
         jc.mode_id,
         jm.mode
         from job_category jc

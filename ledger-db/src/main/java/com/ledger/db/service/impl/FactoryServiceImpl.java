@@ -1,5 +1,7 @@
 package com.ledger.db.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Factory;
 import com.ledger.db.mapper.FactoryMapper;
@@ -26,8 +28,16 @@ public class FactoryServiceImpl extends ServiceImpl<FactoryMapper, Factory> impl
      * @return result
      */
     @Override
-    public Result<Object> queryFactoryList(Integer currentPage, Integer pageSize) {
-        return null;
+    public Result<Object> queryFactoryList(String factoryName, Integer currentPage, Integer pageSize, Integer flag) {
+
+        Page<Factory> page = new Page<>(currentPage, pageSize);
+
+        return Result.ok(
+                lambdaQuery()
+                        .eq(StrUtil.isNotBlank(factoryName), Factory::getFactoryName, factoryName)
+                        .eq(Factory::getFlag, flag)
+                        .page(page)
+        );
     }
 
     /**
@@ -37,8 +47,13 @@ public class FactoryServiceImpl extends ServiceImpl<FactoryMapper, Factory> impl
      * @return result
      */
     @Override
-    public Result<Object> saveFactory(Factory factory) {
-        return null;
+    public Result<Object> saveFactoryInfo(Factory factory) {
+
+        if (save(factory)) {
+            return Result.ok();
+        }
+
+        return Result.fail();
     }
 
     /**

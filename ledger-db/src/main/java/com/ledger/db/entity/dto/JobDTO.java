@@ -53,6 +53,10 @@ public class JobDTO implements Serializable {
      * 工作方式 例如 1压花、2刮胶
      */
     private String mode;
+    /**
+     * 工作方式 工价
+     */
+    private BigDecimal modePrice;
 
 
     /**
@@ -66,7 +70,7 @@ public class JobDTO implements Serializable {
     /**
      * 工作类型 工价
      */
-    private BigDecimal price;
+    private BigDecimal categoryPrice;
 
     /**
      * 数量

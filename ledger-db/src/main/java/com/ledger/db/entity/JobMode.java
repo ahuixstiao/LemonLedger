@@ -28,4 +28,9 @@ public class JobMode extends ParentEntity {
      * 工作方式，例如 压花、刮胶
      */
     private String mode;
+
+    /**
+     * 工作方式 工价
+     */
+    private BigDecimal modePrice;
 }

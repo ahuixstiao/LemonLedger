@@ -21,7 +21,6 @@ public class FactoryController {
 
     private final IFactoryService factoryService;
 
-
     /**
      * 查询工厂列表
      *
@@ -38,14 +37,19 @@ public class FactoryController {
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag) {
 
-        Page<Factory> page = new Page<>(currentPage, pageSize);
 
-        return Result.ok(
-                factoryService.lambdaQuery()
-                        .eq(StrUtil.isNotBlank(factoryName), Factory::getFactoryName, factoryName)
-                        .eq(Factory::getFlag, flag)
-                        .page(page)
-        );
+        return factoryService.queryFactoryList(factoryName, currentPage, pageSize, flag);
+    }
+
+    /**
+     * 保存工厂信息
+     * @param factory 工厂实体
+     * @return result
+     */
+    @PostMapping("/save")
+    public Result<Object> saveFactory(Factory factory) {
+
+        return factoryService.saveFactoryInfo(factory);
     }
 
 }

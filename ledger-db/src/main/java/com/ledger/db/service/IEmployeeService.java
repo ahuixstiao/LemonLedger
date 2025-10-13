@@ -1,8 +1,9 @@
 package com.ledger.db.service;
 
+import com.ledger.common.result.Result;
 import com.ledger.db.entity.Employee;
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.ibatis.annotations.Mapper;
+
 
 import java.util.List;
 
@@ -19,5 +20,8 @@ public interface IEmployeeService extends IService<Employee> {
     /*
     * 查询员工列表
     * */
-    List<Employee> queryEmployees();
+    Result<Object> queryEmployeeList(String name, Integer currentPage, Integer pageSize, Integer flag);
+
+
+    Result<Object> saveEmployee(Employee employee);
 }

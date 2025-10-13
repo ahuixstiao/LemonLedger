@@ -14,7 +14,6 @@
         job.style_number, <!-- 井色号 -->
         job.category_id,
         jc.category, <!-- 工作类型 1小花、2大花、3裤页 -->
-        jc.price, <!-- 单价 -->
         job.quantity, <!-- 数量 -->
         job.mode_id,
         jm.mode, <!-- 工作方式 1压花、2刮胶 -->
@@ -29,7 +28,7 @@
         and job.flag = #{flag}
     </select>
     
-    <!-- 根据员工ID查询工作信息集合 -->
+    <!-- 根据员工ID 查询工作信息列表 -->
     <select id="selectJobListByEmployeeId" resultType="jobDTO">
         select
         job.id,
@@ -41,7 +40,6 @@
         job.style_number, <!-- 井色号 -->
         job.category_id,
         jc.category, <!-- 工作类型 1小花、2大花、3裤页 -->
-        jc.price, <!-- 单价 -->
         job.quantity, <!-- 数量 -->
         job.mode_id,
         jm.mode, <!-- 工作方式 1压花、2刮胶 -->

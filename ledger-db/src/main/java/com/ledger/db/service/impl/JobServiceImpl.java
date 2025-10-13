@@ -9,10 +9,12 @@ import com.ledger.common.util.ConvertUtil;
 import com.ledger.db.entity.Employee;
 import com.ledger.db.entity.Job;
 import com.ledger.db.entity.JobCategory;
+import com.ledger.db.entity.JobMode;
 import com.ledger.db.entity.dto.JobDTO;
 import com.ledger.db.mapper.JobMapper;
 import com.ledger.db.service.IEmployeeService;
 import com.ledger.db.service.IJobCategoryService;
+import com.ledger.db.service.IJobModeService;
 import com.ledger.db.service.IJobService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,8 @@ import java.util.Optional;
 public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobService {
 
     private final JobMapper jobMapper;
+
+    private final IJobModeService jobModeService;
 
     private final IJobCategoryService jobCategoryService;
 
@@ -105,6 +109,18 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     }
 
     /**
+     * 统计员工薪水
+     *
+     * @param startTime 开始时间
+     * @param endTime   结束时间
+     * @return result
+     */
+    @Override
+    public Result<Object> statisticalSalary(String startTime, String endTime) {
+        return null;
+    }
+
+    /**
      * 员工添加工作记录
      *
      * @param job 工作记录
@@ -114,12 +130,17 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     public Result<Object> saveJobInfo(Job job) {
         // 先区分 该员工是什么工种 再计算工作薪资
         // 按工作类型（小花、大花、裤页）和工作方式（压花、刮胶）查找对应的工价
-        BigDecimal price = jobCategoryService.lambdaQuery()
-                .eq(JobCategory::getModeId, job.getModeId())
+        // 获取工作类型 工价
+        BigDecimal categoryPrice = jobCategoryService.lambdaQuery()
                 .eq(JobCategory::getId, job.getCategoryId())
-                .one()
-                .getPrice();
-        // 计算本条工作记录的工资 数量 * 工作类型和工作方式的单价
+                .one().getCategoryPrice();
+        // 获取工作方式 工价
+        BigDecimal modePrice = jobModeService.lambdaQuery()
+                .eq(JobMode::getId, job.getModeId())
+                .one().getModePrice();
+        // 计算工作类型和工作方式的总单价
+        BigDecimal price = categoryPrice.add(modePrice);
+        // 计算本条工作记录的工资 数量 * 总单价
         job.setSalary(new BigDecimal(job.getQuantity()).multiply(price).setScale(2, RoundingMode.HALF_UP));
 
         if (save(job)) {
@@ -136,8 +157,11 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     @Override
     public Result<Object> updateJobInfo(Job job) {
 
-        if(job.getCategoryId() != 0 & job.getModeId() != 0) {
-            // 修改两者
+        BigDecimal salary = new BigDecimal(0);
+
+        //判断员工是否修改了工作类型
+        if(job.getCategoryId() != 0) {
+            //如果修改了工作类型则重新获取新的工作类型薪资
         }
 
         // 思考 工作类型和工作方式的关系

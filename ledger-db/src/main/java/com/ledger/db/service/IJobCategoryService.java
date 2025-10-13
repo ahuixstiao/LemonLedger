@@ -17,12 +17,12 @@ public interface IJobCategoryService extends IService<JobCategory> {
     /**
      * 查询工作类型列表
      *
-     * @param category 工作类型
+     * @param category    工作类型
      * @param currentPage 当前页
      * @param pageSize    每页条数
-     * @param flag 删除状态 0未删除 1删除
+     * @param flag        删除状态 0未删除 1删除
      * @return result
      */
-    public Result<Object> queryCategoryList(String category, Integer currentPage, Integer pageSize, Integer flag);
+    Result<Object> queryCategoryList(String category, Integer currentPage, Integer pageSize, Integer flag);
 
 }

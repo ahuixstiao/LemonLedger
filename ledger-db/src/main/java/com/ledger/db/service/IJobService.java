@@ -37,6 +37,16 @@ public interface IJobService extends IService<Job> {
      */
     Result<Object> queryJobListByEmployeeIDAndDate(Integer empId, String startTime, String endTime, Integer currentPage, Integer pageSize);
 
+
+    /**
+     * 统计员工薪水
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return result
+     */
+    // 统计薪水
+    Result<Object>  statisticalSalary(String startTime, String endTime);
+
     // 员工添加工作记录
     Result<Object> saveJobInfo(Job job);
 

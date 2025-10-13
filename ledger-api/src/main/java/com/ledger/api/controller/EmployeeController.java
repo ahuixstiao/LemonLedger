@@ -38,16 +38,18 @@ public class EmployeeController {
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag) {
 
-        // 构建分页对象
-        Page<Employee> page = new Page<>(currentPage, pageSize);
+        return employeeService.queryEmployeeList(name, currentPage, pageSize, flag);
+    }
 
-        return Result.ok(
-                employeeService.lambdaQuery()
-                        .eq(Employee::getFlag, flag)
-                        // 如果传入名字就按名字搜索
-                        .eq(StrUtil.isNotBlank(name), Employee::getName, name)
-                        .page(page)
-        );
+    /**
+     * 保存员工信息
+     * @param employee 员工实体
+     * @return result
+     */
+    @PostMapping("/save")
+    public Result<Object> saveEmployee(Employee employee) {
+
+        return employeeService.saveEmployee(employee);
     }
 
 
