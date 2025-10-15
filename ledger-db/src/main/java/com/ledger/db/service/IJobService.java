@@ -55,4 +55,11 @@ public interface IJobService extends IService<Job> {
 
     // 员工修改工作记录
     Result<Object> updateJobInfo(Job job);
+
+    /**
+     * 删除工作信息
+     * @param jobId 工作ID
+     * @return result
+     */
+    Result<Object> deleteJobInfo(Integer jobId);
 }

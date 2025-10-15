@@ -2,23 +2,14 @@ package com.ledger.db.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.common.result.Result;
-import com.ledger.common.util.ConvertUtil;
-import com.ledger.db.entity.Employee;
-import com.ledger.db.entity.Job;
-import com.ledger.db.entity.JobCategory;
-import com.ledger.db.entity.JobMode;
+import com.ledger.db.entity.*;
 import com.ledger.db.entity.dto.JobDTO;
 import com.ledger.db.mapper.JobMapper;
-import com.ledger.db.service.IEmployeeService;
-import com.ledger.db.service.IJobCategoryService;
-import com.ledger.db.service.IJobModeService;
-import com.ledger.db.service.IJobService;
+import com.ledger.db.service.*;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +18,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -48,6 +38,8 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
 
     private final IJobCategoryService jobCategoryService;
 
+    private final IFactoryBillService factoryBillService;
+
 
     /**
      * 默认查询当天所有员工的工作信息
@@ -63,7 +55,6 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         Page<JobDTO> page = new Page<>(
                 Optional.ofNullable(currentPage).orElse(1),
                 Optional.ofNullable(pageSize).orElse(5));
-
         // 查询
         page = jobMapper.selectJobListByDefaultCurrentDay(page, flag);
 
@@ -111,10 +102,11 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
 
     /**
      * 统计员工薪水
+     *
      * @param employeeId 员工ID
-     * @param startTime 开始时间
-     * @param endTime   结束时间
-     * @param flag 删除状态 0否 1是
+     * @param startTime  开始时间
+     * @param endTime    结束时间
+     * @param flag       删除状态 0否 1是
      * @return result
      */
     @Override
@@ -153,7 +145,20 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         // 计算本条工作记录的工资 数量 * 总单价
         job.setSalary(new BigDecimal(job.getQuantity()).multiply(price).setScale(2, RoundingMode.HALF_UP));
 
+        // 判断新增工作记录是否成功
         if (save(job)) {
+            //新增成功后 向成衣厂账单表保存一份账单
+            FactoryBill factoryBill = new FactoryBill();
+            factoryBill.setFactoryId(job.getFactoryId()); // 成衣厂
+            factoryBill.setNumber(job.getNumber()); // 床号
+            factoryBill.setStyleNumber(job.getStyleNumber()); // 款式编号
+            factoryBill.setQuantity(job.getQuantity());// 数量
+            // 账单是数量乘以工作类型
+            //先查询 员工提交的工作类型
+            JobCategory jobCategory = jobCategoryService.lambdaQuery().eq(JobCategory::getId, job.getCategoryId()).one();
+
+
+
             return Result.ok();
         }
 
@@ -167,17 +172,23 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     @Override
     public Result<Object> updateJobInfo(Job job) {
 
-        BigDecimal salary = new BigDecimal(0);
-
-        //判断员工是否修改了工作类型
-        if(job.getCategoryId() != 0) {
-            //如果修改了工作类型则重新获取新的工作类型薪资
+        if (updateById(job)) {
+            return Result.ok();
         }
 
-        // 思考 工作类型和工作方式的关系
-        // 当员工想要单独修改工作类型或者工作方式再或者两者一起修改时该如何处理？
+        return Result.fail();
+    }
 
-        if (updateById(job)) {
+    /**
+     * 删除工作信息
+     *
+     * @param jobId 工作ID
+     * @return result
+     */
+    @Override
+    public Result<Object> deleteJobInfo(Integer jobId) {
+
+        if (removeById(jobId)) {
             return Result.ok();
         }
 

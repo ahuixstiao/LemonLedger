@@ -49,7 +49,7 @@ public class JobController {
      * @return result
      */
     // localhost:8080/job/list/1?startDate=2025-10-01&endDate=2025-10-06
-    @GetMapping("/list/employee/{employeeId}")
+    @GetMapping("/list/{employeeId}")
     public Result<Object> queryJobListByIDAndDate(
             @PathVariable @NotNull Integer employeeId,
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
@@ -58,7 +58,6 @@ public class JobController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false, defaultValue = "0") Integer flag
     ) {
-
 
         return jobService.queryJobListByEmployeeIDAndDate(employeeId, startDate, endDate, currentPage, pageSize, flag);
     }
@@ -79,7 +78,6 @@ public class JobController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false, defaultValue = "0") Integer flag) {
 
-
         return jobService.statisticalSalary(employeeId, startDate, endDate, flag);
     }
 
@@ -94,6 +92,28 @@ public class JobController {
 
         return jobService.saveJobInfo(job);
 
+    }
+
+    /**
+     * 修改工作信息
+     * @param job 新的工作信息
+     * @return result
+     */
+    @PutMapping("/update")
+    public Result<Object> updateJobInfo(Job job) {
+        return jobService.updateJobInfo(job);
+    }
+
+    /**
+     * 删除工作信息
+     *
+     * @param jobId 工作ID
+     * @return result
+     */
+    @GetMapping("delete/{jobId}")
+    public Result<Object> deleteJobInfo(@PathVariable @NotNull Integer jobId) {
+
+        return jobService.deleteJobInfo(jobId);
     }
 
 }
