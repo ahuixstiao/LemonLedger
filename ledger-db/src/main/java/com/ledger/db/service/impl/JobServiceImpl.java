@@ -18,6 +18,7 @@ import com.ledger.db.service.IJobModeService;
 import com.ledger.db.service.IJobService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +57,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
-    public Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize) {
+    public Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize, Integer flag) {
 
         // 构建分页对象
         Page<JobDTO> page = new Page<>(
@@ -64,7 +65,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 Optional.ofNullable(pageSize).orElse(5));
 
         // 查询
-        page = jobMapper.selectJobListByDefaultCurrentDay(page, 0);
+        page = jobMapper.selectJobListByDefaultCurrentDay(page, flag);
 
         return Result.ok(page);
     }
@@ -83,7 +84,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     public Result<Object> queryJobListByEmployeeIDAndDate(
             Integer employeeId,
             String startDate, String endDate,
-            Integer currentPage, Integer pageSize) {
+            Integer currentPage, Integer pageSize, Integer flag) {
 
         //根据员工ID查询员工工作信息 假如传入时间为空则查询当天
         if (StrUtil.isBlank(startDate)) {
@@ -102,7 +103,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 Optional.ofNullable(currentPage).orElse(5));
 
         // 查询
-        page = jobMapper.selectJobListByEmployeeId(page, employeeId, startDate, endDate, 0);
+        page = jobMapper.selectJobListByEmployeeId(page, employeeId, startDate, endDate, flag);
 
         // 返回结果
         return Result.ok(page);
@@ -110,14 +111,23 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
 
     /**
      * 统计员工薪水
-     *
+     * @param employeeId 员工ID
      * @param startTime 开始时间
      * @param endTime   结束时间
+     * @param flag 删除状态 0否 1是
      * @return result
      */
     @Override
-    public Result<Object> statisticalSalary(String startTime, String endTime) {
-        return null;
+    public Result<Object> statisticalSalary(Integer employeeId, String startTime, String endTime, Integer flag) {
+
+        // 统计员工薪资
+        JobDTO jobDTO = jobMapper.calculateSalaryByEmployeeIdAndDate(employeeId, startTime, endTime, flag);
+
+        if (ObjectUtil.isNotEmpty(jobDTO)) {
+            return Result.ok(jobDTO);
+        }
+
+        return Result.fail();
     }
 
     /**
@@ -130,14 +140,14 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     public Result<Object> saveJobInfo(Job job) {
         // 先区分 该员工是什么工种 再计算工作薪资
         // 按工作类型（小花、大花、裤页）和工作方式（压花、刮胶）查找对应的工价
-        // 获取工作类型 工价
-        BigDecimal categoryPrice = jobCategoryService.lambdaQuery()
-                .eq(JobCategory::getId, job.getCategoryId())
-                .one().getCategoryPrice();
-        // 获取工作方式 工价
+        // 获取工作方式的基本工价
         BigDecimal modePrice = jobModeService.lambdaQuery()
                 .eq(JobMode::getId, job.getModeId())
                 .one().getModePrice();
+        // 获取工作类型的工价
+        BigDecimal categoryPrice = jobCategoryService.lambdaQuery()
+                .eq(JobCategory::getId, job.getCategoryId())
+                .one().getCategoryPrice();
         // 计算工作类型和工作方式的总单价
         BigDecimal price = categoryPrice.add(modePrice);
         // 计算本条工作记录的工资 数量 * 总单价

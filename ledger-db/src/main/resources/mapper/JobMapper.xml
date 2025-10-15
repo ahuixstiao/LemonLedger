@@ -27,7 +27,7 @@
         where job.created_time = CURDATE()
         and job.flag = #{flag}
     </select>
-    
+
     <!-- 根据员工ID 查询工作信息列表 -->
     <select id="selectJobListByEmployeeId" resultType="jobDTO">
         select
@@ -75,6 +75,42 @@
         </choose>
         <!-- 按员工名称排序 -->
         order by emp.name desc
+    </select>
+
+
+    <!-- 获取指定员工的工资  -->
+    <select id="calculateSalaryByEmployeeIdAndDate" resultType="jobDTO">
+        select
+        job.employee_id,
+        emp.name, <!-- 员工姓名 -->
+        sum(job.quantity) as quantity,  <!-- 计算数量 -->
+        sum(job.salary) as salary <!-- 工资总额 -->
+        from job
+        left join employee emp on job.employee_id = emp.id
+        where employee_id = #{employeeId}
+        and job.flag = #{flag}
+        and emp.flag = #{flag}
+        <choose>
+            <!-- 判断员工是否指定了时间范围 -->
+            <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+                and job.created_time &gt;= DATE(#{startDate})
+                and job.created_time &lt;= DATE(#{endDate})
+            </when>
+            <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
+            <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
+                and job.created_time between DATE(#{startDate}) and CURDATE()
+            </when>
+            <!-- 判断员工是否指定了结束日期 -->
+            <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
+                and job.created_time between CURDATE() and DATE(#{endDate})
+            </when>
+            <!-- 默认查询当月1号至当天的薪资 -->
+            <otherwise>
+                and job.created_time between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
+            </otherwise>
+        </choose>
+        <!-- 按id和姓名分组 -->
+        group by job.employee_id, emp.name
     </select>
 
 </mapper>

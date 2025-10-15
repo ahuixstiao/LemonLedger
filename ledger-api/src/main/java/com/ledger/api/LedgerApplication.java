@@ -10,7 +10,7 @@ import java.lang.reflect.Field;
 
 @MapperScan("com.ledger.db.mapper")
 @EnableTransactionManagement
-@SpringBootApplication(scanBasePackages = {"com.ledger.api","com.ledger.db"})
+@SpringBootApplication(scanBasePackages = {"com.ledger.api", "com.ledger.db", "com.ledger.common"})
 public class LedgerApplication {
 
     /* 启动类 */

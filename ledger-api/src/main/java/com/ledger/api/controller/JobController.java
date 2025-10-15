@@ -32,9 +32,10 @@ public class JobController {
     @GetMapping("/list")
     public Result<Object> queryJobListByDefaultThatDay(
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "5") Integer pageSize) {
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
+            @RequestParam(required = false, defaultValue = "0") Integer flag) {
 
-        return jobService.queryJobListByDefaultCurrentDay(currentPage, pageSize);
+        return jobService.queryJobListByDefaultCurrentDay(currentPage, pageSize, flag);
     }
 
     /**
@@ -54,14 +55,37 @@ public class JobController {
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "0") Integer flag
+    ) {
 
 
-        return jobService.queryJobListByEmployeeIDAndDate(employeeId, startDate, endDate, currentPage, pageSize);
+        return jobService.queryJobListByEmployeeIDAndDate(employeeId, startDate, endDate, currentPage, pageSize, flag);
+    }
+
+    /**
+     * 统计指定员工某段时间内的工资信息
+     *
+     * @param employeeId 员工ID
+     * @param startDate  开始日期
+     * @param endDate    结束日期
+     * @param flag       删除状态 0 正常 1 删除
+     * @return result
+     */
+    @GetMapping("/salary/{employeeId}")
+    public Result<Object> statisticalSalary(
+            @PathVariable @NotNull Integer employeeId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "0") Integer flag) {
+
+
+        return jobService.statisticalSalary(employeeId, startDate, endDate, flag);
     }
 
     /**
      * 保存工作信息
+     *
      * @param job 工作信息实体
      * @return result
      */
