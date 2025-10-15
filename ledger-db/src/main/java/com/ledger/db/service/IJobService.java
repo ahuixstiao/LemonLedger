@@ -4,8 +4,6 @@ import com.ledger.common.result.Result;
 import com.ledger.db.entity.Job;
 import com.baomidou.mybatisplus.extension.service.IService;
 
-import java.time.LocalDateTime;
-
 /**
  * <p>
  * 工作内容表 服务类
@@ -24,7 +22,7 @@ public interface IJobService extends IService<Job> {
      * @param flag        删除状态 0否 1是
      * @return result
      */
-    Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize,, Integer flag);
+    Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize, Integer flag);
 
     /**
      * 查询指定员工当天或某天的工作信息
