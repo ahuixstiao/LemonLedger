@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
+import java.time.LocalDate;
 
 /**
  * @Author: ahui
@@ -23,21 +24,7 @@ public class JobController {
 
     /**
      * 默认查询当天所有员工的工作信息
-     *
-     * @return result
-     */
-    // localhost:8080/job/list
-    @GetMapping("/list")
-    public Result<Object> queryJobListByDefaultThatDay(
-            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
-            @RequestParam(required = false, defaultValue = "0") Integer flag) {
-
-        return jobService.queryJobListByDefaultCurrentDay(currentPage, pageSize, flag);
-    }
-
-    /**
-     * 查询指定员工当天或某天的工作信息
+     * 如果传入员工ID 则按员工ID 查询当天 或 由员工指定的起止日期的工作信息
      *
      * @param employeeId  员工id
      * @param startDate   开始日期
@@ -50,13 +37,12 @@ public class JobController {
     @GetMapping("/list/{employeeId}")
     public Result<Object> queryJobListByIDAndDate(
             @PathVariable @NotNull Integer employeeId,
-            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag
     ) {
-
         return jobService.queryJobListByEmployeeIDAndDate(employeeId, startDate, endDate, currentPage, pageSize, flag);
     }
 
