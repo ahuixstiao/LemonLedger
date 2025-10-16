@@ -97,9 +97,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         }
 
         // 构建分页查询对象
-        Page<JobDTO> page = new Page<>(
-                Optional.ofNullable(currentPage).orElse(1),
-                Optional.ofNullable(currentPage).orElse(5));
+        Page<JobDTO> page = new Page<>(currentPage, pageSize);
 
         // 查询
         page = jobMapper.selectJobListByEmployeeId(page, employeeId, startDate, endDate, flag);

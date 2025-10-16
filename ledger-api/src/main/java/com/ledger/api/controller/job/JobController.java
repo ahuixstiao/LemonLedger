@@ -86,7 +86,7 @@ public class JobController {
      * @return result
      */
     @PostMapping("/save")
-    public Result<Object> saveJobInfo(Job job) {
+    public Result<Object> saveJobInfo(@RequestBody Job job) {
 
         return jobService.saveJobInfo(job);
 
@@ -98,7 +98,7 @@ public class JobController {
      * @return result
      */
     @PutMapping("/update")
-    public Result<Object> updateJobInfo(Job job) {
+    public Result<Object> updateJobInfo(@RequestBody Job job) {
         return jobService.updateJobInfo(job);
     }
 
@@ -108,7 +108,7 @@ public class JobController {
      * @param jobId 工作ID
      * @return result
      */
-    @GetMapping("/delete/{jobId}")
+    @DeleteMapping("/delete/{jobId}")
     public Result<Object> deleteJobInfo(@PathVariable @NotNull Integer jobId) {
 
         return jobService.deleteJobInfo(jobId);

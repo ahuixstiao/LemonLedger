@@ -55,11 +55,11 @@
         left join job_mode jm on job.mode_id = jm.id
         <!-- 按员工ID 查找员工未处于删除状态下的工作记录 -->
         where job.flag = #{flag}
+        <!-- 如果员工未选择姓名则默认查全部人的工作信息 -->
+        <if test="employeeId != null and employeeId != '' ">
+            and job.employee_id = #{employeeId}
+        </if>
         <choose>
-            <!-- 如果员工未选择姓名则默认查全部人的工作信息 -->
-            <when test="employeeId != null and employeeId != '' ">
-                and job.employee_id = #{employeeId}
-            </when>
             <!-- 如果员工指定了某个日期 则按指定日期查找工作记录 -->
             <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
                 and job.created_time = DATE(#{startDate})
@@ -70,9 +70,7 @@
             </when>
             <!-- 如果员工指定了时间范围则按时间范围查找。-->
             <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">
-                <!-- 由于<=在xml中会被错误解析所以需要使用实体编码来表示大于号>和小于号< -->
-                and job.created_time &gt;= DATE(#{startDate})
-                and job.created_time &lt;= DATE(#{endDate})
+                and job.created_time between DATE(#{startDate}) and DATE(#{endDate})
             </when>
             <!-- 如员工未指定日期则默认查找当天工作记录 CURDATE函数的作用是获取当天日期 格式为yyyy-MM-dd -->
             <otherwise>
