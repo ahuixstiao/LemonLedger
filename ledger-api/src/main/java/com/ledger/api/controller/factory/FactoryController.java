@@ -1,17 +1,15 @@
-package com.ledger.api.controller;
+package com.ledger.api.controller.factory;
 
-import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Factory;
-import com.ledger.db.service.IFactoryService;
+import com.ledger.db.service.factory.IFactoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * @Author: ahui
- * @Description: TODO 工厂控制器
+ * @Description: TODO 成衣厂控制器
  * @DateTime: 2025/10/11 - 10:07
  **/
 @RestController

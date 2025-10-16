@@ -1,4 +1,4 @@
-package com.ledger.db.service.impl;
+package com.ledger.db.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;

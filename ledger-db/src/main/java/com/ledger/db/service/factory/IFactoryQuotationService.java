@@ -1,4 +1,4 @@
-package com.ledger.db.service;
+package com.ledger.db.service.factory;
 
 import com.ledger.db.entity.FactoryQuotation;
 import com.baomidou.mybatisplus.extension.service.IService;

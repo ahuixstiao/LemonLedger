@@ -1,4 +1,4 @@
-package com.ledger.db.service;
+package com.ledger.db.service.job;
 
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.JobCategory;
@@ -24,5 +24,21 @@ public interface IJobCategoryService extends IService<JobCategory> {
      * @return result
      */
     Result<Object> queryCategoryList(String category, Integer currentPage, Integer pageSize, Integer flag);
+
+    /**
+     * 保存工作类型
+     *
+     * @param jobCategory 工作类型实体
+     * @return result
+     */
+    Result<Object> saveJobCategoryInfo(JobCategory jobCategory);
+
+    /**
+     * 删除工作类型
+     *
+     * @param categoryId 工作类型ID
+     * @return result
+     */
+    Result<Object> removeJobCategoryInfo(Integer categoryId);
 
 }

@@ -1,23 +1,18 @@
-package com.ledger.db.mapper;
+package com.ledger.db.service.factory;
 
+import com.ledger.common.result.Result;
 import com.ledger.db.entity.FactoryBill;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ledger.db.entity.dto.FactoryBillDto;
-import org.apache.ibatis.annotations.Mapper;
-
-import java.util.List;
+import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * <p>
- * 成衣厂账单表 Mapper 接口
+ * 成衣厂账单表 服务类
  * </p>
  *
  * @author ahui
  * @since 2025-10-15
  */
-@Mapper
-public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
-
+public interface IFactoryBillService extends IService<FactoryBill> {
 
     /**
      * 按条件查询成衣厂账单列表  如果不传递参数则默认查询全部成衣厂账单列表
@@ -29,6 +24,7 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
      * @param flag        删除状态 0否 1是
      * @return result
      */
-    List<FactoryBillDto> selectFactoryBillList(Integer factoryId, Integer number, Integer styleNumber, Integer categoryId, Integer flag);
+    Result<Object> queryFactoryBillListByCondition(Integer factoryId, Integer number, Integer styleNumber, Integer categoryId, Integer flag);
+
 
 }

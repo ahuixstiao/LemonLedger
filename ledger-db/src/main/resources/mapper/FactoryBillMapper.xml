@@ -3,20 +3,39 @@
 <mapper namespace="com.ledger.db.mapper.FactoryBillMapper">
 
     <!-- 查询工厂账单集合 -->
-    <select id="queryFactoryBillList" resultType="factoryBillDto">
+    <select id="selectFactoryBillList" resultType="factoryBillDto">
 
         select fb.id,
-               fb.factory_id,
-               ft.factory_name,
-               fb.number,
-               fb.style_number,
-               fb.category,
-               fb.quantity,
-               fb.bill
+        fb.factory_id,
+        ft.factory_name,
+        fb.number,
+        fb.style_number,
+        fb.category_id,
+        jc.category,
+        fb.quantity,
+        fb.bill
         from factory_bill fb
-                 left join factory ft on fb.factory_id = ft.id
+        left join factory ft on fb.factory_id = ft.id
+        left join job_category jc on fb.category_id = jc.id
         where fb.flag = #{flag}
-
+        <choose>
+            <!-- 如果传入工厂ID则按工厂ID查询 -->
+            <when test="factoryId != null and factoryId != '' ">
+                and fb.factory_id = #{factoryId}
+            </when>
+            <!-- 如果传入床号则按床号查询 -->
+            <when test="number != null and number != '' ">
+                and fb.number = #{number}
+            </when>
+            <!-- 如果传入款式编号则按款式编号查询 -->
+            <when test="styleNumber != null and styleNumber != '' ">
+                and fb.style_number = #{styleNumber}
+            </when>
+            <!-- 如果传入工作类型ID则按工作类型ID查询 -->
+            <when test="categoryId != null and categoryId != '' ">
+                and fb.category_id = #{categoryId}
+            </when>
+        </choose>
     </select>
 
 

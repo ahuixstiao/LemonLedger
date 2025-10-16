@@ -1,12 +1,14 @@
-package com.ledger.db.service.impl;
+package com.ledger.db.impl.factory;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Factory;
 import com.ledger.db.mapper.FactoryMapper;
-import com.ledger.db.service.IFactoryService;
+import com.ledger.db.service.factory.IFactoryService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
  * @since 2025-10-03
  */
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FactoryServiceImpl extends ServiceImpl<FactoryMapper, Factory> implements IFactoryService {
 
     /**

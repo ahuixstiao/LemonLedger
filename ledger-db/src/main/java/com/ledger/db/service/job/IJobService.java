@@ -1,4 +1,4 @@
-package com.ledger.db.service;
+package com.ledger.db.service.job;
 
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Job;

@@ -2,6 +2,8 @@ package com.ledger.db.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ledger.common.entity.ParentEntity;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -23,7 +25,8 @@ import lombok.Setter;
 @TableName("factory_bill")
 public class FactoryBill extends ParentEntity {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 3106510113334294936L;
 
     /**
      * 成衣厂ID
@@ -41,9 +44,9 @@ public class FactoryBill extends ParentEntity {
     private Integer styleNumber;
 
     /**
-     * 类型 小花、大花、裤页
+     * 工作类型 1、小花、2、大花、3、裤页
      */
-    private String category;
+    private Integer categoryId;
 
     /**
      * 数量

@@ -1,10 +1,13 @@
-package com.ledger.api.controller;
+package com.ledger.api.controller.job;
 
 import com.ledger.common.result.Result;
-import com.ledger.db.service.IJobCategoryService;
+import com.ledger.db.entity.JobCategory;
+import com.ledger.db.service.job.IJobCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * @Author: ahui
@@ -19,11 +22,12 @@ public class JobCategoryController {
     private final IJobCategoryService jobCategoryService;
 
     /**
-     * 查询工作类别列表
-     * @param category 工作类别
+     * 查询工作类型列表
+     *
+     * @param category    工作类型
      * @param currentPage 当前页
-     * @param pageSize 每页条数
-     * @param flag 删除状态 0否 1是
+     * @param pageSize    每页条数
+     * @param flag        删除状态 0否 1是
      * @return result
      */
     // localhost:8080/list/xxx?currentPage=1&pageSize=5&flag=0
@@ -35,9 +39,30 @@ public class JobCategoryController {
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag
     ) {
-
-
         return jobCategoryService.queryCategoryList(category, currentPage, pageSize, flag);
     }
 
+
+    /**
+     * 保存工作类别信息
+     *
+     * @param jobCategory 工作类型实体
+     * @return result
+     */
+    @PostMapping("/save")
+    public Result<Object> saveJobCategoryInfo(JobCategory jobCategory) {
+        return jobCategoryService.saveJobCategoryInfo(jobCategory);
+    }
+
+    /**
+     * 删除工作类别信息
+     *
+     * @param categoryId 工作类别ID
+     * @return result
+     */
+    @DeleteMapping("/remove/{categoryId}")
+    public Result<Object> removeJobCategoryInfo(@PathVariable @NotNull Integer categoryId) {
+
+        return  jobCategoryService.removeJobCategoryInfo(categoryId);
+    }
 }

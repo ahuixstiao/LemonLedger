@@ -1,15 +1,13 @@
-package com.ledger.api.controller;
+package com.ledger.api.controller.job;
 
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Job;
-import com.ledger.db.service.IJobService;
+import com.ledger.db.service.job.IJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
-import java.time.format.DateTimeFormatter;
 
 /**
  * @Author: ahui

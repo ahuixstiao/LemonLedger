@@ -1,9 +1,11 @@
-package com.ledger.db.service.impl;
+package com.ledger.db.impl.factory;
 
 import com.ledger.db.entity.FactoryQuotation;
 import com.ledger.db.mapper.FactoryQuotationMapper;
-import com.ledger.db.service.IFactoryQuotationService;
+import com.ledger.db.service.factory.IFactoryQuotationService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
  * @since 2025-10-16
  */
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FactoryQuotationServiceImpl extends ServiceImpl<FactoryQuotationMapper, FactoryQuotation> implements IFactoryQuotationService {
 
 }

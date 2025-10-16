@@ -1,4 +1,4 @@
-package com.ledger.db.service;
+package com.ledger.db.service.job;
 
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.JobMode;
@@ -23,5 +23,21 @@ public interface IJobModeService extends IService<JobMode> {
      * @return result
      */
     Result<Object> queryJobModeList(Integer currentPage, Integer pageSize, String mode);
+
+    /**
+     * 保存工作方式信息
+     *
+     * @param jobMode 工作方式实体
+     * @return result
+     */
+    Result<Object> saveJobModeInfo(JobMode jobMode);
+
+    /**
+     * 删除工作方式信息
+     *
+     * @param jobModeId 工作方式ID
+     * @return result
+     */
+    Result<Object> removeJobModeInfo(Integer jobModeId);
 
 }

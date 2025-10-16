@@ -1,4 +1,4 @@
-package com.ledger.db.service.impl;
+package com.ledger.db.impl.job;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -7,13 +7,15 @@ import com.ledger.common.result.Result;
 import com.ledger.db.entity.*;
 import com.ledger.db.entity.dto.JobDTO;
 import com.ledger.db.mapper.JobMapper;
-import com.ledger.db.service.*;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ledger.db.service.factory.IFactoryBillService;
+import com.ledger.db.service.factory.IFactoryQuotationService;
+import com.ledger.db.service.job.IJobQuotationService;
+import com.ledger.db.service.job.IJobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -154,13 +156,14 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         if (save(job)) {
             log.info("================= 工作记录保存成功: {} =================", job);
             //新增成功后 向成衣厂账单表保存一份账单
-            FactoryBill factoryBill = new FactoryBill();
+            FactoryBill factoryBill = new FactoryBill(); // 构建对象
             factoryBill.setFactoryId(job.getFactoryId()); // 成衣厂
             factoryBill.setNumber(job.getNumber()); // 床号
             factoryBill.setStyleNumber(job.getStyleNumber()); // 款式编号
+            factoryBill.setCategoryId(job.getCategoryId()); // 工作类型
             factoryBill.setQuantity(job.getQuantity());// 数量
             // 成衣厂账单字段的参数由 数量 * 成衣厂报价得出
-            // 先获取员工提交的工作类型和成衣厂ID 然后从成衣厂报价表中获取计件的报价
+            // 根据员工提交的工作类型和成衣厂ID 从成衣厂报价表中获取计件的报价
             BigDecimal quotation = factoryQuotationService.lambdaQuery()
                     .eq(FactoryQuotation::getCategoryId, job.getCategoryId())
                     .eq(FactoryQuotation::getFactoryId, job.getFactoryId())

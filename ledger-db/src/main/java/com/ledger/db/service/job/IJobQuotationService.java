@@ -1,4 +1,4 @@
-package com.ledger.db.service;
+package com.ledger.db.service.job;
 
 import com.ledger.db.entity.JobQuotation;
 import com.baomidou.mybatisplus.extension.service.IService;

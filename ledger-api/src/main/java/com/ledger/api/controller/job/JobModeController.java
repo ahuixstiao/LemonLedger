@@ -1,10 +1,13 @@
-package com.ledger.api.controller;
+package com.ledger.api.controller.job;
 
 import com.ledger.common.result.Result;
-import com.ledger.db.service.IJobModeService;
+import com.ledger.db.entity.JobMode;
+import com.ledger.db.service.job.IJobModeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * @Author: ahui
@@ -34,5 +37,30 @@ public class JobModeController {
 
         return jobModeService.queryJobModeList(currentPage, pageSize, mode);
     }
+
+    /**
+     * 保存工作方式信息
+     *
+     * @param jobMode 工作方式实体
+     * @return result
+     */
+    @PostMapping("/save")
+    public Result<Object> saveJobModeInfo(JobMode jobMode) {
+
+        return jobModeService.saveJobModeInfo(jobMode);
+    }
+
+    /**
+     * 删除工作方式信息
+     *
+     * @param jobModeId 工作方式ID
+     * @return result
+     */
+    @DeleteMapping("/remove/{jobModeId}")
+    public Result<Object> removeJobModeById(@PathVariable @NotNull Integer jobModeId) {
+
+        return jobModeService.removeJobModeInfo(jobModeId);
+    }
+
 
 }
