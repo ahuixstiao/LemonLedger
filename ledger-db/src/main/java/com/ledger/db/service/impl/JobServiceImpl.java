@@ -10,8 +10,11 @@ import com.ledger.db.mapper.JobMapper;
 import com.ledger.db.service.*;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -29,14 +32,15 @@ import java.util.Optional;
  * @since 2025-10-02
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobService {
 
     private final JobMapper jobMapper;
 
-    private final IJobModeService jobModeService;
+    private final IJobQuotationService jobQuotationService;
 
-    private final IJobCategoryService jobCategoryService;
+    private final IFactoryQuotationService factoryQuotationService;
 
     private final IFactoryBillService factoryBillService;
 
@@ -49,6 +53,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
+    @Transactional(readOnly = true)
     public Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize, Integer flag) {
 
         // 构建分页对象
@@ -72,6 +77,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
+    @Transactional(readOnly = true)
     public Result<Object> queryJobListByEmployeeIDAndDate(
             Integer employeeId,
             String startDate, String endDate,
@@ -110,6 +116,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
+    @Transactional(readOnly = true)
     public Result<Object> statisticalSalary(Integer employeeId, String startTime, String endTime, Integer flag) {
 
         // 统计员工薪资
@@ -119,7 +126,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
             return Result.ok(jobDTO);
         }
 
-        return Result.fail();
+        return Result.fail("暂无信息");
     }
 
     /**
@@ -128,40 +135,46 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @param job 工作记录
      * @return result
      */
+    @Transactional(rollbackFor = RuntimeException.class)
     @Override
     public Result<Object> saveJobInfo(Job job) {
         // 先区分 该员工是什么工种 再计算工作薪资
         // 按工作类型（小花、大花、裤页）和工作方式（压花、刮胶）查找对应的工价
-        // 获取工作方式的基本工价
-        BigDecimal modePrice = jobModeService.lambdaQuery()
-                .eq(JobMode::getId, job.getModeId())
-                .one().getModePrice();
-        // 获取工作类型的工价
-        BigDecimal categoryPrice = jobCategoryService.lambdaQuery()
-                .eq(JobCategory::getId, job.getCategoryId())
-                .one().getCategoryPrice();
+        // 通过工作类型和工作方式查询工作报价表获取计件报价
+        JobQuotation jobQuotation = jobQuotationService.lambdaQuery()
+                .eq(JobQuotation::getCategoryId, job.getCategoryId())
+                .eq(JobQuotation::getModeId, job.getModeId())
+                .one();
+
         // 计算工作类型和工作方式的总单价
-        BigDecimal price = categoryPrice.add(modePrice);
-        // 计算本条工作记录的工资 数量 * 总单价
-        job.setSalary(new BigDecimal(job.getQuantity()).multiply(price).setScale(2, RoundingMode.HALF_UP));
+        // 计算本条工作记录的工资 数量 * 员工工作报价
+        job.setSalary(new BigDecimal(job.getQuantity()).multiply(jobQuotation.getQuotation()).setScale(2, RoundingMode.HALF_UP));
 
         // 判断新增工作记录是否成功
         if (save(job)) {
+            log.info("================= 工作记录保存成功: {} =================", job);
             //新增成功后 向成衣厂账单表保存一份账单
             FactoryBill factoryBill = new FactoryBill();
             factoryBill.setFactoryId(job.getFactoryId()); // 成衣厂
             factoryBill.setNumber(job.getNumber()); // 床号
             factoryBill.setStyleNumber(job.getStyleNumber()); // 款式编号
             factoryBill.setQuantity(job.getQuantity());// 数量
-            // 账单是数量乘以工作类型
-            //先查询 员工提交的工作类型
-            JobCategory jobCategory = jobCategoryService.lambdaQuery().eq(JobCategory::getId, job.getCategoryId()).one();
+            // 成衣厂账单字段的参数由 数量 * 成衣厂报价得出
+            // 先获取员工提交的工作类型和成衣厂ID 然后从成衣厂报价表中获取计件的报价
+            BigDecimal quotation = factoryQuotationService.lambdaQuery()
+                    .eq(FactoryQuotation::getCategoryId, job.getCategoryId())
+                    .eq(FactoryQuotation::getFactoryId, job.getFactoryId())
+                    .one().getQuotation();
+            // 将数量 * 成衣厂报价 得出本床账单
+            factoryBill.setBill(new BigDecimal(job.getQuantity()).multiply(quotation).setScale(2, RoundingMode.HALF_UP));
 
+            // 判断账单保存是否成功
+            if (factoryBillService.save(factoryBill)) {
+                log.info("================= 成衣厂账单保存成功: {} =================", factoryBill);
+                return Result.ok();
+            }
 
-
-            return Result.ok();
         }
-
         return Result.fail();
     }
 
@@ -170,6 +183,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
+    @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> updateJobInfo(Job job) {
 
         if (updateById(job)) {
@@ -186,6 +200,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
+    @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> deleteJobInfo(Integer jobId) {
 
         if (removeById(jobId)) {

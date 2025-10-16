@@ -4,9 +4,7 @@ import com.ledger.common.result.Result;
 import com.ledger.db.service.IJobModeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @Author: ahui
@@ -14,16 +12,27 @@ import org.springframework.web.bind.annotation.RestController;
  * @DateTime: 2025/10/11 - 10:07
  **/
 @RestController
-@RequiredArgsConstructor(onConstructor_ =  @Autowired)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @RequestMapping("/mode")
 public class JobModeController {
 
     private final IJobModeService jobModeService;
 
-    @GetMapping("/list")
-    public Result<Object> queryJobModeList() {
+    /**
+     * 查询工作方式集合
+     *
+     * @param mode        工作方式
+     * @param currentPage 当前页
+     * @param pageSize    页面条数
+     * @return reuslt
+     */
+    @GetMapping("/list/{mode}")
+    public Result<Object> queryJobModeList(
+            @PathVariable(required = false) String mode,
+            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize) {
 
-        return null;
+        return jobModeService.queryJobModeList(currentPage, pageSize, mode);
     }
 
 }

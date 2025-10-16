@@ -51,9 +51,12 @@
         left join job_category jc on job.category_id = jc.id
         left join job_mode jm on job.mode_id = jm.id
         <!-- 按员工ID 查找员工未处于删除状态下的工作记录 -->
-        where job.employee_id = #{employeeId}
-        and job.flag = #{flag}
+        where job.flag = #{flag}
         <choose>
+            <!-- 如果员工未选择姓名则默认查全部人的工作信息 -->
+            <when test="employeeId != null and employeeId != '' ">
+                and job.employee_id = #{employeeId}
+            </when>
             <!-- 如果员工指定了某个日期 则按指定日期查找工作记录 -->
             <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
                 and job.created_time = DATE(#{startDate})

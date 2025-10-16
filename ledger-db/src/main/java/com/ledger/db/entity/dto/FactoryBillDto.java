@@ -39,7 +39,7 @@ public class FactoryBillDto implements Serializable {
     /**
      * 类型 小花、大花、裤页
      */
-    private String category;
+    private String categoryId;
 
     /**
      * 数量

@@ -28,14 +28,4 @@ public class JobCategory extends ParentEntity {
      * 工作类型，例如 小花、大花、裤页
      */
     private String category;
-
-    /**
-     * 工作类型价格 根据工作方式来区分工作类型的工价
-     */
-    private BigDecimal categoryPrice;
-
-    /**
-     * 工作方式 ID，例如 1压花 2刮胶
-     */
-    private Integer modeId;
 }

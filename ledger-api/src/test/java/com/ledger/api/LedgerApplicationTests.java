@@ -45,16 +45,16 @@ class LedgerApplicationTests {
     @Test
     void contextLoads() {
         // 逆向工程
-        //codeGenerator("factory_bill");
+        //codeGenerator("factory_quotation");
 
         //System.out.println(LocalDateTime.parse("2025-10-05T08:21:26.663105").format(DateTimeFormatter.ISO_DATE));
         //System.out.println(LocalDate.parse("2025-10-01").format(DateTimeFormatter.ISO_DATE));
 
         //根据员工ID查询员工工作信息
         /*Page<JobDTO> jobDTOList = jobMapper.selectJobListByEmployeeId(
-                new Page<>(1, 5),1,
+                new Page<>(1, 5),0,
                "2025-10-01 T08:21:26",
-                "2025-10-10", 0);
+                "2025-10-15", 0);
         jobDTOList.getRecords().forEach(System.out::println);*/
 
 
@@ -62,7 +62,7 @@ class LedgerApplicationTests {
         /*Page<JobDTO> page = jobMapper.selectJobListByDefaultCurrentDay(
                 new Page<>(1, 5),0);
         page.getRecords().forEach(System.out::println);*/
-        // 插入员工信息
+
 
         // 查询员工工资
         /*JobDTO jobDTO = jobMapper.calculateSalaryByEmployeeIdAndDate(

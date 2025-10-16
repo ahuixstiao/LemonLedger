@@ -25,12 +25,7 @@ public class JobMode extends ParentEntity {
     @Serial
     private static final long serialVersionUID = 2111013045403443199L;
     /**
-     * 工作方式，例如 压花、刮胶
+     * 工作方式，如 1、压花、2、刮胶
      */
     private String mode;
-
-    /**
-     * 工作方式 工价
-     */
-    private BigDecimal modePrice;
 }

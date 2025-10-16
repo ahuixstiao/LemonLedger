@@ -9,8 +9,8 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 @MapperScan("com.ledger.db.mapper")
-@EnableTransactionManagement
-@SpringBootApplication(scanBasePackages = {"com.ledger.api", "com.ledger.db", "com.ledger.common"})
+@EnableTransactionManagement //启用事务管理
+@SpringBootApplication(scanBasePackages = {"com.ledger.api", "com.ledger.db", "com.ledger.common"}) // 扫描包的组件比如@Component、@Configuration
 public class LedgerApplication {
 
     /* 启动类 */

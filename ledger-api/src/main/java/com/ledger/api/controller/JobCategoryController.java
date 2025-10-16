@@ -18,8 +18,6 @@ public class JobCategoryController {
 
     private final IJobCategoryService jobCategoryService;
 
-
-
     /**
      * 查询工作类别列表
      * @param category 工作类别
