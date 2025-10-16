@@ -49,6 +49,7 @@ class LedgerApplicationTests {
 
         //System.out.println(LocalDateTime.parse("2025-10-05T08:21:26.663105").format(DateTimeFormatter.ISO_DATE));
         //System.out.println(LocalDate.parse("2025-10-01").format(DateTimeFormatter.ISO_DATE));
+        //System.out.println(LocalDate.now().toString());
 
         //根据员工ID查询员工工作信息
         /*Page<JobDTO> jobDTOList = jobMapper.selectJobListByEmployeeId(

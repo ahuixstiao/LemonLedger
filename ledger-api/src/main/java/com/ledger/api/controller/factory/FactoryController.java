@@ -28,13 +28,12 @@ public class FactoryController {
      * @param flag        状态 0-启用 1-禁用
      * @return result
      */
-    @GetMapping("/list/{factoryName}")
+    @GetMapping("/list")
     public Result<Object> queryFactoryList(
-            @PathVariable(required = false) String factoryName,
+            @RequestParam(required = false) String factoryName,
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag) {
-
 
         return factoryService.queryFactoryList(factoryName, currentPage, pageSize, flag);
     }

@@ -47,25 +47,26 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     private final IFactoryBillService factoryBillService;
 
     /**
-     * 查询员工当天或某天的工作信息
+     * 默认查询当天所有员工的工作信息
+     * 如果传入员工ID 则按员工ID 查询当天 或 由员工指定的起止日期的工作信息
      *
-     * @param employeeId  员工id
-     * @param startDate   开始日期
-     * @param endDate     结束日期
+     * @param employeeId       员工ID
+     * @param startDate   开始时间
+     * @param endDate     结束时间
      * @param currentPage 当前页
      * @param pageSize    每页条数
+     * @param flag        删除状态 0否 1是
      * @return result
      */
     @Override
     @Transactional(readOnly = true)
     public Result<Object> queryJobListByEmployeeIDAndDate(
-            Integer employeeId,
-            String startDate, String endDate,
+            Integer employeeId, String startDate, String endDate,
             Integer currentPage, Integer pageSize, Integer flag) {
 
         //根据员工ID查询员工工作信息 假如传入时间为空则查询当天
         if (StrUtil.isBlank(startDate)) {
-            startDate = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE);
+            startDate = LocalDate.now().toString();
         }
         // 用户如果指定时间范围则按范围查询
         if (StrUtil.isNotBlank(startDate) & StrUtil.isNotBlank(endDate)) {
