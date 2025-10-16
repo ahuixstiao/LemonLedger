@@ -1,5 +1,6 @@
 package com.ledger.api;
 
+import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,6 +9,7 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
+@Slf4j
 @MapperScan("com.ledger.db.mapper")
 @EnableTransactionManagement //启用事务管理
 @SpringBootApplication(scanBasePackages = {"com.ledger.api", "com.ledger.db", "com.ledger.common"}) // 扫描包的组件比如@Component、@Configuration
@@ -17,6 +19,7 @@ public class LedgerApplication {
     public static void main(String[] args) {
         disableWarning();
         SpringApplication.run(LedgerApplication.class, args);
+        log.info("====================== Ledger Application Started ======================");
     }
 
     // 关闭警告

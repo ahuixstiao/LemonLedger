@@ -25,7 +25,6 @@ public class EmployeeController {
 
     private final IEmployeeService employeeService;
 
-
     /**
      * 查询员工列表
      *
@@ -47,14 +46,14 @@ public class EmployeeController {
      * @param flag 删除状态 0否 1是
      * @return result
      */
-    @GetMapping("/{name}")
-    public Result<Object> queryEmployeeInfo(
-            @PathVariable @NotNull String name,
+    @GetMapping("/list/{name}")
+    public Result<Object> queryEmployeeListByCondition(
+            @PathVariable(required = false) String name,
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag) {
 
-        return employeeService.queryEmployeeList(name, currentPage, pageSize, flag);
+        return employeeService.queryEmployeeListByCondition(name, currentPage, pageSize, flag);
     }
 
     /**
@@ -64,7 +63,7 @@ public class EmployeeController {
      * @return result
      */
     @PostMapping("/save")
-    public Result<Object> saveEmployee(Employee employee) {
+    public Result<Object> saveEmployee(@RequestBody Employee employee) {
 
         return employeeService.saveEmployee(employee);
     }

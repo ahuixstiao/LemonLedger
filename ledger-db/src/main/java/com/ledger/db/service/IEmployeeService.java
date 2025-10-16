@@ -34,7 +34,7 @@ public interface IEmployeeService extends IService<Employee> {
      * @param flag 删除状态 0否 1是
      * @return result
      */
-    Result<Object> queryEmployeeList(String name, Integer currentPage, Integer pageSize, Integer flag);
+    Result<Object> queryEmployeeListByCondition(String name, Integer currentPage, Integer pageSize, Integer flag);
 
     Result<Object> saveEmployee(Employee employee);
 }

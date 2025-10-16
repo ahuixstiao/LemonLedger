@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * @Author: ahui
@@ -50,7 +50,7 @@ public class ParentEntity implements Serializable {
      */
     @TableField(value = "created_time", fill = FieldFill.INSERT)
     @JsonFormat(pattern = PATTERN, timezone = TIMEZONE)
-    private LocalDateTime createdTime;
+    private LocalDate createdTime;
 
     /**
      * 修改人
@@ -63,7 +63,7 @@ public class ParentEntity implements Serializable {
      */
     @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
     @JsonFormat(pattern = PATTERN, timezone = TIMEZONE)
-    private LocalDateTime updatedTime;
+    private LocalDate updatedTime;
 
     /**
      * 逻辑删除状态 0:正常 1:禁用

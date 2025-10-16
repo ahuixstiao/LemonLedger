@@ -108,7 +108,7 @@ public class JobController {
      * @param jobId 工作ID
      * @return result
      */
-    @GetMapping("delete/{jobId}")
+    @GetMapping("/delete/{jobId}")
     public Result<Object> deleteJobInfo(@PathVariable @NotNull Integer jobId) {
 
         return jobService.deleteJobInfo(jobId);

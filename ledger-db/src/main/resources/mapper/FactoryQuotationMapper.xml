@@ -2,4 +2,27 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.db.mapper.FactoryQuotationMapper">
 
+
+    <!-- 根据条件查询成衣厂报价单表 -->
+    <select id="selectFactoryQuotationListBtCondition" resultType="factoryQuotationDto">
+        select fq.id,
+        fq.factory_id,
+        ft.factory_name,
+        fq.category_id,
+        jc.category,
+        fq.quotation
+        from factory_quotation fq
+        left join factory ft on fq.factory_id = ft.id
+        left join job_category jc on fq.category_id = jc.id
+        where fq.flag = #{flag}
+        <choose>
+            <when test="factoryId != null and factoryId != '' ">
+                and fq.factory_id = #{factoryId}
+            </when>
+            <when test="categoryId != null and categoryId != '' ">
+                and fq.category_id = #{categoryId}
+            </when>
+        </choose>
+    </select>
+
 </mapper>

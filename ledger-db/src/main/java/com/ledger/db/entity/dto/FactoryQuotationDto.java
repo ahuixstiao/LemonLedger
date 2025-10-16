@@ -8,14 +8,14 @@ import java.math.BigDecimal;
 
 /**
  * @Author: ahui
- * @Description: TODO 工厂账单DTO
- * @DateTime: 2025/10/15 - 23:04
+ * @Description: TODO
+ * @DateTime: 2025/10/16 - 14:55
  **/
 @Data
-public class FactoryBillDto implements Serializable {
+public class FactoryQuotationDto implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = -8681847460603512795L;
+    private static final long serialVersionUID = -6940791438457492925L;
 
     private Integer id;
 
@@ -23,40 +23,26 @@ public class FactoryBillDto implements Serializable {
      * 成衣厂ID
      */
     private Integer factoryId;
+
     /**
      * 成衣厂名称
      */
     private String factoryName;
 
-    /**
-     * 床号
-     */
-    private Integer number;
 
     /**
-     * 款式编号
-     */
-    private Integer styleNumber;
-
-    /**
-     * 类型 小花、大花、裤页
+     * 工作类型 1小花、2大花、3裤页
      */
     private Integer categoryId;
+
     /**
      * 工作类型名称
      */
     private String category;
 
     /**
-     * 数量
+     * 报价
      */
-    private Integer quantity;
-
-    /**
-     * 本床账单
-     */
-    private BigDecimal bill;
-
-
+    private BigDecimal quotation;
 
 }

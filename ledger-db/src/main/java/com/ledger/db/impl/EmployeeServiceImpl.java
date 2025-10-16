@@ -37,11 +37,16 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
     }
 
     /**
-     * 查询员工列表
+     * 按条件查询员工列表 默认查全部员工
+     *
+     * @param name 员工名称
+     * @param currentPage 当前页
+     * @param pageSize 页面条数
+     * @param flag 删除状态 0否 1是
      * @return result
      */
     @Override
-    public Result<Object> queryEmployeeList(String name, Integer currentPage, Integer pageSize, Integer flag){
+    public Result<Object> queryEmployeeListByCondition(String name, Integer currentPage, Integer pageSize, Integer flag){
         // 构建分页对象
         Page<Employee> page = new Page<>(currentPage, pageSize);
 
@@ -50,6 +55,7 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
                 // 如果传入名字就按名字搜索
                 .eq(StrUtil.isNotBlank(name), Employee::getName, name)
                 .page(page);
+
         return Result.ok(page);
     }
 
