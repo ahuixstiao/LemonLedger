@@ -4,7 +4,6 @@
       <van-button type="primary" @click="data.dialogVisible = true"
         >注册</van-button
       >
-
       <van-button type="primary">添加工作记录</van-button>
       <van-button type="primary">汇总薪资</van-button>
       <van-cell
@@ -16,12 +15,18 @@
       <van-calendar
         v-model:show="data.isShowDate"
         allow-same-day
+        :min-date="new Date(2020, 0, 1)"
         type="range"
-        @confirm="onConfirm"
+        @confirm="onConfirm()"
       />
       <van-dropdown-menu>
-        <van-dropdown-item v-model="data.id" :options="data.joblist" />
+        <van-dropdown-item
+          v-model="data.id"
+          @change="queryJobListByIDAndDateHandle"
+          :options="data.joblist"
+        />
       </van-dropdown-menu>
+      <van-button type="primary" @click="resetForm">重置</van-button>
     </div>
     <div class="list-container">
       <el-table :data="data.tableData" height="60" stripe style="height: 100%">
@@ -65,13 +70,13 @@
 import { reactive, onMounted, ref } from 'vue'
 import {
   queryEmployees,
-  queryJobListByDefaultThatDay,
-  saveJobInfo
+  saveJobInfo,
+  queryJobListByIDAndDate
 } from '../nwtwork/index.js'
 import { ElMessage } from 'element-plus'
 onMounted(() => {
   queryEmployeesHandle()
-  queryJobListByDefaultThatDayHandle()
+  queryJobListByIDAndDateHandle()
 })
 
 const queryEmployeesHandle = async () => {
@@ -81,15 +86,25 @@ const queryEmployeesHandle = async () => {
     text: item.name, // Vant 组件显示的文字
     value: item.id // 绑定到 v-model 的值
   }))
-  data.id = data.joblist[0].value
+  data.joblist.unshift({ text: '员工名字', value: 0 })
 }
 
-const queryJobListByDefaultThatDayHandle = async () => {
-  const { data: res } = await queryJobListByDefaultThatDay()
-  console.log(res.data.records)
+const resetForm = () => {
+  data.startDate = ''
+  data.endDate = ''
+  data.id = 0
+  queryJobListByIDAndDateHandle()
+}
+
+const queryJobListByIDAndDateHandle = async () => {
+  const { data: res } = await queryJobListByIDAndDate(
+    data.id,
+    data.startDate,
+    data.endDate
+  )
   data.tableData = res.data.records
+  console.log(res.data)
 }
-
 const data = reactive({
   dialogVisible: false,
   isShowDate: false,
@@ -173,6 +188,7 @@ const onConfirm = values => {
   data.isShowDate = false
   data.startDate = formatDate(start)
   data.endDate = formatDate(end)
+  queryJobListByIDAndDateHandle()
   console.log(data.startDate, data.endDate)
 }
 </script>

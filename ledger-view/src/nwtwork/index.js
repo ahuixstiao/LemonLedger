@@ -20,6 +20,14 @@ export function saveJobInfo(employee) {
   return request({
     url: '/employee/save',
     method: 'post',
-    data: { ...employee } 
+    data: employee
   })
 } 
+
+export function queryJobListByIDAndDate(employeeId,startDate,endDate) {
+  return request({
+    url: '/job/list/'+ employeeId,
+    method: 'get',
+    params: {startDate,endDate}
+  })
+}
