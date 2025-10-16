@@ -19,11 +19,13 @@
         jm.mode, <!-- 工作方式 1压花、2刮胶 -->
         job.salary, <!-- 工资 -->
         job.created_time
+
         from job
         left join employee emp on job.employee_id = emp.id
         left join factory fac on job.factory_id = fac.id
         left join job_category jc on job.category_id = jc.id
         left join job_mode jm on job.mode_id = jm.id
+
         where job.created_time = CURDATE()
         and job.flag = #{flag}
 
@@ -48,37 +50,39 @@
         jm.mode, <!-- 工作方式 1压花、2刮胶 -->
         job.salary, <!-- 工资 -->
         job.created_time
+
         from job
         left join employee emp on job.employee_id = emp.id
         left join factory fac on job.factory_id = fac.id
         left join job_category jc on job.category_id = jc.id
         left join job_mode jm on job.mode_id = jm.id
+
         <!-- 按员工ID 查找员工未处于删除状态下的工作记录 -->
-        where job.flag = #{flag}
-        <choose>
+        <where>
+            job.flag = #{flag}
             <!-- 如果员工未选择姓名则默认查全部人的工作信息 -->
-            <when test="employeeId != null and employeeId != '' ">
+            <if test="employeeId != null and employeeId != '' ">
                 and job.employee_id = #{employeeId}
-            </when>
-            <!-- 如果员工指定了某个日期 则按指定日期查找工作记录 -->
-            <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
-                and job.created_time = DATE(#{startDate})
-            </when>
-            <!-- 如果员工只选了结束日期则默认当前日期为当天 -->
-            <when test="endDate != null and endDate != '' and (startDate == null or startDate == '') ">
-                and job.created_time between CURDATE() and #{endDate}
-            </when>
-            <!-- 如果员工指定了时间范围则按时间范围查找。-->
-            <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">
-                <!-- 由于<=在xml中会被错误解析所以需要使用实体编码来表示大于号>和小于号< -->
-                and job.created_time &gt;= DATE(#{startDate})
-                and job.created_time &lt;= DATE(#{endDate})
-            </when>
-            <!-- 如员工未指定日期则默认查找当天工作记录 CURDATE函数的作用是获取当天日期 格式为yyyy-MM-dd -->
-            <otherwise>
-                and job.created_time = CURDATE()
-            </otherwise>
-        </choose>
+            </if>
+            <choose>
+                <!-- 如果员工指定了起止日期 则按起止日期查找-->
+                <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">
+                    and job.created_time between #{startDate} and #{endDate}
+                </when>
+                <!-- 如果员工指定了开始日期 则按开始日期查找工作记录 -->
+                <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
+                    and job.created_time = #{startDate}
+                </when>
+                <!-- 如果员工只选了结束日期则默认查询小于等于结束日期的工作记录 -->
+                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '') ">
+                    and job.created_time &lt;= #{endDate}
+                </when>
+                <!-- 如员工未指定日期则默认查找当天工作记录 CURDATE函数的作用是获取当天日期 格式为yyyy-MM-dd -->
+                <otherwise>
+                    and job.created_time = CURDATE()
+                </otherwise>
+            </choose>
+        </where>
         <!-- 按员工名称排序 -->
         order by emp.name desc
     </select>

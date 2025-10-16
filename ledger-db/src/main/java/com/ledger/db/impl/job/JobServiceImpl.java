@@ -46,28 +46,6 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
 
     private final IFactoryBillService factoryBillService;
 
-
-    /**
-     * 默认查询当天所有员工的工作信息
-     *
-     * @param currentPage 当前页
-     * @param pageSize    每页条数
-     * @return result
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize, Integer flag) {
-
-        // 构建分页对象
-        Page<JobDTO> page = new Page<>(
-                Optional.ofNullable(currentPage).orElse(1),
-                Optional.ofNullable(pageSize).orElse(5));
-        // 查询
-        page = jobMapper.selectJobListByDefaultCurrentDay(page, flag);
-
-        return Result.ok(page);
-    }
-
     /**
      * 查询员工当天或某天的工作信息
      *
@@ -97,9 +75,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         }
 
         // 构建分页查询对象
-        Page<JobDTO> page = new Page<>(
-                Optional.ofNullable(currentPage).orElse(1),
-                Optional.ofNullable(currentPage).orElse(5));
+        Page<JobDTO> page = new Page<>(currentPage, pageSize);
 
         // 查询
         page = jobMapper.selectJobListByEmployeeId(page, employeeId, startDate, endDate, flag);

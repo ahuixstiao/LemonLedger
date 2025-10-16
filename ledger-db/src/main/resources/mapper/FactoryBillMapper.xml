@@ -18,24 +18,23 @@
         left join factory ft on fb.factory_id = ft.id
         left join job_category jc on fb.category_id = jc.id
         where fb.flag = #{flag}
-        <choose>
-            <!-- 如果传入工厂ID则按工厂ID查询 -->
-            <when test="factoryId != null and factoryId != '' ">
-                and fb.factory_id = #{factoryId}
-            </when>
-            <!-- 如果传入床号则按床号查询 -->
-            <when test="number != null and number != '' ">
-                and fb.number = #{number}
-            </when>
-            <!-- 如果传入款式编号则按款式编号查询 -->
-            <when test="styleNumber != null and styleNumber != '' ">
-                and fb.style_number = #{styleNumber}
-            </when>
-            <!-- 如果传入工作类型ID则按工作类型ID查询 -->
-            <when test="categoryId != null and categoryId != '' ">
-                and fb.category_id = #{categoryId}
-            </when>
-        </choose>
+        <!-- 如果传入工厂ID则按工厂ID查询 -->
+        <if test="factoryId != null and factoryId != '' ">
+            and fb.factory_id = #{factoryId}
+        </if>
+        <!-- 如果传入床号则按床号查询 -->
+        <if test="number != null and number != '' ">
+            and fb.number = #{number}
+        </if>
+        <!-- 如果传入款式编号则按款式编号查询 -->
+        <if test="styleNumber != null and styleNumber != '' ">
+            and fb.style_number = #{styleNumber}
+        </if>
+        <!-- 如果传入工作类型ID则按工作类型ID查询 -->
+        <if test="categoryId != null and categoryId != '' ">
+            and fb.category_id = #{categoryId}
+        </if>
+        order by ft.factory_name desc
     </select>
 
 

@@ -50,7 +50,7 @@ public class JobCategoryController {
      * @return result
      */
     @PostMapping("/save")
-    public Result<Object> saveJobCategoryInfo(JobCategory jobCategory) {
+    public Result<Object> saveJobCategoryInfo(@RequestBody JobCategory jobCategory) {
         return jobCategoryService.saveJobCategoryInfo(jobCategory);
     }
 
@@ -60,7 +60,7 @@ public class JobCategoryController {
      * @param categoryId 工作类别ID
      * @return result
      */
-    @DeleteMapping("/remove/{categoryId}")
+    @DeleteMapping("/delete/{categoryId}")
     public Result<Object> removeJobCategoryInfo(@PathVariable @NotNull Integer categoryId) {
 
         return  jobCategoryService.removeJobCategoryInfo(categoryId);

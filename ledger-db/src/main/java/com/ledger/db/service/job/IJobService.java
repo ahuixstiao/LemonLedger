@@ -15,16 +15,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface IJobService extends IService<Job> {
 
     /**
-     * 默认查询当天所有员工的工作信息
-     *
-     * @param currentPage 当前页
-     * @param pageSize    每页条数
-     * @param flag        删除状态 0否 1是
-     * @return result
-     */
-    Result<Object> queryJobListByDefaultCurrentDay(Integer currentPage, Integer pageSize, Integer flag);
-
-    /**
      * 查询指定员工当天或某天的工作信息
      *
      * @param empId       员工ID
