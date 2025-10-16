@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -24,16 +25,31 @@ public class EmployeeController {
 
     private final IEmployeeService employeeService;
 
+
     /**
      * 查询员工列表
      *
-     * @param currentPage 当前页
-     * @param pageSize    每页条数
+     * @param flag 删除状态 0否 1是
      * @return result
      */
-    @GetMapping("/list/{name}")
-    public Result<Object> queryEmployees(
-            @PathVariable(required = false) String name,
+    @GetMapping("/list")
+    public Result<Object> queryEmployees(@RequestParam(required = false, defaultValue = "0") Integer flag) {
+
+        return employeeService.queryEmployeeList(flag);
+    }
+
+    /**
+     * 按条件查询员工列表
+     *
+     * @param name 员工名称
+     * @param currentPage 当前页
+     * @param pageSize 页面条数
+     * @param flag 删除状态 0否 1是
+     * @return result
+     */
+    @GetMapping("/{name}")
+    public Result<Object> queryEmployeeInfo(
+            @PathVariable @NotNull String name,
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag) {
@@ -43,6 +59,7 @@ public class EmployeeController {
 
     /**
      * 保存员工信息
+     *
      * @param employee 员工实体
      * @return result
      */

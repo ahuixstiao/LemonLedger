@@ -17,11 +17,24 @@ import java.util.List;
  */
 public interface IEmployeeService extends IService<Employee> {
 
-    /*
-    * 查询员工列表
-    * */
-    Result<Object> queryEmployeeList(String name, Integer currentPage, Integer pageSize, Integer flag);
+    /**
+     * 查询员工列表
+     *
+     * @param flag 删除状态 0否 1是
+     * @return result
+     */
+    Result<Object> queryEmployeeList(Integer flag);
 
+    /**
+     * 按条件查询员工列表
+     *
+     * @param name 员工名称
+     * @param currentPage 当前页
+     * @param pageSize 页面条数
+     * @param flag 删除状态 0否 1是
+     * @return result
+     */
+    Result<Object> queryEmployeeList(String name, Integer currentPage, Integer pageSize, Integer flag);
 
     Result<Object> saveEmployee(Employee employee);
 }

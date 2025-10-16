@@ -27,6 +27,17 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
 
     /**
      * 查询员工列表
+     *
+     * @param flag 删除状态 0否 1是
+     * @return result
+     */
+    @Override
+    public Result<Object> queryEmployeeList(Integer flag) {
+        return Result.ok(lambdaQuery().eq(Employee::getFlag, flag).list());
+    }
+
+    /**
+     * 查询员工列表
      * @return result
      */
     @Override
