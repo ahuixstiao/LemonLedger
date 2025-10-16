@@ -42,7 +42,7 @@ public class ParentEntity implements Serializable {
     /**
      * 创建人
      */
-    @TableField(value = "created_by", fill = FieldFill.INSERT) // 创建时自动填充
+    @TableField(value = "created_by", fill = FieldFill.INSERT) // 创建时自动填充 需要配合字段填充处理器使用
     private String createdBy;
 
     /**

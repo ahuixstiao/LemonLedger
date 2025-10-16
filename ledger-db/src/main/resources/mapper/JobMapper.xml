@@ -26,6 +26,9 @@
         left join job_mode jm on job.mode_id = jm.id
         where job.created_time = CURDATE()
         and job.flag = #{flag}
+
+        <!-- 按员工名称排序 -->
+        order by emp.name desc
     </select>
 
     <!-- 根据员工ID 查询工作信息列表 -->
