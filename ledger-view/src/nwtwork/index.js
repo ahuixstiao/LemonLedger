@@ -8,13 +8,6 @@ export function queryEmployees(data) {
   })
 }
 
-export function queryJobListByDefaultThatDay() {
-  return request({
-    url: '/job/list',
-    method: 'get',
-  })
-}
-
 export function saveJobInfo(employee) {
   
   return request({
@@ -29,5 +22,12 @@ export function queryJobListByIDAndDate(employeeId,startDate,endDate) {
     url: '/job/list/'+ employeeId,
     method: 'get',
     params: {startDate,endDate}
+  })
+}
+
+export function queryFactoryList() {
+  return request({
+    url: '/factory/list',
+    method: 'get',
   })
 }
