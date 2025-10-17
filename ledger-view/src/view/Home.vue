@@ -66,7 +66,7 @@
     <el-dialog v-model="data.SalaryVisible" title="薪资汇总" width="90%" center>
       <el-form label-position="top">
         <el-form-item label="员工姓名:" size="large">
-          <el-select v-model="SalaryRef.name" placeholder="请选择员工">
+          <el-select v-model="SalaryRef.id" placeholder="请选择员工">
             <el-option
               v-for="(item, index) in data.joblist"
               :label="item.text"
@@ -76,13 +76,17 @@
         </el-form-item>
         <el-form-item label="时间日期:" size="large">
           <el-date-picker
-            v-model="data.salaryStartDate"
+            v-model="SalaryRef.salaryStartDate"
             type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
             placeholder="开始日期"
           />
           <el-date-picker
-            v-model="data.salaryEndDate"
+            v-model="SalaryRef.salaryEndDate"
             type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
             placeholder="结束日期"
           />
         </el-form-item>
@@ -118,8 +122,8 @@
         :rules="addWorkRules"
         label-position="top"
       >
-        <el-form-item label="员工姓名:" size="large" prop="name">
-          <el-select v-model="addWorkRef.name" placeholder="请选择员工姓名">
+        <el-form-item label="员工姓名:" size="large" prop="id">
+          <el-select v-model="addWorkRef.id" placeholder="请选择员工姓名">
             <el-option
               v-for="item in data.joblist"
               :label="item.text"
@@ -127,8 +131,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="选择厂名:" size="large" prop="id">
-          <el-select v-model="addWorkRef.id" placeholder="请选择厂名">
+        <el-form-item label="选择厂名:" size="large" prop="factoryId">
+          <el-select v-model="addWorkRef.factoryId" placeholder="请选择厂名">
             <el-option
               v-for="(item, index) in data.factoryList"
               :label="item.factoryName"
@@ -187,9 +191,11 @@
 import { reactive, onMounted, ref } from 'vue'
 import {
   queryEmployees,
-  saveJobInfo,
+  saveEmployee,
   queryJobListByIDAndDate,
-  queryFactoryList
+  queryFactoryList,
+  saveJobInfo,
+  queryFactoryBillListByCondition
 } from '../nwtwork/index.js'
 import { ElMessage } from 'element-plus'
 import { useTransition } from '@vueuse/core'
@@ -240,15 +246,13 @@ const data = reactive({
   joblist: [],
   tableData: [],
   isloading: false,
-  factoryList: [],
-  salaryStartDate: '',
-  salaryEndDate: ''
+  factoryList: []
 })
 
 // 注册处理函数
 const registerHandle = async () => {
   data.isloading = true
-  const { data: res } = await saveJobInfo(jobRef)
+  const { data: res } = await saveEmployee(jobRef)
   console.log(res)
   if (res.status === 200) {
     ElMessage.success(res.message)
@@ -267,6 +271,16 @@ const clickSalary = () => {
   //console.log(data.joblist)
 }
 
+const saveJobInfoHandle = async () => {
+  const { data: res } = await saveJobInfo(addWorkRef)
+  console.log(res)
+  if (res.status === 200) {
+    ElMessage.success(res.message)
+  } else {
+    ElMessage.error(res.message)
+  }
+}
+
 // 查询厂名列表
 const queryFactoryListHandle = async () => {
   const { data: res } = await queryFactoryList()
@@ -282,55 +296,39 @@ const jobRef = reactive({
 })
 
 const addWorkRef = reactive({
-  name: '',
   id: '',
+  factoryId: '',
   number: '',
   styleNumber: '',
   quantity: ''
 })
 
 const SalaryRef = reactive({
-  name: '',
+  id: '',
   startDate: '',
   endDate: ''
-})
-
-// 注册表单校验规则
-const rules = reactive({
-  name: [
-    { required: true, message: '请输入员工姓名', trigger: 'blur' },
-    { min: 2, max: 30, message: '长度在 2 到 6 个字符', trigger: 'blur' }
-  ]
-})
-
-// 添加工作记录表单校验规则
-const addWorkRules = reactive({
-  name: [{ required: true, message: '请选择员工姓名', trigger: 'blur' }],
-  id: [{ required: true, message: '请选择厂名', trigger: 'blur' }],
-  number: [
-    { required: true, message: '请输入床号', trigger: 'blur' },
-    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
-  ],
-  styleNumber: [
-    { required: true, message: '请输入款式编号', trigger: 'blur' },
-    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
-  ],
-  quantity: [
-    { required: true, message: '请输入数量', trigger: 'blur' },
-    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
-  ]
 })
 
 const salaryTotal = ref(0)
 
 // 查询薪资
-const salaryInquiry = () => {
-  salaryTotal.value = 172000
+const salaryInquiry = async () => {
+  const { data: res } = await queryFactoryBillListByCondition(
+    SalaryRef.id,
+    SalaryRef.salaryStartDate,
+    SalaryRef.salaryEndDate
+  )
+  if (res.status === 200) {
+    salaryTotal.value = salaryTotal.value = res.data.salary
+  } else {
+    salaryTotal.value = 0
+    ElMessage.error(res.message)
+  }
 }
+// 动画过渡
 const outputValue = useTransition(salaryTotal, {
   duration: 200
 })
-// 动画过渡
 
 // 注册表单校验
 const submitForm = async formEl => {
@@ -351,6 +349,7 @@ const addWorkSubmitForm = async formEl => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
     if (valid) {
+      saveJobInfoHandle()
       console.log('submit!')
     } else {
       console.log('error submit!', fields)
@@ -375,6 +374,32 @@ const onConfirm = values => {
   queryJobListByIDAndDateHandle()
   console.log(data.startDate, data.endDate)
 }
+
+// 注册表单校验规则
+const rules = reactive({
+  name: [
+    { required: true, message: '请输入员工姓名', trigger: 'blur' },
+    { min: 2, max: 30, message: '长度在 2 到 6 个字符', trigger: 'blur' }
+  ]
+})
+
+// 添加工作记录表单校验规则
+const addWorkRules = reactive({
+  id: [{ required: true, message: '请选择员工姓名', trigger: 'blur' }],
+  factoryId: [{ required: true, message: '请选择厂名', trigger: 'blur' }],
+  number: [
+    { required: true, message: '请输入床号', trigger: 'blur' },
+    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+  ],
+  styleNumber: [
+    { required: true, message: '请输入款式编号', trigger: 'blur' },
+    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+  ],
+  quantity: [
+    { required: true, message: '请输入数量', trigger: 'blur' },
+    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+  ]
+})
 </script>
 
 <style scoped>

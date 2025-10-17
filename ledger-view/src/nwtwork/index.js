@@ -8,8 +8,8 @@ export function queryEmployees(data) {
   })
 }
 
-export function saveJobInfo(employee) {
-  
+// 员工注册
+export function saveEmployee(employee) {
   return request({
     url: '/employee/save',
     method: 'post',
@@ -17,6 +17,17 @@ export function saveJobInfo(employee) {
   })
 } 
 
+// 添加工作记录
+export function saveJobInfo(job) {
+  console.log(job);
+  return request({
+    url: '/job/save',
+    method: 'post',
+    data: job
+  })
+} 
+
+// 按时间/id查询信息
 export function queryJobListByIDAndDate(employeeId,startDate,endDate) {
   return request({
     url: '/job/list/'+ employeeId,
@@ -25,9 +36,19 @@ export function queryJobListByIDAndDate(employeeId,startDate,endDate) {
   })
 }
 
+// 查询工厂列表
 export function queryFactoryList() {
   return request({
     url: '/factory/list',
     method: 'get',
+  })
+}
+
+// 查询薪资
+export function queryFactoryBillListByCondition(employeeId,startDate,endDate) {
+  return request({
+    url: '/job/salary/'+ employeeId,
+    method: 'get',
+       params: {startDate,endDate}
   })
 }
