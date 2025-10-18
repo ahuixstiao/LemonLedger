@@ -4,8 +4,8 @@
       <van-button type="primary" @click="data.dialogVisible = true"
         >注册</van-button
       >
-      <van-button type="primary">添加工作记录</van-button>
-      <van-button type="primary">汇总薪资</van-button>
+      <van-button type="primary" @click="clickAddWork">添加工作记录</van-button>
+      <van-button type="primary" @click="clickSalary">汇总薪资</van-button>
       <van-cell
         title="选择日期区间"
         :value="data.date"
@@ -17,7 +17,7 @@
         allow-same-day
         :min-date="new Date(2020, 0, 1)"
         type="range"
-        @confirm="onConfirm()"
+        @confirm="onConfirm"
       />
       <van-dropdown-menu>
         <van-dropdown-item
@@ -63,6 +63,127 @@
         </div>
       </template>
     </el-dialog>
+    <el-dialog v-model="data.SalaryVisible" title="薪资汇总" width="90%" center>
+      <el-form label-position="top">
+        <el-form-item label="员工姓名:" size="large">
+          <el-select v-model="SalaryRef.id" placeholder="请选择员工">
+            <el-option
+              v-for="(item, index) in data.joblist"
+              :label="item.text"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="时间日期:" size="large">
+          <el-date-picker
+            v-model="SalaryRef.salaryStartDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            placeholder="开始日期"
+          />
+          <el-date-picker
+            v-model="SalaryRef.salaryEndDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            placeholder="结束日期"
+          />
+        </el-form-item>
+        <el-form-item size="large">
+          <el-button
+            type="primary"
+            style="width: 100%"
+            size="large"
+            @click="salaryInquiry()"
+          >
+            查询薪资</el-button
+          >
+        </el-form-item>
+        <el-form-item size="large">
+          <el-statistic
+            title="薪资总和"
+            Transactions
+            :value="outputValue"
+            style="text-align: center; margin: 0 auto; display: block"
+          />
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+    <el-dialog
+      v-model="data.addWorkVisible"
+      title="添加工作记录"
+      width="90%"
+      center
+    >
+      <el-form
+        ref="addWorkFormRef"
+        :model="addWorkRef"
+        :rules="addWorkRules"
+        label-position="top"
+      >
+        <el-form-item label="员工姓名:" size="large" prop="id">
+          <el-select v-model="addWorkRef.id" placeholder="请选择员工姓名">
+            <el-option
+              v-for="item in data.joblist"
+              :label="item.text"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="选择厂名:" size="large" prop="factoryId">
+          <el-select v-model="addWorkRef.factoryId" placeholder="请选择厂名">
+            <el-option
+              v-for="(item, index) in data.factoryList"
+              :label="item.factoryName"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="床号：" prop="number">
+          <el-input
+            v-model="addWorkRef.number"
+            autocomplete="off"
+            size="large"
+            placeholder="请输入床号"
+            type="number"
+          />
+        </el-form-item>
+        <el-form-item label="款式编号：" prop="styleNumber">
+          <el-input
+            v-model="addWorkRef.styleNumber"
+            autocomplete="off"
+            size="large"
+            placeholder="请输入款式编号"
+            type="number"
+          />
+        </el-form-item>
+        <el-form-item label="数量：" prop="quantity">
+          <el-input
+            v-model="addWorkRef.quantity"
+            autocomplete="off"
+            size="large"
+            placeholder="请输入数量"
+            type="number"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="data.addWorkVisible = false" size="large"
+            >取消</el-button
+          >
+          <el-button
+            type="primary"
+            :loading="data.isloading"
+            @click="addWorkSubmitForm(addWorkFormRef)"
+            size="large"
+          >
+            确认
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -70,15 +191,20 @@
 import { reactive, onMounted, ref } from 'vue'
 import {
   queryEmployees,
+  saveEmployee,
+  queryJobListByIDAndDate,
+  queryFactoryList,
   saveJobInfo,
-  queryJobListByIDAndDate
+  queryFactoryBillListByCondition
 } from '../nwtwork/index.js'
 import { ElMessage } from 'element-plus'
+import { useTransition } from '@vueuse/core'
 onMounted(() => {
   queryEmployeesHandle()
   queryJobListByIDAndDateHandle()
 })
 
+// 按员工id查询员工列表
 const queryEmployeesHandle = async () => {
   const { data: res } = await queryEmployees()
   data.joblist = res.data
@@ -89,6 +215,7 @@ const queryEmployeesHandle = async () => {
   data.joblist.unshift({ text: '员工名字', value: 0 })
 }
 
+// 重置按钮
 const resetForm = () => {
   data.startDate = ''
   data.endDate = ''
@@ -96,6 +223,7 @@ const resetForm = () => {
   queryJobListByIDAndDateHandle()
 }
 
+// 按区间/id查询处理函数
 const queryJobListByIDAndDateHandle = async () => {
   const { data: res } = await queryJobListByIDAndDate(
     data.id,
@@ -103,48 +231,28 @@ const queryJobListByIDAndDateHandle = async () => {
     data.endDate
   )
   data.tableData = res.data.records
-  console.log(res.data)
+  console.log(data.tableData)
 }
+
 const data = reactive({
   dialogVisible: false,
+  addWorkVisible: false,
+  SalaryVisible: false,
   isShowDate: false,
   id: Number(),
   startDate: '',
   endDate: '',
   date: '',
   joblist: [],
-  tableData: [
-    {
-      jobName: '王小明',
-      factoryName: 'A厂',
-      bedNumber: '1',
-      styleNumber: 'A1001'
-    },
-    {
-      jobName: '张小红',
-      factoryName: 'B厂',
-      bedNumber: '2',
-      styleNumber: 'B1001'
-    },
-    {
-      jobName: '李小刚',
-      factoryName: 'C厂',
-      bedNumber: '3',
-      styleNumber: 'C1001'
-    },
-    {
-      jobName: '赵小丽',
-      factoryName: 'D厂',
-      bedNumber: '4',
-      styleNumber: 'D1001'
-    }
-  ],
-  isloading: false
+  tableData: [],
+  isloading: false,
+  factoryList: []
 })
 
+// 注册处理函数
 const registerHandle = async () => {
   data.isloading = true
-  const { data: res } = await saveJobInfo(jobRef)
+  const { data: res } = await saveEmployee(jobRef)
   console.log(res)
   if (res.status === 200) {
     ElMessage.success(res.message)
@@ -154,21 +262,80 @@ const registerHandle = async () => {
   data.isloading = false
 }
 
+const clickAddWork = () => {
+  data.addWorkVisible = true
+  queryFactoryListHandle()
+}
+const clickSalary = () => {
+  data.SalaryVisible = true
+  //console.log(data.joblist)
+}
+
+const saveJobInfoHandle = async () => {
+  const { data: res } = await saveJobInfo(addWorkRef)
+  console.log(res)
+  if (res.status === 200) {
+    ElMessage.success(res.message)
+  } else {
+    ElMessage.error(res.message)
+  }
+}
+
+// 查询厂名列表
+const queryFactoryListHandle = async () => {
+  const { data: res } = await queryFactoryList()
+  data.factoryList = res.data.records
+  console.log(data.factoryList)
+}
+
 const ruleFormRef = ref()
+const addWorkFormRef = ref()
+
 const jobRef = reactive({
   name: ''
 })
-const rules = reactive({
-  name: [
-    { required: true, message: '请输入员工姓名', trigger: 'blur' },
-    { min: 2, max: 30, message: '长度在 2 到 6 个字符', trigger: 'blur' }
-  ]
+
+const addWorkRef = reactive({
+  id: '',
+  factoryId: '',
+  number: '',
+  styleNumber: '',
+  quantity: ''
 })
 
+const SalaryRef = reactive({
+  id: '',
+  startDate: '',
+  endDate: ''
+})
+
+const salaryTotal = ref(0)
+
+// 查询薪资
+const salaryInquiry = async () => {
+  const { data: res } = await queryFactoryBillListByCondition(
+    SalaryRef.id,
+    SalaryRef.salaryStartDate,
+    SalaryRef.salaryEndDate
+  )
+  if (res.status === 200) {
+    salaryTotal.value = salaryTotal.value = res.data.salary
+  } else {
+    salaryTotal.value = 0
+    ElMessage.error(res.message)
+  }
+}
+// 动画过渡
+const outputValue = useTransition(salaryTotal, {
+  duration: 200
+})
+
+// 注册表单校验
 const submitForm = async formEl => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
     if (valid) {
+      // 发起注册请求
       registerHandle()
       console.log('submit!')
     } else {
@@ -177,12 +344,28 @@ const submitForm = async formEl => {
   })
 }
 
+// 添加工作记录表单校验
+const addWorkSubmitForm = async formEl => {
+  if (!formEl) return
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      saveJobInfoHandle()
+      console.log('submit!')
+    } else {
+      console.log('error submit!', fields)
+    }
+  })
+}
+
+// 日期格式化函数
 const formatDate = date => {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+
+// 按区间/id查询方法
 const onConfirm = values => {
   const [start, end] = values
   data.isShowDate = false
@@ -191,6 +374,32 @@ const onConfirm = values => {
   queryJobListByIDAndDateHandle()
   console.log(data.startDate, data.endDate)
 }
+
+// 注册表单校验规则
+const rules = reactive({
+  name: [
+    { required: true, message: '请输入员工姓名', trigger: 'blur' },
+    { min: 2, max: 30, message: '长度在 2 到 6 个字符', trigger: 'blur' }
+  ]
+})
+
+// 添加工作记录表单校验规则
+const addWorkRules = reactive({
+  id: [{ required: true, message: '请选择员工姓名', trigger: 'blur' }],
+  factoryId: [{ required: true, message: '请选择厂名', trigger: 'blur' }],
+  number: [
+    { required: true, message: '请输入床号', trigger: 'blur' },
+    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+  ],
+  styleNumber: [
+    { required: true, message: '请输入款式编号', trigger: 'blur' },
+    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+  ],
+  quantity: [
+    { required: true, message: '请输入数量', trigger: 'blur' },
+    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+  ]
+})
 </script>
 
 <style scoped>
@@ -252,5 +461,10 @@ const onConfirm = values => {
 
 .drlist-item {
   padding: 10px 15px;
+}
+
+:deep(.el-form-item__content) {
+  flex-wrap: nowrap;
+  gap: 10px;
 }
 </style>
