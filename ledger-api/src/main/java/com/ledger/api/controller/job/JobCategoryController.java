@@ -32,9 +32,9 @@ public class JobCategoryController {
      */
     // localhost:8080/list/xxx?currentPage=1&pageSize=5&flag=0
     // required属性 表示该参数是否为必须传递
-    @GetMapping("/list/{category}")
+    @GetMapping("/list")
     public Result<Object> queryJobCategoryList(
-            @PathVariable(required = false) String category,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag

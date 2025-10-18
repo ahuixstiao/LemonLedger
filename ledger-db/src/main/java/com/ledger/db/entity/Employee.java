@@ -25,4 +25,9 @@ public class Employee extends ParentEntity {
      * 员工姓名，用于查询工作内容
      */
     private String name;
+
+    /**
+     * 员工的工作方式 1压花 2刮胶
+     */
+    private Integer modeId;
 }

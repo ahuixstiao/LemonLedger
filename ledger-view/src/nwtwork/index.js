@@ -44,6 +44,22 @@ export function queryFactoryList() {
   })
 }
 
+// 查询工作类型列表
+export function queryCategoryList() {
+    return request({
+        url: '/category/list',
+        method: 'get',
+    })
+}
+
+// 查询工作方式列表
+export function queryModeList() {
+    return request({
+        url: '/mode/list',
+        method: 'get'
+    })
+}
+
 // 查询薪资
 export function queryFactoryBillListByCondition(employeeId,startDate,endDate) {
   return request({

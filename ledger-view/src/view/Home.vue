@@ -1,184 +1,163 @@
 <template>
   <div class="home-container">
     <div class="nav-container">
-      <van-button type="primary" @click="data.dialogVisible = true"
-        >注册</van-button
-      >
+      <van-button type="primary" @click="clickAddEmployee">注册</van-button>
       <van-button type="primary" @click="clickAddWork">添加工作记录</van-button>
-      <van-button type="primary" @click="clickSalary">汇总薪资</van-button>
+      <van-button type="primary" @click="clickSalary">计算工资</van-button>
       <van-cell
-        title="选择日期区间"
-        :value="data.date"
-        @click="data.isShowDate = true"
-        class="databutton"
-      />
+          title="选择日期区间"
+          :value="data.date"
+          @click="data.isShowDate = true"
+          class="databutton"/>
       <van-calendar
-        v-model:show="data.isShowDate"
-        allow-same-day
-        :min-date="new Date(2020, 0, 1)"
-        type="range"
-        @confirm="onConfirm"
-      />
+          v-model:show="data.isShowDate"
+          allow-same-day
+          :min-date="new Date(2020, 0, 1)"
+          type="range"
+          @confirm="onConfirm"/>
       <van-dropdown-menu>
         <van-dropdown-item
-          v-model="data.id"
-          @change="queryJobListByIDAndDateHandle"
-          :options="data.joblist"
-        />
+            v-model="data.id"
+            @change="queryJobListByIDAndDateHandle"
+            :options="data.joblist"/>
       </van-dropdown-menu>
-      <van-button type="primary" @click="resetForm">重置</van-button>
+      <van-button type="primary" @click="resetQueryConditionForm">重置</van-button>
     </div>
+
+    <!--  工作信息列表  -->
     <div class="list-container">
       <el-table :data="data.tableData" height="60" stripe style="height: 100%">
-        <el-table-column prop="name" label="员工名称" />
-        <el-table-column prop="factoryName" label="厂名" />
-        <el-table-column prop="number" label="床号" />
-        <el-table-column prop="styleNumber" label="款式编号" />
+        <el-table-column prop="name" label="员工名称"/>
+        <el-table-column prop="factoryName" label="厂名"/>
+        <el-table-column prop="number" label="床号"/>
+        <el-table-column prop="styleNumber" label="款式编号"/>
+        <el-table-column prop="category" label="类型"/>
+        <el-table-column prop="quantity" label="数量"/>
+        <el-table-column prop="salary" label="本床工资(单位: 元)"/>
       </el-table>
     </div>
+
+    <!--  员工注册表单  -->
     <el-dialog v-model="data.dialogVisible" title="员工注册" width="90%" center>
-      <el-form
-        ref="ruleFormRef"
-        :model="jobRef"
-        :rules="rules"
-        label-position="top"
-      >
-        <el-form-item label="员工姓名：" prop="name">
-          <el-input v-model="jobRef.name" autocomplete="off" size="large" />
+      <el-form ref="ruleFormRef" :model="employeeRef" :rules="rules" label-position="top">
+        <el-form-item label="员工姓名:" prop="name">
+          <el-input v-model="employeeRef.name" autocomplete="off" size="large"/>
+        </el-form-item>
+        <el-form-item label="选择工作方式:" size="large" prop="modeId">
+          <el-select v-model="employeeRef.modeId" placeholder="请选择工作类型">
+            <el-option
+                v-for="(item, index) in data.modeList"
+                :label="item.mode"
+                :value="item.id"/>
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="data.dialogVisible = false" size="large"
-            >取消</el-button
-          >
-          <el-button
-            type="primary"
-            :loading="data.isloading"
-            @click="submitForm(ruleFormRef)"
-            size="large"
-          >
-            确认
+          <el-button @click="data.dialogVisible = false" size="large">取消</el-button>
+          <el-button type="primary" :loading="data.isloading" @click="submitForm(ruleFormRef)" size="large">确认
           </el-button>
         </div>
       </template>
     </el-dialog>
-    <el-dialog v-model="data.SalaryVisible" title="薪资汇总" width="90%" center>
+
+    <!--  工资计算表单  -->
+    <el-dialog v-model="data.SalaryVisible" title="工资计算" width="90%" center>
       <el-form label-position="top">
         <el-form-item label="员工姓名:" size="large">
           <el-select v-model="SalaryRef.id" placeholder="请选择员工">
-            <el-option
-              v-for="(item, index) in data.joblist"
-              :label="item.text"
-              :value="item.value"
-            />
+            <el-option v-for="(item, index) in data.joblist" :label="item.text" :value="item.value"/>
           </el-select>
         </el-form-item>
-        <el-form-item label="时间日期:" size="large">
+        <el-form-item label="计算日期:" size="large">
           <el-date-picker
-            v-model="SalaryRef.salaryStartDate"
-            type="date"
-            format="YYYY/MM/DD"
-            value-format="YYYY-MM-DD"
-            placeholder="开始日期"
-          />
+              v-model="SalaryRef.salaryStartDate"
+              type="date"
+              format="YYYY/MM/DD"
+              value-format="YYYY-MM-DD"
+              placeholder="开始日期"/>
           <el-date-picker
-            v-model="SalaryRef.salaryEndDate"
-            type="date"
-            format="YYYY/MM/DD"
-            value-format="YYYY-MM-DD"
-            placeholder="结束日期"
-          />
+              v-model="SalaryRef.salaryEndDate"
+              type="date"
+              format="YYYY/MM/DD"
+              value-format="YYYY-MM-DD"
+              placeholder="结束日期"/>
         </el-form-item>
         <el-form-item size="large">
           <el-button
-            type="primary"
-            style="width: 100%"
-            size="large"
-            @click="salaryInquiry()"
-          >
-            查询薪资</el-button
-          >
+              type="primary"
+              style="width: 100%"
+              size="large"
+              @click="salaryInquiry()">
+            计算
+          </el-button>
         </el-form-item>
         <el-form-item size="large">
           <el-statistic
-            title="薪资总和"
-            Transactions
-            :value="outputValue"
-            style="text-align: center; margin: 0 auto; display: block"
-          />
+              title="工资总和"
+              Transactions
+              :value="outputValue + '元'"
+              style="text-align: center; margin: 0 auto; display: block"/>
         </el-form-item>
       </el-form>
     </el-dialog>
-    <el-dialog
-      v-model="data.addWorkVisible"
-      title="添加工作记录"
-      width="90%"
-      center
-    >
-      <el-form
-        ref="addWorkFormRef"
-        :model="addWorkRef"
-        :rules="addWorkRules"
-        label-position="top"
-      >
+
+    <!--   添加工作信息表单   -->
+    <el-dialog v-model="data.addWorkVisible" title="添加工作记录" width="90%" center>
+      <el-form ref="addWorkFormRef" :model="addWorkRef" :rules="addWorkRules" label-position="top">
         <el-form-item label="员工姓名:" size="large" prop="id">
           <el-select v-model="addWorkRef.id" placeholder="请选择员工姓名">
             <el-option
-              v-for="item in data.joblist"
-              :label="item.text"
-              :value="item.value"
-            />
+                v-for="item in data.joblist"
+                :label="item.text"
+                :value="item.value"/>
           </el-select>
         </el-form-item>
         <el-form-item label="选择厂名:" size="large" prop="factoryId">
           <el-select v-model="addWorkRef.factoryId" placeholder="请选择厂名">
             <el-option
-              v-for="(item, index) in data.factoryList"
-              :label="item.factoryName"
-              :value="item.id"
-            />
+                v-for="(item, index) in data.factoryList"
+                :label="item.factoryName"
+                :value="item.id"/>
           </el-select>
         </el-form-item>
         <el-form-item label="床号：" prop="number">
           <el-input
-            v-model="addWorkRef.number"
-            autocomplete="off"
-            size="large"
-            placeholder="请输入床号"
-            type="number"
-          />
+              v-model="addWorkRef.number"
+              autocomplete="off"
+              size="large"
+              placeholder="请输入床号"
+              type="number"/>
+        </el-form-item>
+        <el-form-item label="选择工作类型:" size="large" prop="categoryId">
+          <el-select v-model="addWorkRef.categoryId" placeholder="请选择工作类型">
+            <el-option
+                v-for="(item, index) in data.categoryList"
+                :label="item.category"
+                :value="item.id"/>
+          </el-select>
         </el-form-item>
         <el-form-item label="款式编号：" prop="styleNumber">
           <el-input
-            v-model="addWorkRef.styleNumber"
-            autocomplete="off"
-            size="large"
-            placeholder="请输入款式编号"
-            type="number"
-          />
+              v-model="addWorkRef.styleNumber"
+              autocomplete="off"
+              size="large"
+              placeholder="请输入款式编号"
+              type="number"/>
         </el-form-item>
         <el-form-item label="数量：" prop="quantity">
           <el-input
-            v-model="addWorkRef.quantity"
-            autocomplete="off"
-            size="large"
-            placeholder="请输入数量"
-            type="number"
-          />
+              v-model="addWorkRef.quantity"
+              autocomplete="off"
+              size="large"
+              placeholder="请输入数量"
+              type="number"/>
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="data.addWorkVisible = false" size="large"
-            >取消</el-button
-          >
-          <el-button
-            type="primary"
-            :loading="data.isloading"
-            @click="addWorkSubmitForm(addWorkFormRef)"
-            size="large"
-          >
+          <el-button @click="resetSaveJobInfoForm" size="large">取消</el-button>
+          <el-button type="primary" :loading="data.isloading" @click="addWorkSubmitForm(addWorkFormRef)" size="large">
             确认
           </el-button>
         </div>
@@ -188,50 +167,42 @@
 </template>
 
 <script setup>
-import { reactive, onMounted, ref } from 'vue'
+import {reactive, onMounted, ref} from 'vue'
 import {
   queryEmployees,
   saveEmployee,
   queryJobListByIDAndDate,
   queryFactoryList,
   saveJobInfo,
-  queryFactoryBillListByCondition
+  queryFactoryBillListByCondition, queryCategoryList, queryModeList
 } from '../nwtwork/index.js'
-import { ElMessage } from 'element-plus'
-import { useTransition } from '@vueuse/core'
+import {ElMessage} from 'element-plus'
+import {useTransition} from '@vueuse/core'
+
 onMounted(() => {
   queryEmployeesHandle()
   queryJobListByIDAndDateHandle()
 })
 
-// 按员工id查询员工列表
+// 查询员工列表
 const queryEmployeesHandle = async () => {
-  const { data: res } = await queryEmployees()
+  const {data: res} = await queryEmployees()
   data.joblist = res.data
   data.joblist = data.joblist.map(item => ({
     text: item.name, // Vant 组件显示的文字
     value: item.id // 绑定到 v-model 的值
   }))
-  data.joblist.unshift({ text: '员工名字', value: 0 })
-}
-
-// 重置按钮
-const resetForm = () => {
-  data.startDate = ''
-  data.endDate = ''
-  data.id = 0
-  queryJobListByIDAndDateHandle()
+  data.joblist.unshift({text: '员工名字', value: 0})
 }
 
 // 按区间/id查询处理函数
 const queryJobListByIDAndDateHandle = async () => {
-  const { data: res } = await queryJobListByIDAndDate(
-    data.id,
-    data.startDate,
-    data.endDate
+  const {data: res} = await queryJobListByIDAndDate(
+      data.id,
+      data.startDate,
+      data.endDate
   )
   data.tableData = res.data.records
-  console.log(data.tableData)
 }
 
 const data = reactive({
@@ -246,14 +217,15 @@ const data = reactive({
   joblist: [],
   tableData: [],
   isloading: false,
-  factoryList: []
+  factoryList: [],
+  categoryList: [],
+  modeList: []
 })
 
 // 注册处理函数
 const registerHandle = async () => {
   data.isloading = true
-  const { data: res } = await saveEmployee(jobRef)
-  console.log(res)
+  const {data: res} = await saveEmployee(employeeRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
   } else {
@@ -262,18 +234,27 @@ const registerHandle = async () => {
   data.isloading = false
 }
 
+// 注册员工按钮点击事件
+const clickAddEmployee = () => {
+  data.dialogVisible = true
+  queryModeListHandle()
+}
+
+// 添加工作信息按钮点击事件
 const clickAddWork = () => {
   data.addWorkVisible = true
   queryFactoryListHandle()
-}
-const clickSalary = () => {
-  data.SalaryVisible = true
-  //console.log(data.joblist)
+  queryCategoryListHandle()
 }
 
+// 计算工资按钮点击事件
+const clickSalary = () => {
+  data.SalaryVisible = true
+}
+
+// 保存工作信息
 const saveJobInfoHandle = async () => {
-  const { data: res } = await saveJobInfo(addWorkRef)
-  console.log(res)
+  const {data: res} = await saveJobInfo(addWorkRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
   } else {
@@ -283,25 +264,53 @@ const saveJobInfoHandle = async () => {
 
 // 查询厂名列表
 const queryFactoryListHandle = async () => {
-  const { data: res } = await queryFactoryList()
+  const {data: res} = await queryFactoryList()
   data.factoryList = res.data.records
-  console.log(data.factoryList)
+}
+
+// 查询工作类型列表
+const queryCategoryListHandle = async () => {
+  const {data: res} = await queryCategoryList()
+  data.categoryList = res.data.records
+}
+// 查询工作方式列表
+const queryModeListHandle = async () => {
+  const {data: res} = await queryModeList()
+  data.modeList = res.data.records
 }
 
 const ruleFormRef = ref()
 const addWorkFormRef = ref()
 
-const jobRef = reactive({
-  name: ''
+const employeeRef = reactive({
+  name: '',
+  modeId: ''
 })
 
+// 表单参数
 const addWorkRef = reactive({
   id: '',
   factoryId: '',
+  categoryId: '',
   number: '',
   styleNumber: '',
   quantity: ''
 })
+
+
+// 重置按钮
+const resetQueryConditionForm = () => {
+  data.startDate = ''
+  data.endDate = ''
+  data.id = 0
+  queryJobListByIDAndDateHandle()
+}
+
+// 清除添加工作信息表单填写的参数
+const resetSaveJobInfoForm = () => {
+  addWorkFormRef.value.resetFields()
+  data.addWorkVisible = false
+}
 
 const SalaryRef = reactive({
   id: '',
@@ -313,10 +322,10 @@ const salaryTotal = ref(0)
 
 // 查询薪资
 const salaryInquiry = async () => {
-  const { data: res } = await queryFactoryBillListByCondition(
-    SalaryRef.id,
-    SalaryRef.salaryStartDate,
-    SalaryRef.salaryEndDate
+  const {data: res} = await queryFactoryBillListByCondition(
+      SalaryRef.id,
+      SalaryRef.salaryStartDate,
+      SalaryRef.salaryEndDate
   )
   if (res.status === 200) {
     salaryTotal.value = salaryTotal.value = res.data.salary
@@ -378,26 +387,28 @@ const onConfirm = values => {
 // 注册表单校验规则
 const rules = reactive({
   name: [
-    { required: true, message: '请输入员工姓名', trigger: 'blur' },
-    { min: 2, max: 30, message: '长度在 2 到 6 个字符', trigger: 'blur' }
-  ]
+    {required: true, message: '请输入员工姓名', trigger: 'blur'},
+    {min: 2, max: 30, message: '长度在 2 到 6 个字符', trigger: 'blur'}
+  ],
+  modeId: [{required: true, message: '请选择工作方式', trigger: 'blur'}]
 })
 
 // 添加工作记录表单校验规则
 const addWorkRules = reactive({
-  id: [{ required: true, message: '请选择员工姓名', trigger: 'blur' }],
-  factoryId: [{ required: true, message: '请选择厂名', trigger: 'blur' }],
+  id: [{required: true, message: '请选择员工姓名', trigger: 'blur'}],
+  factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
+  categoryId: [{required: true, message: '请选择工作类型', trigger: 'blur'}],
   number: [
-    { required: true, message: '请输入床号', trigger: 'blur' },
-    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+    {required: true, message: '请输入床号', trigger: 'blur'},
+    {pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur'}
   ],
   styleNumber: [
-    { required: true, message: '请输入款式编号', trigger: 'blur' },
-    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+    {required: true, message: '请输入款式编号', trigger: 'blur'},
+    {pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur'}
   ],
   quantity: [
-    { required: true, message: '请输入数量', trigger: 'blur' },
-    { pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur' }
+    {required: true, message: '请输入数量', trigger: 'blur'},
+    {pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur'}
   ]
 })
 </script>
@@ -406,6 +417,7 @@ const addWorkRules = reactive({
 .home-contain {
   height: 100%;
 }
+
 .nav-container {
   position: fixed;
   top: 0;
@@ -420,6 +432,7 @@ const addWorkRules = reactive({
   padding: 15px;
   background: white;
 }
+
 .list-container {
   position: fixed;
   top: 130px; /* 适配 nav-container 高度 */
@@ -430,18 +443,22 @@ const addWorkRules = reactive({
   overflow: auto;
   background: white; /* 避免内容重叠 */
 }
+
 :deep(.van-cell) {
   width: auto;
 }
+
 :deep(.van-cell__value) {
   flex: 0;
 }
+
 :deep(.van-dropdown-menu__bar) {
   background-color: #1989fa;
   border-radius: 4px;
   height: 45px;
   color: white;
 }
+
 :deep(.van-dropdown-menu__title) {
   color: white;
 }
@@ -449,9 +466,11 @@ const addWorkRules = reactive({
 :deep(.el-table__inner-wrapper) {
   font-size: 16px;
 }
+
 :deep(.el-form-item__label) {
   font-size: 16px;
 }
+
 .databutton {
   background-color: #1989fa;
   border-radius: 4px;

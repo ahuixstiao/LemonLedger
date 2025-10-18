@@ -29,9 +29,9 @@ public class JobModeController {
      * @param pageSize    页面条数
      * @return reuslt
      */
-    @GetMapping("/list/{mode}")
+    @GetMapping("/list")
     public Result<Object> queryJobModeList(
-            @PathVariable(required = false) String mode,
+            @RequestParam(required = false) String mode,
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize) {
 
