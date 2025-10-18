@@ -8,9 +8,12 @@ import com.ledger.db.mapper.EmployeeMapper;
 import com.ledger.db.service.IEmployeeService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -22,6 +25,7 @@ import java.util.List;
  * @since 2025-10-02
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor(onConstructor_ =  @Autowired)
 public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> implements IEmployeeService {
 
@@ -65,10 +69,17 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
      * @return result
      */
     @Override
+    @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> saveEmployee(Employee employee) {
 
-        if (save(employee)) {
-            return Result.ok();
+        //处理重复名称的异常情况
+        try {
+            if (save(employee)) {
+                return Result.ok();
+            }
+        } catch (RuntimeException runtimeException) {
+            // 打印异常
+            log.error(runtimeException.getMessage());
         }
 
         return Result.fail();

@@ -33,6 +33,7 @@ public class FactoryServiceImpl extends ServiceImpl<FactoryMapper, Factory> impl
     @Override
     public Result<Object> queryFactoryList(String factoryName, Integer currentPage, Integer pageSize, Integer flag) {
 
+        // 构建分页对象
         Page<Factory> page = new Page<>(currentPage, pageSize);
 
         return Result.ok(

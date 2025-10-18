@@ -50,7 +50,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * 默认查询当天所有员工的工作信息
      * 如果传入员工ID 则按员工ID 查询当天 或 由员工指定的起止日期的工作信息
      *
-     * @param employeeId       员工ID
+     * @param employeeId  员工ID
      * @param startDate   开始时间
      * @param endDate     结束时间
      * @param currentPage 当前页
@@ -114,44 +114,56 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @param job 工作记录
      * @return result
      */
-    @Transactional(rollbackFor = RuntimeException.class)
     @Override
+    @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> saveJobInfo(Job job) {
-        // 先区分 该员工是什么工种 再计算工作薪资
-        // 按工作类型（小花、大花、裤页）和工作方式（压花、刮胶）查找对应的工价
-        // 通过工作类型和工作方式查询工作报价表获取计件报价
-        JobQuotation jobQuotation = jobQuotationService.lambdaQuery()
-                .eq(JobQuotation::getCategoryId, job.getCategoryId())
-                .eq(JobQuotation::getModeId, job.getModeId())
-                .one();
 
-        // 计算工作类型和工作方式的总单价
-        // 计算本条工作记录的工资 数量 * 员工工作报价
-        job.setSalary(new BigDecimal(job.getQuantity()).multiply(jobQuotation.getQuotation()).setScale(2, RoundingMode.HALF_UP));
+        // 判断对象是否为空
+        if (ObjectUtil.isNotNull(job)) {
+            // 通过工作类型和工作方式查询工作报价表获取报价
+            JobQuotation jobQuotation = jobQuotationService.lambdaQuery()
+                    .eq(JobQuotation::getCategoryId, job.getCategoryId())
+                    .eq(JobQuotation::getModeId, job.getModeId())
+                    .one();
 
-        // 判断新增工作记录是否成功
-        if (save(job)) {
-            log.info("================= 工作记录保存成功: {} =================", job);
-            //新增成功后 向成衣厂账单表保存一份账单
-            FactoryBill factoryBill = new FactoryBill(); // 构建对象
-            factoryBill.setFactoryId(job.getFactoryId()); // 成衣厂
-            factoryBill.setNumber(job.getNumber()); // 床号
-            factoryBill.setStyleNumber(job.getStyleNumber()); // 款式编号
-            factoryBill.setCategoryId(job.getCategoryId()); // 工作类型
-            factoryBill.setQuantity(job.getQuantity());// 数量
-            // 成衣厂账单字段的参数由 数量 * 成衣厂报价得出
-            // 根据员工提交的工作类型和成衣厂ID 从成衣厂报价表中获取计件的报价
-            BigDecimal quotation = factoryQuotationService.lambdaQuery()
-                    .eq(FactoryQuotation::getCategoryId, job.getCategoryId())
-                    .eq(FactoryQuotation::getFactoryId, job.getFactoryId())
-                    .one().getQuotation();
-            // 将数量 * 成衣厂报价 得出本床账单
-            factoryBill.setBill(new BigDecimal(job.getQuantity()).multiply(quotation).setScale(2, RoundingMode.HALF_UP));
+            // 计算工作类型和工作方式的总单价
+            // 计算本条工作记录的工资 数量 * 员工工作报价
+            job.setSalary(new BigDecimal(job.getQuantity()).multiply(jobQuotation.getQuotation()).setScale(2, RoundingMode.HALF_UP));
 
-            // 判断账单保存是否成功
-            if (factoryBillService.save(factoryBill)) {
-                log.info("================= 成衣厂账单保存成功: {} =================", factoryBill);
-                return Result.ok();
+            //捕获异常
+            try {
+                // 判断新增工作记录是否成功
+                if (save(job)) {
+                    log.info("================= 工作记录保存成功: {} =================", job);
+                    //新增成功后 向成衣厂账单表保存一份账单
+                    FactoryBill factoryBill = new FactoryBill();        // 构建对象
+                    factoryBill.setFactoryId(job.getFactoryId());       // 成衣厂
+                    factoryBill.setNumber(job.getNumber());             // 床号
+                    factoryBill.setStyleNumber(job.getStyleNumber());   // 款式编号
+                    factoryBill.setCategoryId(job.getCategoryId());     // 工作类型
+                    factoryBill.setQuantity(job.getQuantity());         // 数量
+                    // 成衣厂账单字段的参数由 数量 * 成衣厂报价得出
+                    // 根据员工提交的工作类型和成衣厂ID 从成衣厂报价表中获取计件的报价
+                    BigDecimal quotation = factoryQuotationService.lambdaQuery()
+                            .eq(FactoryQuotation::getCategoryId, job.getCategoryId())
+                            .eq(FactoryQuotation::getFactoryId, job.getFactoryId())
+                            .one().getQuotation();
+                    // 将数量 * 成衣厂报价 得出本床账单
+                    factoryBill.setBill(new BigDecimal(job.getQuantity()).multiply(quotation).setScale(2, RoundingMode.HALF_UP));
+
+                    try {
+                        // 判断账单保存是否成功
+                        if (factoryBillService.save(factoryBill)) {
+                            log.info("================= 成衣厂账单保存成功: {} =================", factoryBill);
+                            return Result.ok();
+                        }
+                    } catch (RuntimeException runtimeException) {
+                        log.error("成衣厂账单保存错误: {}", runtimeException.getMessage());
+                    }
+                }
+            } catch (RuntimeException runtimeException) {
+                // 打印异常
+                log.error("工作信息保存错误: {}", runtimeException.getMessage());
             }
 
         }
