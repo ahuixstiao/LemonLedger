@@ -8,6 +8,7 @@ import com.ledger.db.entity.*;
 import com.ledger.db.entity.dto.JobDTO;
 import com.ledger.db.mapper.JobMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ledger.db.service.IEmployeeService;
 import com.ledger.db.service.factory.IFactoryBillService;
 import com.ledger.db.service.factory.IFactoryQuotationService;
 import com.ledger.db.service.job.IJobQuotationService;
@@ -39,6 +40,8 @@ import java.util.Optional;
 public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobService {
 
     private final JobMapper jobMapper;
+
+    private final IEmployeeService employeeService;
 
     private final IJobQuotationService jobQuotationService;
 
@@ -117,6 +120,11 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     @Override
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> saveJobInfo(Job job) {
+
+        // 重复问题： 员工可以提交多条相同的记录 保存之前要做查询处理存在则不允许保存实现去重
+        // 工厂账单问题多个员工提交同一份工作记录时会出现多份相同账单，也要做去重处理 
+        // 比如A和B是搭档做的是同一床，那么他们两个就会提交一份同样的工作记录，导致成衣厂账单出现两份相同的
+
 
         // 判断对象是否为空
         if (ObjectUtil.isNotNull(job)) {

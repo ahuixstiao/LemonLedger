@@ -5,21 +5,23 @@
       <van-button type="primary" @click="clickAddWork">添加工作记录</van-button>
       <van-button type="primary" @click="clickSalary">计算工资</van-button>
       <van-cell
-          title="选择日期区间"
+          title="选择日期"
           :value="data.date"
           @click="data.isShowDate = true"
-          class="databutton"/>
+          class="databutton"
+      />
       <van-calendar
           v-model:show="data.isShowDate"
           allow-same-day
           :min-date="new Date(2020, 0, 1)"
           type="range"
-          @confirm="onConfirm"/>
+          @confirm="onConfirm"
+      />
+      <!--   员工选择组件   -->
       <van-dropdown-menu>
-        <van-dropdown-item
-            v-model="data.id"
-            @change="queryJobListByIDAndDateHandle"
-            :options="data.joblist"/>
+        <van-dropdown-item v-model="data.id"
+                           @change="queryJobListByEmployeeIdAndDateHandle"
+                           :options="data.employeeList"/>
       </van-dropdown-menu>
       <van-button type="primary" @click="resetQueryConditionForm">重置</van-button>
     </div>
@@ -66,7 +68,7 @@
       <el-form label-position="top">
         <el-form-item label="员工姓名:" size="large">
           <el-select v-model="SalaryRef.id" placeholder="请选择员工">
-            <el-option v-for="(item, index) in data.joblist" :label="item.text" :value="item.value"/>
+            <el-option v-for="(item, index) in data.employeeList" :label="item.text" :value="item.value"/>
           </el-select>
         </el-form-item>
         <el-form-item label="计算日期:" size="large">
@@ -105,12 +107,10 @@
     <!--   添加工作信息表单   -->
     <el-dialog v-model="data.addWorkVisible" title="添加工作记录" width="90%" center>
       <el-form ref="addWorkFormRef" :model="addWorkRef" :rules="addWorkRules" label-position="top">
-        <el-form-item label="员工姓名:" size="large" prop="id">
-          <el-select v-model="addWorkRef.id" placeholder="请选择员工姓名">
-            <el-option
-                v-for="item in data.joblist"
-                :label="item.text"
-                :value="item.value"/>
+        <el-form-item label="员工姓名:" size="large" prop="employeeId">
+          <el-select v-model="addWorkRef.employeeId" placeholder="请选择员工姓名" @change="handleEmployeeChange">
+            <el-option v-for="item in data.employeeList"
+                       :key="item.value" :label="item.text" :value="item.value"/>
           </el-select>
         </el-form-item>
         <el-form-item label="选择厂名:" size="large" prop="factoryId">
@@ -163,6 +163,7 @@
         </div>
       </template>
     </el-dialog>
+
   </div>
 </template>
 
@@ -171,39 +172,20 @@ import {reactive, onMounted, ref} from 'vue'
 import {
   queryEmployees,
   saveEmployee,
-  queryJobListByIDAndDate,
   queryFactoryList,
   saveJobInfo,
-  queryFactoryBillListByCondition, queryCategoryList, queryModeList
+  queryFactoryBillListByCondition, queryCategoryList, queryModeList,
+  queryJobListByEmployeeIdAndDate
 } from '../nwtwork/index.js'
 import {ElMessage} from 'element-plus'
 import {useTransition} from '@vueuse/core'
 
+
+// 进入页面时执行
 onMounted(() => {
-  queryEmployeesHandle()
-  queryJobListByIDAndDateHandle()
+  queryEmployeeListHandle()
+  queryJobListByEmployeeIdAndDateHandle()
 })
-
-// 查询员工列表
-const queryEmployeesHandle = async () => {
-  const {data: res} = await queryEmployees()
-  data.joblist = res.data
-  data.joblist = data.joblist.map(item => ({
-    text: item.name, // Vant 组件显示的文字
-    value: item.id // 绑定到 v-model 的值
-  }))
-  data.joblist.unshift({text: '员工名字', value: 0})
-}
-
-// 按区间/id查询处理函数
-const queryJobListByIDAndDateHandle = async () => {
-  const {data: res} = await queryJobListByIDAndDate(
-      data.id,
-      data.startDate,
-      data.endDate
-  )
-  data.tableData = res.data.records
-}
 
 const data = reactive({
   dialogVisible: false,
@@ -214,13 +196,41 @@ const data = reactive({
   startDate: '',
   endDate: '',
   date: '',
-  joblist: [],
+  employeeList: [],
   tableData: [],
   isloading: false,
   factoryList: [],
   categoryList: [],
   modeList: []
 })
+
+// 查询员工列表
+const queryEmployeeListHandle = async () => {
+  const {data: res} = await queryEmployees()
+  data.employeeList = res.data
+  data.employeeList = data.employeeList.map(item => ({
+    text: item.name, // Vant 组件显示的文字
+    value: item.id, // 绑定到 v-model 的值
+    modeId: item.modeId
+  }))
+  data.employeeList.unshift({text: '员工名字', value: 0})
+}
+
+// 获取当前选中员工的modeId
+const handleEmployeeChange = (employeeId) => {
+  const selectedEmployee = data.employeeList.find(item => item.value === employeeId)
+  addWorkRef.modeId = selectedEmployee ? selectedEmployee.modeId : ''
+}
+
+// 按员工ID和日期区间查询员工的工作信息列表
+const queryJobListByEmployeeIdAndDateHandle = async () => {
+  const {data: res} = await queryJobListByEmployeeIdAndDate(
+      data.id,
+      data.startDate,
+      data.endDate
+  )
+  data.tableData = res.data.records
+}
 
 // 注册处理函数
 const registerHandle = async () => {
@@ -287,11 +297,12 @@ const employeeRef = reactive({
   modeId: ''
 })
 
-// 表单参数
+// 添加工作信息表单参数
 const addWorkRef = reactive({
-  id: '',
+  employeeId: '',
   factoryId: '',
   categoryId: '',
+  modeId: '',
   number: '',
   styleNumber: '',
   quantity: ''
@@ -303,7 +314,7 @@ const resetQueryConditionForm = () => {
   data.startDate = ''
   data.endDate = ''
   data.id = 0
-  queryJobListByIDAndDateHandle()
+  queryJobListByEmployeeIdAndDateHandle()
 }
 
 // 清除添加工作信息表单填写的参数
@@ -380,7 +391,7 @@ const onConfirm = values => {
   data.isShowDate = false
   data.startDate = formatDate(start)
   data.endDate = formatDate(end)
-  queryJobListByIDAndDateHandle()
+  queryJobListByEmployeeIdAndDateHandle()
   console.log(data.startDate, data.endDate)
 }
 
@@ -395,7 +406,7 @@ const rules = reactive({
 
 // 添加工作记录表单校验规则
 const addWorkRules = reactive({
-  id: [{required: true, message: '请选择员工姓名', trigger: 'blur'}],
+  employeeId: [{required: true, message: '请选择员工姓名', trigger: 'blur'}],
   factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
   categoryId: [{required: true, message: '请选择工作类型', trigger: 'blur'}],
   number: [

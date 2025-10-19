@@ -19,7 +19,6 @@ export function saveEmployee(employee) {
 
 // 添加工作记录
 export function saveJobInfo(job) {
-  console.log(job);
   return request({
     url: '/job/save',
     method: 'post',
@@ -27,8 +26,8 @@ export function saveJobInfo(job) {
   })
 } 
 
-// 按时间/id查询信息
-export function queryJobListByIDAndDate(employeeId,startDate,endDate) {
+// 按员工ID和日期区间查询员工的工作信息列表
+export function queryJobListByEmployeeIdAndDate(employeeId,startDate,endDate) {
   return request({
     url: '/job/list/'+ employeeId,
     method: 'get',
