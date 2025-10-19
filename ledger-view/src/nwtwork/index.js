@@ -60,7 +60,7 @@ export function queryModeList() {
 }
 
 // 查询薪资
-export function queryFactoryBillListByCondition(employeeId,startDate,endDate) {
+export function querySalaryByCondition(employeeId,startDate,endDate) {
   return request({
     url: '/job/salary/'+ employeeId,
     method: 'get',

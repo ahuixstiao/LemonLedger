@@ -65,32 +65,28 @@
 
     <!--  工资计算表单  -->
     <el-dialog v-model="data.SalaryVisible" title="工资计算" width="90%" center>
-      <el-form label-position="top">
-        <el-form-item label="员工姓名:" size="large">
-          <el-select v-model="SalaryRef.id" placeholder="请选择员工">
+      <el-form  ref="querySalaryFormRef" label-position="top" :model="SalaryRef" :rules="querySalaryRule">
+        <el-form-item label="员工姓名:" size="large" prop="employeeId">
+          <el-select v-model="SalaryRef.employeeId" placeholder="请选择员工">
             <el-option v-for="(item, index) in data.employeeList" :label="item.text" :value="item.value"/>
           </el-select>
         </el-form-item>
         <el-form-item label="计算日期:" size="large">
           <el-date-picker
-              v-model="SalaryRef.salaryStartDate"
+              v-model="SalaryRef.startDate"
               type="date"
               format="YYYY/MM/DD"
               value-format="YYYY-MM-DD"
               placeholder="开始日期"/>
           <el-date-picker
-              v-model="SalaryRef.salaryEndDate"
+              v-model="SalaryRef.endDate"
               type="date"
               format="YYYY/MM/DD"
               value-format="YYYY-MM-DD"
               placeholder="结束日期"/>
         </el-form-item>
         <el-form-item size="large">
-          <el-button
-              type="primary"
-              style="width: 100%"
-              size="large"
-              @click="salaryInquiry()">
+          <el-button type="primary" style="width: 100%" size="large" @click="querySalarySubmitForm(querySalaryFormRef)">
             计算
           </el-button>
         </el-form-item>
@@ -108,7 +104,8 @@
     <el-dialog v-model="data.addWorkVisible" title="添加工作记录" width="90%" center>
       <el-form ref="addWorkFormRef" :model="addWorkRef" :rules="addWorkRules" label-position="top">
         <el-form-item label="员工姓名:" size="large" prop="employeeId">
-          <el-select v-model="addWorkRef.employeeId" placeholder="请选择员工姓名" @change="handleEmployeeChange">
+          <el-select v-model="addWorkRef.employeeId" placeholder="请选择员工姓名"
+                     @change="handleEmployeeChange">
             <el-option v-for="item in data.employeeList"
                        :key="item.value" :label="item.text" :value="item.value"/>
           </el-select>
@@ -127,7 +124,7 @@
               autocomplete="off"
               size="large"
               placeholder="请输入床号"
-              type="number"/>
+              type="text"/>
         </el-form-item>
         <el-form-item label="选择工作类型:" size="large" prop="categoryId">
           <el-select v-model="addWorkRef.categoryId" placeholder="请选择工作类型">
@@ -143,7 +140,7 @@
               autocomplete="off"
               size="large"
               placeholder="请输入款式编号"
-              type="number"/>
+              type="text"/>
         </el-form-item>
         <el-form-item label="数量：" prop="quantity">
           <el-input
@@ -151,7 +148,7 @@
               autocomplete="off"
               size="large"
               placeholder="请输入数量"
-              type="number"/>
+              type="text"/>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -174,8 +171,8 @@ import {
   saveEmployee,
   queryFactoryList,
   saveJobInfo,
-  queryFactoryBillListByCondition, queryCategoryList, queryModeList,
-  queryJobListByEmployeeIdAndDate
+  queryCategoryList, queryModeList,
+  queryJobListByEmployeeIdAndDate, querySalaryByCondition
 } from '../nwtwork/index.js'
 import {ElMessage} from 'element-plus'
 import {useTransition} from '@vueuse/core'
@@ -267,6 +264,11 @@ const saveJobInfoHandle = async () => {
   const {data: res} = await saveJobInfo(addWorkRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
+    // 保存成功后 关闭弹窗
+    data.addWorkVisible = false
+    // 保存成功后清除填写的工作信息
+    resetSaveJobInfoForm()
+    await queryJobListByEmployeeIdAndDateHandle()
   } else {
     ElMessage.error(res.message)
   }
@@ -291,6 +293,7 @@ const queryModeListHandle = async () => {
 
 const ruleFormRef = ref()
 const addWorkFormRef = ref()
+const querySalaryFormRef = ref()
 
 const employeeRef = reactive({
   name: '',
@@ -324,19 +327,19 @@ const resetSaveJobInfoForm = () => {
 }
 
 const SalaryRef = reactive({
-  id: '',
+  employeeId: '',
   startDate: '',
   endDate: ''
 })
 
 const salaryTotal = ref(0)
 
-// 查询薪资
+// 计算工资请求
 const salaryInquiry = async () => {
-  const {data: res} = await queryFactoryBillListByCondition(
-      SalaryRef.id,
-      SalaryRef.salaryStartDate,
-      SalaryRef.salaryEndDate
+  const {data: res} = await querySalaryByCondition(
+      SalaryRef.employeeId,
+      SalaryRef.startDate,
+      SalaryRef.endDate
   )
   if (res.status === 200) {
     salaryTotal.value = salaryTotal.value = res.data.salary
@@ -357,7 +360,6 @@ const submitForm = async formEl => {
     if (valid) {
       // 发起注册请求
       registerHandle()
-      console.log('submit!')
     } else {
       console.log('error submit!', fields)
     }
@@ -370,9 +372,21 @@ const addWorkSubmitForm = async formEl => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       saveJobInfoHandle()
-      console.log('submit!')
     } else {
       console.log('error submit!', fields)
+      data.addWorkVisible = false
+    }
+  })
+}
+
+// 查询计算工资表单校验
+const querySalarySubmitForm = async formEl => {
+  if (!formEl) return
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      salaryInquiry()
+    } else {
+      console.log('error query!', fields)
     }
   })
 }
@@ -404,22 +418,50 @@ const rules = reactive({
   modeId: [{required: true, message: '请选择工作方式', trigger: 'blur'}]
 })
 
+const onlyNumberRule = {pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur'}
 // 添加工作记录表单校验规则
 const addWorkRules = reactive({
-  employeeId: [{required: true, message: '请选择员工姓名', trigger: 'blur'}],
+  employeeId: [
+    {required: true, message: '请选择员工姓名', trigger: 'blur'},
+    {
+      validator: (rule, value, callback) => {
+        if (value === 0) {
+          callback(new Error('请选择有效的员工姓名'))
+        } else {
+          callback()
+        }
+      }, trigger: 'blur'
+    }
+  ],
   factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
   categoryId: [{required: true, message: '请选择工作类型', trigger: 'blur'}],
   number: [
     {required: true, message: '请输入床号', trigger: 'blur'},
-    {pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur'}
+    onlyNumberRule
   ],
   styleNumber: [
     {required: true, message: '请输入款式编号', trigger: 'blur'},
-    {pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur'}
+    onlyNumberRule
   ],
   quantity: [
     {required: true, message: '请输入数量', trigger: 'blur'},
-    {pattern: /^[0-9]+$/, message: '只能输入数字', trigger: 'blur'}
+    onlyNumberRule
+  ]
+})
+
+// 计算工资表单校验规则
+const querySalaryRule = reactive({
+  employeeId: [
+    {required: true, message: '请选择员工姓名', trigger: 'blur'},
+    {
+      validator: (rule, value, callback) => {
+        if (value === 0) {
+          callback(new Error('请选择有效的员工姓名'))
+        } else {
+          callback()
+        }
+      }, trigger: 'blur'
+    }
   ]
 })
 </script>
