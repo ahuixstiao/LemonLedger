@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>ledger-api</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <name>ledger-api</name>
 
     <!-- 程序打包方式指定为jar -->
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>com.ahui</groupId>
             <artifactId>ledger-db</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
 
         <!-- 测试依赖 -->
@@ -46,7 +46,57 @@
 
 
     <build>
+        <finalName>LemonLedger</finalName>
         <plugins>
+            <!-- ① 自动执行前端构建命令 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.4.0</version>
+                <executions>
+                    <execution>
+                        <id>npm-run-build</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>../ledger-view</workingDirectory> <!-- ⚠️ 前端路径 -->
+                            <executable>npm</executable>
+                            <arguments>
+                                <argument>run</argument>
+                                <argument>build</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- ② 自动复制 Vite 打包结果到 Spring Boot 静态资源目录 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-vite-dist</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../ledger-view/dist</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- ③ Spring Boot 打包插件 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -63,8 +113,10 @@
                     </excludes>
                 </configuration>
             </plugin>
+
         </plugins>
-        <finalName>LemonLedger</finalName>
     </build>
+
+
 
 </project>

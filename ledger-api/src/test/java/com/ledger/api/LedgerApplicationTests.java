@@ -1,33 +1,26 @@
 package com.ledger.api;
 
-import cn.hutool.core.date.LocalDateTimeUtil;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.generator.FastAutoGenerator;
 import com.baomidou.mybatisplus.generator.config.OutputFile;
 import com.baomidou.mybatisplus.generator.config.rules.DateType;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
 import com.ledger.common.entity.ParentEntity;
-import com.ledger.db.entity.dto.JobDTO;
 import com.ledger.db.mapper.JobMapper;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.net.http.HttpClient;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 @SpringBootTest
 @Component
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class LedgerApplicationTests {
 
     @Value("${db.url}")
@@ -39,8 +32,7 @@ class LedgerApplicationTests {
     @Value("${db.password}")
     private String password;
 
-    @Autowired
-    private JobMapper jobMapper;
+    private final JobMapper jobMapper;
 
     @Test
     void contextLoads() {

@@ -13,7 +13,7 @@
     <!-- 程序信息 -->
     <groupId>com.ahui</groupId> <!--程序所属组织或作者-->
     <artifactId>LemonLedger</artifactId>
-    <version>0.0.1</version> <!-- 程序版本 -->
+    <version>0.0.2</version> <!-- 程序版本 -->
     <name>LemonLedger</name> <!-- 程序名称 -->
 
     <!--

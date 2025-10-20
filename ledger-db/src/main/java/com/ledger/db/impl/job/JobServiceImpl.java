@@ -201,6 +201,28 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     }
 
     /**
+     * 计算工作工资
+     *
+     * @param job
+     */
+    private void calculateJobSalary(Job job) {
+
+        // 通过工作类型和工作方式查询工作报价表获取报价
+        JobQuotation jobQuotation = jobQuotationService.lambdaQuery()
+                .eq(JobQuotation::getCategoryId, job.getCategoryId())
+                .eq(JobQuotation::getModeId, job.getModeId())
+                .oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作报价"));
+
+        // 计算本条工作记录的工资 数量 * 工作报价
+        job.setSalary(BigDecimal
+                .valueOf(job.getQuantity())
+                .multiply(jobQuotation.getQuotation())
+                .setScale(2, RoundingMode.HALF_UP)
+        );
+
+    }
+
+    /**
      * 判断该成衣厂账单是否存在重复 以工厂ID、床号、款式编号、日期来判断
      *
      * @param job 工作信息
@@ -240,28 +262,6 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         factoryBillService.save(factoryBill);
 
         log.info("================= 成衣厂账单保存成功: {} =================", factoryBill);
-    }
-
-    /**
-     * 计算工作工资
-     *
-     * @param job
-     */
-    private void calculateJobSalary(Job job) {
-
-        // 通过工作类型和工作方式查询工作报价表获取报价
-        JobQuotation jobQuotation = jobQuotationService.lambdaQuery()
-                .eq(JobQuotation::getCategoryId, job.getCategoryId())
-                .eq(JobQuotation::getModeId, job.getModeId())
-                .oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作报价"));
-
-        // 计算本条工作记录的工资 数量 * 工作报价
-        job.setSalary(BigDecimal
-                .valueOf(job.getQuantity())
-                .multiply(jobQuotation.getQuotation())
-                .setScale(2, RoundingMode.HALF_UP)
-        );
-
     }
 
 }
