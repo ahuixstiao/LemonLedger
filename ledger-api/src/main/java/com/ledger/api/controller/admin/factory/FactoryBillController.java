@@ -1,4 +1,4 @@
-package com.ledger.api.controller.factory;
+package com.ledger.api.controller.admin.factory;
 
 import com.ledger.common.result.Result;
 import com.ledger.db.service.factory.IFactoryBillService;

@@ -28,15 +28,30 @@
 
     <!--  工作信息列表  -->
     <div class="list-container">
-      <el-table :data="data.tableData" height="60" stripe style="height: 100%">
-        <el-table-column prop="name" label="员工名称"/>
-        <el-table-column prop="factoryName" label="厂名"/>
-        <el-table-column prop="number" label="床号"/>
-        <el-table-column prop="styleNumber" label="款式编号"/>
-        <el-table-column prop="category" label="类型"/>
-        <el-table-column prop="quantity" label="数量"/>
-        <el-table-column prop="salary" label="本床工资(单位: 元)"/>
-      </el-table>
+      <el-card>
+        <el-row>
+          <el-table :data="data.tableData" height="60" stripe fit highlight-current-row show-summary style="height: 100%">
+            <el-table-column prop="name" label="员工名称"/>
+            <el-table-column prop="factoryName" label="厂名"/>
+            <el-table-column prop="number" label="床号"/>
+            <el-table-column prop="styleNumber" label="款式编号"/>
+            <el-table-column prop="category" label="类型"/>
+            <el-table-column prop="quantity" label="数量"/>
+            <el-table-column prop="salary" label="本床工资(单位: 元)"/>
+            <el-table-column prop="createdTime" label="日期"/>
+          </el-table>
+        </el-row>
+        <!-- 分页控制 -->
+        <el-row class="page-help">
+          <el-pagination
+              background
+              :total="data.total" v-model:current-page="data.currentPage" v-model:page-size="data.pageSize"
+              :page-sizes="[5, 10, 20, 50, 100]" layout="sizes, prev, pager, next, jumper, ->"
+              @current-change="queryJobListByEmployeeIdAndDateHandle()" @size-change="queryJobListByEmployeeIdAndDateHandle()"/>
+        </el-row>
+      </el-card>
+
+
     </div>
 
     <!--  员工注册表单  -->
@@ -198,7 +213,10 @@ const data = reactive({
   isloading: false,
   factoryList: [],
   categoryList: [],
-  modeList: []
+  modeList: [],
+  total: 0,
+  currentPage: 1,
+  pageSize: 10,
 })
 
 // 查询员工列表
@@ -210,7 +228,7 @@ const queryEmployeeListHandle = async () => {
     value: item.id, // 绑定到 v-model 的值
     modeId: item.modeId
   }))
-  data.employeeList.unshift({text: '员工名字', value: 0})
+  data.employeeList.unshift({text: '选择员工', value: 0})
 }
 
 // 获取当前选中员工的modeId
@@ -224,9 +242,12 @@ const queryJobListByEmployeeIdAndDateHandle = async () => {
   const {data: res} = await queryJobListByEmployeeIdAndDate(
       data.id,
       data.startDate,
-      data.endDate
+      data.endDate,
+      data.currentPage,
+      data.pageSize
   )
-  data.tableData = res.data.records
+  data.tableData = res.data.records;
+  data.total = res.data.total;
 }
 
 // 注册处理函数
@@ -277,18 +298,18 @@ const saveJobInfoHandle = async () => {
 // 查询厂名列表
 const queryFactoryListHandle = async () => {
   const {data: res} = await queryFactoryList()
-  data.factoryList = res.data.records
+  data.factoryList = res.data
 }
 
 // 查询工作类型列表
 const queryCategoryListHandle = async () => {
   const {data: res} = await queryCategoryList()
-  data.categoryList = res.data.records
+  data.categoryList = res.data
 }
 // 查询工作方式列表
 const queryModeListHandle = async () => {
   const {data: res} = await queryModeList()
-  data.modeList = res.data.records
+  data.modeList = res.data
 }
 
 const ruleFormRef = ref()

@@ -1,17 +1,11 @@
-package com.ledger.api.controller;
+package com.ledger.api.controller.admin;
 
-import cn.hutool.core.lang.intern.InternUtil;
-import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Employee;
 import com.ledger.db.service.IEmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import javax.validation.constraints.NotNull;
-import java.util.List;
 
 /**
  * @Author: ahui
@@ -20,8 +14,8 @@ import java.util.List;
  **/
 @RestController
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@RequestMapping("/employee")
-public class EmployeeController {
+@RequestMapping("/admin/emp")
+public class AdminEmployeeController {
 
     private final IEmployeeService employeeService;
 

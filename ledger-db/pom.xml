@@ -22,23 +22,6 @@
             <version>0.0.2</version>
         </dependency>
 
-        <!-- mbp 代码生成器 根据SQL表逆向生成entity、mapper、service等-->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-generator</artifactId>
-        </dependency>
-        <!-- 模板引擎 二选一即可-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-freemarker</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <!-- druid数据库连接池 -->
         <dependency>
             <groupId>com.alibaba</groupId>

@@ -1,4 +1,4 @@
-package com.ledger.api.controller.job;
+package com.ledger.api.controller.employee.job;
 
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Job;
@@ -8,17 +8,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
-import java.time.LocalDate;
 
 /**
  * @Author: ahui
- * @Description: TODO 工作内容控制器
+ * @Description: TODO 员工工作内容控制器
  * @DateTime: 2025/10/10 - 14:47
  **/
 @RestController
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@RequestMapping("/job")
-public class JobController {
+@RequestMapping("/emp/job")
+public class EmpJobController {
 
     private final IJobService jobService;
 

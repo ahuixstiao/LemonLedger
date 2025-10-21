@@ -79,7 +79,7 @@
                 <executions>
                     <execution>
                         <id>copy-vite-dist</id>
-                        <phase>prepare-package</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
@@ -95,6 +95,7 @@
                     </execution>
                 </executions>
             </plugin>
+
 
             <!-- ③ Spring Boot 打包插件 -->
             <plugin>

@@ -37,13 +37,14 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- mybatis-plus 版本 -->
-        <mybatisPlus.version>3.5.3.1</mybatisPlus.version>
+        <mybatisPlus.version>3.5.14</mybatisPlus.version>
+        <jsqlparser.version>4.6</jsqlparser.version>
         <!-- druid数据库连接池 版本 -->
         <druid.version>1.2.14</druid.version>
         <!-- fastjson2 版本 -->
         <fastjson2.version>2.0.16</fastjson2.version>
         <!-- hutool 版本 -->
-        <hutool.version>5.8.18</hutool.version>
+        <hutool.version>5.8.38</hutool.version>
 
         <!-- spring boot 版本 -->
         <spring-boot.version>2.7.0</spring-boot.version>
@@ -60,29 +61,18 @@
                 <version>${spring-boot.version}</version>
             </dependency>
 
-            <!-- mybatis-plus 依赖 -->
+            <!-- mybatis-plus 插件管理bom，mybatisPlus所有插件和主体版本都由该依赖管理 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <artifactId>mybatis-plus-bom</artifactId>
                 <version>${mybatisPlus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
-            <!-- mybatis-plus 注解支持 -->
             <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-annotation</artifactId>
-                <version>${mybatisPlus.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.mybatis</groupId>
-                        <artifactId>mybatis</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!-- mbp 代码生成器 根据SQL表逆向生成entity、mapper、service等-->
-            <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-generator</artifactId>
-                <version>${mybatisPlus.version}</version>
+                <groupId>com.github.jsqlparser</groupId>
+                <artifactId>jsqlparser</artifactId>
+                <version>${jsqlparser.version}</version>
             </dependency>
 
             <!-- druid数据库连接池 -->

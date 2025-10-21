@@ -12,6 +12,7 @@ spring:
     time-zone: GMT+8
   # 表示启用指定配置文件 若不指定则其他配置文件的配置不生效。
   profiles:
+    #active: db-dev, common
     active: db, common
 
 # 配置程序访问端口

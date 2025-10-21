@@ -1,4 +1,4 @@
-package com.ledger.api.controller.job;
+package com.ledger.api.controller.admin.job;
 
 import com.ledger.db.service.job.IJobQuotationService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @RequestMapping("/jobQuotation")
-public class JobQuotationController {
+public class AdminJobQuotationController {
 
     private final IJobQuotationService jobQuotationService;
 
