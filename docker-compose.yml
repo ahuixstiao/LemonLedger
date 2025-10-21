@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   lemonledger:
     image: 794862853/lemonledger:1.0
@@ -11,28 +9,26 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ledger?useUnicode=true&serverTimezone=GMT%2B8&characterEncoding=utf8&useSSL=false
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
-      SPRING_PROFILES_ACTIVE: prod
-      SPRING_WEB_RESOURCES_STATIC-LOCATIONS: file:/app/static/
     depends_on:
       - mysql
-    volumes:
-      - ./logs:/app/logs  # 映射日志
-      - ./ledger-view/dist:/app/static  # 前端静态资源热替换
+    networks:
+      - my_network  # 使用自定义网络
     restart: always
 
-# 构建mysql配置 docker内所有容器访问mysql时不需要知道ip直接填服务名mysql即可
   mysql:
     image: mysql:8.0
     container_name: mysql_container
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ledger_db
+      MYSQL_DATABASE: ledger
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"
     volumes:
       - ./mysql-data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - my_network  # 使用自定义网络
     restart: always
 
   adminer:
@@ -40,8 +36,12 @@ services:
     container_name: adminer_container
     ports:
       - "8081:8080"
+    networks:
+      - my_network  # 使用自定义网络
     depends_on:
       - mysql
+    restart: always
 
-volumes:
-  mysql-data:
+networks:
+  my_network:
+    driver: bridge  # 使用自定义桥接网络
