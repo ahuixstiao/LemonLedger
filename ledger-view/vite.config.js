@@ -13,7 +13,7 @@ export default defineConfig({
             resolvers: [VantResolver(), ElementPlusResolver()],
         }),
     )],
-    base: './',
+    base: '/',
     server: {
         port: 3000,
         open: true,

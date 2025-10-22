@@ -4,20 +4,14 @@ export function request(config) {
     // 创建实例
     const _axiso = axios.create({
         // 服务器基础路径
-        //baseURL: "http://192.168.110.246:8080" //获取对应环境的路径
-        baseURL: "http://localhost:8080"
+        baseURL: "/api",
+        //baseURL: "http://localhost:8080"
         //timeout: 5000
     })
 
     // 请求拦截器
     _axiso.interceptors.request.use(
         config => {
-            // if (config.headers !== undefined) {
-            //   // 请求头添加token信息
-            //   if (token != undefined && token != '') {
-            //     config.headers['satoken'] = token
-            //   }
-            // }
             return config
         },
         error => {

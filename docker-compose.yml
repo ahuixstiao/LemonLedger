@@ -1,18 +1,18 @@
 services:
   lemonledger:
-    image: 794862853/lemonledger:1.0
+    image: 794862853/lemonledger:1.2
     build: ./ledger-api
     container_name: lemonledger_container
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"  # 内部网络访问，不暴露给外部
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ledger?useUnicode=true&serverTimezone=GMT%2B8&characterEncoding=utf8&useSSL=false
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ledger?useUnicode=true&serverTimezone=GMT%2B8&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
     depends_on:
       - mysql
     networks:
-      - my_network  # 使用自定义网络
+      - my_network
     restart: always
 
   mysql:
@@ -28,7 +28,7 @@ services:
       - ./mysql-data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
     networks:
-      - my_network  # 使用自定义网络
+      - my_network
     restart: always
 
   adminer:
@@ -37,11 +37,27 @@ services:
     ports:
       - "8081:8080"
     networks:
-      - my_network  # 使用自定义网络
+      - my_network
     depends_on:
       - mysql
     restart: always
 
+  nginx:
+    image: nginx:latest
+    container_name: nginx_container
+    ports:
+      - "8080:80"  # 外部访问端口
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ledger-view/dist:/usr/share/nginx/html  # 你的前端打包文件
+    depends_on:
+      - lemonledger
+      - adminer
+    networks:
+      - my_network
+    restart: always
+
 networks:
   my_network:
-    driver: bridge  # 使用自定义桥接网络
+    name: lemonledger_network
+    driver: bridge

@@ -34,7 +34,7 @@ CREATE TABLE `employee` (
   `remark` varchar(255) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='员工表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='员工表';
 
 -- ----------------------------
 -- Table structure for factory
@@ -51,7 +51,7 @@ CREATE TABLE `factory` (
   `flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '删除状态 0否 1是',
   `remark` varchar(255) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂表';
 
 -- ----------------------------
 -- Table structure for factory_bill
@@ -76,7 +76,7 @@ CREATE TABLE `factory_bill` (
   UNIQUE KEY `unique_factory_bill` (`factory_id`,`number`,`style_number`,`flag`,`created_time`),
   KEY `factory_bill_number_index` (`number`),
   KEY `factory_bill_style_number_index` (`style_number`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂账单表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂账单表';
 
 -- ----------------------------
 -- Table structure for factory_quotation
@@ -95,7 +95,7 @@ CREATE TABLE `factory_quotation` (
   `flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '删除状态 0否 1是',
   `remark` varchar(255) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂报价表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂报价表';
 
 -- ----------------------------
 -- Table structure for job
@@ -123,7 +123,7 @@ CREATE TABLE `job` (
   KEY `job_category_id_index` (`category_id`),
   KEY `job_employee_id_index` (`employee_id`),
   KEY `job_factory_id_index` (`factory_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=152 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作内容表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作内容表';
 
 -- ----------------------------
 -- Table structure for job_category
@@ -140,7 +140,7 @@ CREATE TABLE `job_category` (
   `flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '删除状态 0否 1是',
   `remark` varchar(255) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作类型表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作类型表';
 
 -- ----------------------------
 -- Table structure for job_mode
@@ -157,7 +157,7 @@ CREATE TABLE `job_mode` (
   `flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '删除状态 0否 1是',
   `remark` varchar(255) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作方式表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作方式表';
 
 -- ----------------------------
 -- Table structure for job_quotation
@@ -180,6 +180,6 @@ CREATE TABLE `job_quotation` (
   KEY `job_quotation_job_mode_id_fk` (`mode_id`),
   CONSTRAINT `job_quotation_job_category_id_fk` FOREIGN KEY (`category_id`) REFERENCES `job_category` (`id`) ON DELETE CASCADE,
   CONSTRAINT `job_quotation_job_mode_id_fk` FOREIGN KEY (`mode_id`) REFERENCES `job_mode` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作报价表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作报价表';
 
 SET FOREIGN_KEY_CHECKS = 1;
