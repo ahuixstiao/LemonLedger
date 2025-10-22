@@ -136,10 +136,14 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         //捕获异常
         try {
             // 保存 工作记录
-            save(job);
-            // 保存 成衣厂账单
-            saveFactoryBillIfNotExists(job);
-            log.info("================= 工作记录保存成功: {} =================", job);
+            if (save(job)) {
+                log.info("================= 工作记录保存成功: {} =================", job);
+                // 保存 成衣厂账单
+                saveFactoryBillIfNotExists(job);
+            }else {
+                log.info("================= 工作记录保存失败: {} =================", job);
+            }
+
         } catch (RuntimeException runtimeException) {
             // 打印异常
             log.error("错误: {}", runtimeException.getMessage());
@@ -195,7 +199,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 .eq(Job::getStyleNumber, job.getStyleNumber())
                 .eq(Job::getNumber, job.getNumber())
                 .eq(Job::getModeId, job.getModeId())
-                .eq(Job::getCreatedTime, LocalDate.now())
+                .eq(Job::getCreatedTime, job.getCreatedTime())
                 .eq(Job::getFlag, 0)
                 .exists();
     }
@@ -234,7 +238,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 .eq(FactoryBill::getFactoryId, job.getFactoryId())
                 .eq(FactoryBill::getNumber, job.getNumber())
                 .eq(FactoryBill::getStyleNumber, job.getStyleNumber())
-                .eq(FactoryBill::getCreatedTime, LocalDate.now())
+                .eq(FactoryBill::getCreatedTime, job.getCreatedTime())
                 .eq(FactoryBill::getFlag, 0)
                 .exists();
     }
@@ -257,11 +261,14 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         factoryBill.setNumber(job.getNumber());             // 床号
         factoryBill.setStyleNumber(job.getStyleNumber());   // 款式编号
         factoryBill.setQuantity(job.getQuantity());         // 数量
+        factoryBill.setCreatedTime(job.getCreatedTime());   // 日期
         // 成衣厂账单参数 由管理员手动在后台中选择工作类型后得出
 
-        factoryBillService.save(factoryBill);
-
-        log.info("================= 成衣厂账单保存成功: {} =================", factoryBill);
+        if (factoryBillService.save(factoryBill)) {
+            log.info("================= 成衣厂账单保存成功: {} =================", factoryBill);
+        }else {
+            log.info("================= 成衣厂账单保存失败: {} =================", factoryBill);
+        }
     }
 
 }

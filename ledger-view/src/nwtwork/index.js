@@ -26,6 +26,14 @@ export function saveJobInfo(job) {
     })
 }
 
+// 删除工作记录
+export function deleteJobInfoById(id) {
+    return request({
+        url: 'emp/job/delete/' + id,
+        method: 'delete',
+    })
+}
+
 // 按员工ID和日期区间查询员工的工作信息列表
 export function queryJobListByEmployeeIdAndDate(employeeId, startDate, endDate, currentPage, pageSize) {
     return request({

@@ -39,6 +39,11 @@
             <el-table-column prop="quantity" label="数量"/>
             <el-table-column prop="salary" label="本床工资(单位: 元)"/>
             <el-table-column prop="createdTime" label="日期"/>
+            <el-table-column label="管理">
+              <template #default ="scope">
+                <el-button type="text" @click="deleteJobInfoByIdHandler(scope.row.id)" >删除</el-button>
+              </template>
+            </el-table-column>
           </el-table>
         </el-row>
         <!-- 分页控制 -->
@@ -126,9 +131,10 @@
           </el-select>
         </el-form-item>
         <el-form-item label="选择厂名:" size="large" prop="factoryId">
-          <el-select v-model="addWorkRef.factoryId" placeholder="请选择厂名">
+          <el-select filterable v-model="addWorkRef.factoryId" placeholder="请选择厂名">
             <el-option
                 v-for="(item, index) in data.factoryList"
+                :key="item.id"
                 :label="item.factoryName"
                 :value="item.id"/>
           </el-select>
@@ -165,6 +171,14 @@
               placeholder="请输入数量"
               type="text"/>
         </el-form-item>
+        <el-form-item label="工作日期:" size="large">
+          <el-date-picker
+              v-model="addWorkRef.createdTime"
+              type="date"
+              format="YYYY/MM/DD"
+              value-format="YYYY-MM-DD"
+              placeholder="工作记录日期"/>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -187,7 +201,7 @@ import {
   queryFactoryList,
   saveJobInfo,
   queryCategoryList, queryModeList,
-  queryJobListByEmployeeIdAndDate, querySalaryByCondition
+  queryJobListByEmployeeIdAndDate, querySalaryByCondition, deleteJobInfoById
 } from '../nwtwork/index.js'
 import {ElMessage} from 'element-plus'
 import {useTransition} from '@vueuse/core'
@@ -275,6 +289,7 @@ const clickAddWork = () => {
   queryCategoryListHandle()
 }
 
+
 // 计算工资按钮点击事件
 const clickSalary = () => {
   data.SalaryVisible = true
@@ -286,13 +301,24 @@ const saveJobInfoHandle = async () => {
   if (res.status === 200) {
     ElMessage.success(res.message)
     // 保存成功后 关闭弹窗
-    data.addWorkVisible = false
+    //data.addWorkVisible = false
     // 保存成功后清除填写的工作信息
-    resetSaveJobInfoForm()
+    //resetSaveJobInfoForm()
     await queryJobListByEmployeeIdAndDateHandle()
   } else {
     ElMessage.error(res.message)
   }
+}
+
+// 删除工作信息
+const deleteJobInfoByIdHandler = async (id) => {
+  const {data: res} = await deleteJobInfoById(id)
+  if (res.status === 200) {
+    ElMessage.success(res.message)
+  }else {
+    ElMessage.error(res.message)
+  }
+  await queryJobListByEmployeeIdAndDateHandle()
 }
 
 // 查询厂名列表
@@ -329,7 +355,8 @@ const addWorkRef = reactive({
   modeId: '',
   number: '',
   styleNumber: '',
-  quantity: ''
+  quantity: '',
+  createdTime: '',
 })
 
 
@@ -457,8 +484,7 @@ const addWorkRules = reactive({
   factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
   categoryId: [{required: true, message: '请选择工作类型', trigger: 'blur'}],
   number: [
-    {required: true, message: '请输入床号', trigger: 'blur'},
-    onlyNumberRule
+    {required: true, message: '请输入床号', trigger: 'blur'}
   ],
   styleNumber: [
     {required: true, message: '请输入款式编号', trigger: 'blur'},
@@ -467,6 +493,9 @@ const addWorkRules = reactive({
   quantity: [
     {required: true, message: '请输入数量', trigger: 'blur'},
     onlyNumberRule
+  ],
+  createdTime: [
+    {required: true, message: '请选择工作日期', trigger: 'blur'}
   ]
 })
 

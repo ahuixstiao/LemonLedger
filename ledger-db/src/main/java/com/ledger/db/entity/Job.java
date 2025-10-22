@@ -1,12 +1,11 @@
 package com.ledger.db.entity;
 
 import com.ledger.common.entity.ParentEntity;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
 import java.math.BigDecimal;
-
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * <p>
@@ -35,7 +34,7 @@ public class Job extends ParentEntity {
     /**
      * 床号
      */
-    private Integer number;
+    private String number;
 
     /**
      * 款式编号 比如3101

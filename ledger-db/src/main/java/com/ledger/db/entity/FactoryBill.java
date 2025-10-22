@@ -2,15 +2,11 @@ package com.ledger.db.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ledger.common.entity.ParentEntity;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.math.BigDecimal;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+
+import java.io.Serial;
+import java.math.BigDecimal;
 
 /**
  * <p>
@@ -36,7 +32,7 @@ public class FactoryBill extends ParentEntity {
     /**
      * 床号
      */
-    private Integer number;
+    private String number;
 
     /**
      * 款式编号

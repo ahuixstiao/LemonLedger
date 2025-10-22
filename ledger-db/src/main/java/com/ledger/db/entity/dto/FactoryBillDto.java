@@ -31,7 +31,7 @@ public class FactoryBillDto implements Serializable {
     /**
      * 床号
      */
-    private Integer number;
+    private String number;
 
     /**
      * 款式编号
