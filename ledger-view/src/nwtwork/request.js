@@ -4,8 +4,8 @@ export function request(config) {
     // 创建实例
     const _axiso = axios.create({
         // 服务器基础路径
-        baseURL: "/api",
-        //baseURL: "http://localhost:8080"
+        // baseURL: "/api",
+        baseURL: import.meta.env.VITE_BASE_URL //获取对应环境的路径
         //timeout: 5000
     })
 
