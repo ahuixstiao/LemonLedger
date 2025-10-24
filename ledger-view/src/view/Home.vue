@@ -28,6 +28,8 @@
       <van-button type="primary" @click="resetQueryConditionForm"
         >重置</van-button
       >
+
+      <router-link to="/admin">管理 </router-link>
     </div>
 
     <!--  工作信息列表  -->
@@ -667,14 +669,13 @@ const querySalaryRule = reactive({
 }
 :deep(.el-row) {
   overflow: auto;
-  flex: auto;
 }
 .page-help {
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  height: 50px;
+  height: 50px !important;
 }
 :deep(.van-cell) {
   width: auto;
