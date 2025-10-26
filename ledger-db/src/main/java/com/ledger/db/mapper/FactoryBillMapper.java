@@ -4,6 +4,7 @@ import com.ledger.db.entity.FactoryBill;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -27,8 +28,14 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
      * @param styleNumber 款式编号
      * @param categoryId  工作类型
      * @param flag        删除状态 0否 1是
+     * @param startDate   开始日期
+     * @param endDate     结束日期
      * @return result
      */
-    List<FactoryBillDto> selectFactoryBillList(Integer factoryId, Integer number, Integer styleNumber, Integer categoryId, Integer flag);
+    List<FactoryBillDto> selectFactoryBillList(
+            @Param("factoryId") Integer factoryId, @Param("number") Integer number,
+            @Param("styleNumber") Integer styleNumber, @Param("categoryId") Integer categoryId,
+            @Param("flag") Integer flag,
+            @Param("startDate") String startDate, @Param("endDate") String endDate);
 
 }

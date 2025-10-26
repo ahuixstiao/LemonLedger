@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
  **/
 @RestController
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@RequestMapping("/factoryBill")
+@RequestMapping("/admin/factoryBill")
 public class FactoryBillController {
 
     private final IFactoryBillService factoryBillService;
@@ -28,15 +28,18 @@ public class FactoryBillController {
      * @param flag        删除状态 0否 1是
      * @return result
      */
-    @GetMapping("/list/{factoryId}")
+    @GetMapping("/list")
     public Result<Object> queryFactoryBillListByCondition(
-            @PathVariable(required = false) Integer factoryId,
+            @RequestParam(required = false) Integer factoryId,
             @RequestParam(required = false) Integer number,
             @RequestParam(required = false) Integer styleNumber,
             @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false, defaultValue = "0") Integer flag
+            @RequestParam(required = false, defaultValue = "0") Integer flag,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
+
     ) {
-        return factoryBillService.queryFactoryBillListByCondition(factoryId, number, styleNumber, categoryId, flag);
+        return factoryBillService.queryFactoryBillListByCondition(factoryId, number, styleNumber, categoryId, flag, startDate, endDate);
     }
 
 }

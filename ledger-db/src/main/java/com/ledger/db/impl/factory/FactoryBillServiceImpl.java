@@ -34,12 +34,15 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
      * @param styleNumber 款式编号
      * @param categoryId  工作类型
      * @param flag        删除状态 0否 1是
+     * @param startDate   开始日期
+     * @param endDate     结束日期
      * @return result
      */
     @Override
-    public Result<Object> queryFactoryBillListByCondition(Integer factoryId, Integer number, Integer styleNumber, Integer categoryId, Integer flag) {
+    public Result<Object> queryFactoryBillListByCondition(Integer factoryId, Integer number, Integer styleNumber, Integer categoryId, Integer flag, String startDate, String endDate) {
 
-        List<FactoryBillDto> list = factoryBillMapper.selectFactoryBillList(factoryId, number, styleNumber, categoryId, flag);
+        List<FactoryBillDto> list =
+                factoryBillMapper.selectFactoryBillList(factoryId, number, styleNumber, categoryId, flag, startDate, endDate);
 
         if (list.isEmpty()) {
             return Result.fail("暂无数据");

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
  **/
 @RestController
 @RequiredArgsConstructor(onConstructor_ =  @Autowired)
-@RequestMapping("/factoryQuotation")
+@RequestMapping("/admin/factoryQuotation")
 public class FactoryQuotationController {
 
     private final IFactoryQuotationService factoryQuotationService;

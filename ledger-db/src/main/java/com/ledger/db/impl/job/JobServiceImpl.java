@@ -2,6 +2,8 @@ package com.ledger.db.impl.job;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.result.Result;
@@ -177,9 +179,29 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> deleteJobInfo(Integer jobId) {
 
+        Job job = lambdaQuery().eq(Job::getId, jobId).oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作记录"));
+
+        // 删除工作记录的同时也删除成衣厂账单记录
         if (removeById(jobId)) {
+            log.info("================= 工作信息删除成功，JobID为: {} =================", jobId);
+
+            // 构建删除条件
+            Wrapper<FactoryBill> wrapper = new QueryWrapper<FactoryBill>()
+                    .eq("factory_id", job.getFactoryId())
+                    .eq("number", job.getNumber())
+                    .eq("style_number", job.getStyleNumber())
+                    .eq("created_time", job.getCreatedTime());
+            log.info("================= 构建删除成衣厂账单条件 =================");
+            boolean exists = factoryBillService.remove(wrapper);
+            if (exists) {
+                log.info("================= 成衣厂账单删除成功: {} =================", wrapper.getEntity());
+            } else {
+                log.info("================= 成衣厂账单删除失败: {} =================", wrapper.getEntity());
+            }
             return Result.ok();
         }
+
+        log.info("================= 工作信息删除失败，JobID为: {} =================", jobId);
 
         return Result.fail();
     }

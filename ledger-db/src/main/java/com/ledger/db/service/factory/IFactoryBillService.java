@@ -22,9 +22,11 @@ public interface IFactoryBillService extends IService<FactoryBill> {
      * @param styleNumber 款式编号
      * @param categoryId  工作类型
      * @param flag        删除状态 0否 1是
+     * @param startDate   开始日期
+     * @param endDate     结束日期
      * @return result
      */
-    Result<Object> queryFactoryBillListByCondition(Integer factoryId, Integer number, Integer styleNumber, Integer categoryId, Integer flag);
+    Result<Object> queryFactoryBillListByCondition(Integer factoryId, Integer number, Integer styleNumber, Integer categoryId, Integer flag, String startDate, String endDate);
 
 
 }

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
  **/
 @RestController
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@RequestMapping("/factory")
+@RequestMapping("/admin/factory")
 public class FactoryController {
 
     private final IFactoryService factoryService;
