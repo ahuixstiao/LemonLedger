@@ -1,14 +1,11 @@
 package com.ledger.db.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.db.entity.Job;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ledger.db.entity.dto.JobDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * <p>
@@ -28,6 +25,9 @@ public interface JobMapper extends BaseMapper<Job> {
      * @param employeeId 员工ID
      * @param startDate  开始日期
      * @param endDate    结束日期
+     * @param factoryId   指定工厂
+     * @param number      指定床号
+     * @param categoryId  指定工作类型
      * @return 以分页后的方式返回工作信息列表
      */
     Page<JobDTO> selectJobListByEmployeeId(
@@ -35,6 +35,9 @@ public interface JobMapper extends BaseMapper<Job> {
             @Param("employeeId") Integer employeeId,
             @Param("startDate") String startDate,
             @Param("endDate") String endDate,
+            @Param("factoryId") Integer factoryId,
+            @Param("number") String number,
+            @Param("categoryId") Integer categoryId,
             @Param("flag") Integer flag);
 
 

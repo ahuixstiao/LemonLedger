@@ -7,11 +7,13 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.result.Result;
+import com.ledger.db.entity.Employee;
 import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.Job;
 import com.ledger.db.entity.JobQuotation;
 import com.ledger.db.entity.dto.JobDTO;
 import com.ledger.db.mapper.JobMapper;
+import com.ledger.db.service.IEmployeeService;
 import com.ledger.db.service.factory.IFactoryBillService;
 import com.ledger.db.service.job.IJobQuotationService;
 import com.ledger.db.service.job.IJobService;
@@ -41,6 +43,8 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
 
     private final JobMapper jobMapper;
 
+    private final IEmployeeService employeeService;
+
     private final IJobQuotationService jobQuotationService;
 
     private final IFactoryBillService factoryBillService;
@@ -52,6 +56,9 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @param employeeId  员工ID
      * @param startDate   开始时间
      * @param endDate     结束时间
+     * @param factoryId   指定工厂
+     * @param number      指定床号
+     * @param categoryId  指定工作类型
      * @param currentPage 当前页
      * @param pageSize    每页条数
      * @param flag        删除状态 0否 1是
@@ -61,6 +68,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     @Transactional(readOnly = true)
     public Result<Object> queryJobListByEmployeeIDAndDate(
             Integer employeeId, String startDate, String endDate,
+            Integer factoryId, String number, Integer categoryId,
             Integer currentPage, Integer pageSize, Integer flag) {
 
         //根据员工ID查询员工工作信息 假如传入时间为空则查询当天
@@ -78,7 +86,10 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         Page<JobDTO> page = new Page<>(currentPage, pageSize);
 
         // 查询
-        page = jobMapper.selectJobListByEmployeeId(page, employeeId, startDate, endDate, flag);
+        page = jobMapper.selectJobListByEmployeeId(page,
+                employeeId, startDate, endDate,
+                factoryId, number, categoryId,
+                flag);
 
         // 返回结果
         return Result.ok(page);
@@ -130,6 +141,16 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         // 判断是否存在相同的工作信息记录, 不存在才进行下一步操作
         if (isJobDuplicate(job)) {
             return Result.fail("工作记录重复");
+        }
+
+        // 判断前端是否传递了modeId
+        if(ObjectUtil.isNull(job.getModeId()) || job.getModeId().equals(0)) {
+            job.setModeId(
+                    employeeService.lambdaQuery()
+                            .eq(Employee::getId, job.getEmployeeId())
+                            .one()
+                            .getModeId()
+            );
         }
 
         // 计算工作工资
@@ -194,14 +215,14 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
             log.info("================= 构建删除成衣厂账单条件 =================");
             boolean exists = factoryBillService.remove(wrapper);
             if (exists) {
-                log.info("================= 成衣厂账单删除成功: {} =================", wrapper.getEntity());
+                log.info("================= 成衣厂账单删除成功 =================");
             } else {
-                log.info("================= 成衣厂账单删除失败: {} =================", wrapper.getEntity());
+                log.info("================= 成衣厂账单删除失败 =================");
             }
             return Result.ok();
         }
 
-        log.info("================= 工作信息删除失败，JobID为: {} =================", jobId);
+        log.info("================= 工作信息删除失败，JobID: {} =================", jobId);
 
         return Result.fail();
     }
@@ -260,6 +281,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 .eq(FactoryBill::getFactoryId, job.getFactoryId())
                 .eq(FactoryBill::getNumber, job.getNumber())
                 .eq(FactoryBill::getStyleNumber, job.getStyleNumber())
+                .eq(FactoryBill::getCategoryId, job.getCategoryId())
                 .eq(FactoryBill::getCreatedTime, job.getCreatedTime())
                 .eq(FactoryBill::getFlag, 0)
                 .exists();
@@ -282,6 +304,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         factoryBill.setFactoryId(job.getFactoryId());       // 成衣厂
         factoryBill.setNumber(job.getNumber());             // 床号
         factoryBill.setStyleNumber(job.getStyleNumber());   // 款式编号
+        factoryBill.setCategoryId(job.getCategoryId());     // 工作类型
         factoryBill.setQuantity(job.getQuantity());         // 数量
         factoryBill.setCreatedTime(job.getCreatedTime());   // 日期
         // 成衣厂账单参数 由管理员手动在后台中选择工作类型后得出

@@ -26,7 +26,9 @@ public interface IJobService extends IService<Job> {
      * @param flag        删除状态 0否 1是
      * @return result
      */
-    Result<Object> queryJobListByEmployeeIDAndDate(Integer employeeId, String startDate, String endDate, Integer currentPage, Integer pageSize, Integer flag);
+    Result<Object> queryJobListByEmployeeIDAndDate(Integer employeeId, String startDate, String endDate,
+                                                   Integer factoryId, String number, Integer categoryId,
+                                                   Integer currentPage, Integer pageSize, Integer flag);
 
     /**
      * 统计员工薪水

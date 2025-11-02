@@ -33,6 +33,18 @@
             <if test="employeeId != null and employeeId != '' ">
                 and job.employee_id = #{employeeId}
             </if>
+            <!-- 如果指定了工厂 -->
+            <if test="factoryId != null and factoryId != '' ">
+                and job.factory_id = #{factoryId}
+            </if>
+            <!-- 如果指定了床号 -->
+            <if test="number != null and number != '' ">
+                and job.number like CONCAT('%', #{number}, '%')
+            </if>
+            <!-- 如果指定了工作类型 -->
+            <if test="categoryId != null and categoryId != ''">
+                and job.category_id = #{categoryId}
+            </if>
             <choose>
                 <!-- 如果员工指定了起止日期 则按起止日期查找-->
                 <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">

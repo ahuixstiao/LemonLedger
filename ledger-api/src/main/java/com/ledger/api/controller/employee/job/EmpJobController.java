@@ -28,6 +28,9 @@ public class EmpJobController {
      * @param employeeId  员工id
      * @param startDate   开始日期
      * @param endDate     结束日期
+     * @param factoryId   指定工厂
+     * @param number      指定床号
+     * @param categoryId  指定工作类型
      * @param currentPage 当前页
      * @param pageSize    每页条数
      * @return result
@@ -38,11 +41,17 @@ public class EmpJobController {
             @PathVariable @NotNull Integer employeeId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) Integer factoryId,
+            @RequestParam(required = false) String number,
+            @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false, defaultValue = "1") Integer currentPage,
             @RequestParam(required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(required = false, defaultValue = "0") Integer flag
     ) {
-        return jobService.queryJobListByEmployeeIDAndDate(employeeId, startDate, endDate, currentPage, pageSize, flag);
+        return jobService.queryJobListByEmployeeIDAndDate(
+                employeeId, startDate, endDate,
+                factoryId, number, categoryId,
+                currentPage, pageSize, flag);
     }
 
     /**
@@ -79,6 +88,7 @@ public class EmpJobController {
 
     /**
      * 修改工作信息
+     *
      * @param job 新的工作信息
      * @return result
      */

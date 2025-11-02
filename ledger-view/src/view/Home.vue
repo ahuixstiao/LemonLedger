@@ -10,6 +10,7 @@
           @click="data.isShowDate = true"
           class="databutton"
       />
+      <!-- 日期选择组件 -->
       <van-calendar
           v-model:show="data.isShowDate"
           allow-same-day
@@ -17,24 +18,44 @@
           type="range"
           @confirm="onConfirm"
       />
+
       <!--   员工选择组件   -->
       <van-dropdown-menu>
         <van-dropdown-item
             v-model="data.id"
             @change="queryJobListByEmployeeIdAndDateHandle"
-            :options="data.employeeList"
-        />
+            :options="data.selectEmployeeList"/>
       </van-dropdown-menu>
-      <van-button type="primary" @click="resetQueryConditionForm"
-      >重置
-      </van-button
-      >
 
-      <router-link to="/admin">管理 </router-link>
+      <!--   工作类型选择组件   -->
+      <van-dropdown-menu>
+        <van-dropdown-item
+            v-model="data.categoryId"
+            @change="queryJobListByEmployeeIdAndDateHandle"
+            :options="data.selectCategoryList"/>
+      </van-dropdown-menu>
+      <!--   成衣厂搜索组件   -->
+      <el-select size="large" style="width: 10%" filterable
+                 v-model="data.factoryId" placeholder="选择成衣厂"
+                 @change="queryJobListByEmployeeIdAndDateHandle">
+        <el-option
+            v-for="(item, index) in data.factoryList"
+            :key="item.id"
+            :label="item.factoryName"
+            :value="item.id"/>
+      </el-select>
+      <!--   床号搜索组件   -->
+      <el-input
+          v-model="data.number"
+          style="width: 10%"
+          size="large"
+          placeholder="要查询的床号"
+          @input="queryJobListByEmployeeIdAndDateHandle"/>
+
+      <van-button type="primary" @click="resetQueryConditionForm">重置</van-button>
     </div>
 
     <!--  工作信息列表  -->
-    <!-- <div class="list-container"> -->
     <el-card>
       <el-row>
         <el-table
@@ -44,19 +65,15 @@
             fit
             highlight-current-row
             show-summary
-            style="height: 100%"
-        >
+            :summary-method="summaryQuantityAndSalary"
+            style="height: 100%">
           <el-table-column prop="name" label="员工名称"/>
           <el-table-column prop="factoryName" label="厂名"/>
           <el-table-column prop="number" label="床号"/>
           <el-table-column prop="styleNumber" label="款式编号"/>
           <el-table-column prop="category" label="类型"/>
           <el-table-column prop="quantity" label="数量"/>
-          <el-table-column
-              prop="salary"
-              width="95"
-              label="本床工资(单位: 元)"
-          />
+          <el-table-column prop="salary" width="95" label="本床工资(单位: 元)"/>
           <el-table-column prop="createdTime" label="日期"/>
           <el-table-column label="管理">
             <template #default="scope">
@@ -84,7 +101,6 @@
         />
       </el-row>
     </el-card>
-    <!-- </div> -->
 
     <!--  员工注册表单  -->
     <el-dialog v-model="data.dialogVisible" title="员工注册" width="90%" center>
@@ -178,12 +194,7 @@
     </el-dialog>
 
     <!--   添加工作信息表单   -->
-    <el-dialog
-        v-model="data.addWorkVisible"
-        title="添加工作记录"
-        width="90%"
-        center
-    >
+    <el-dialog v-model="data.addWorkVisible" title="添加工作记录" width="90%" center>
       <el-form
           ref="addWorkFormRef"
           :model="addWorkRef"
@@ -192,30 +203,26 @@
       >
         <el-form-item label="员工姓名:" size="large" prop="employeeId">
           <el-select
+              filterable
               v-model="addWorkRef.employeeId"
               placeholder="请选择员工姓名"
               @change="handleEmployeeChange"
           >
             <el-option
                 v-for="item in data.employeeList"
-                :key="item.value"
-                :label="item.text"
-                :value="item.value"
+                :key="item.modeId"
+                :label="item.name"
+                :value="item.id"
             />
           </el-select>
         </el-form-item>
         <el-form-item label="选择厂名:" size="large" prop="factoryId">
-          <el-select
-              filterable
-              v-model="addWorkRef.factoryId"
-              placeholder="请选择厂名"
-          >
+          <el-select filterable v-model="addWorkRef.factoryId" placeholder="请选择厂名">
             <el-option
                 v-for="(item, index) in data.factoryList"
                 :key="item.id"
                 :label="item.factoryName"
-                :value="item.id"
-            />
+                :value="item.id"/>
           </el-select>
         </el-form-item>
         <el-form-item label="床号：" prop="number">
@@ -259,6 +266,7 @@
         </el-form-item>
         <el-form-item label="工作日期:" size="large">
           <el-date-picker
+              :editable="false"
               v-model="addWorkRef.createdTime"
               type="date"
               format="YYYY/MM/DD"
@@ -303,6 +311,8 @@ import {useTransition} from '@vueuse/core'
 // 进入页面时执行
 onMounted(() => {
   queryEmployeeListHandle()
+  queryFactoryListHandle()
+  queryCategoryListHandle()
   queryJobListByEmployeeIdAndDateHandle()
 })
 
@@ -312,14 +322,21 @@ const data = reactive({
   SalaryVisible: false,
   isShowDate: false,
   id: Number(),
-  startDate: '',
-  endDate: '',
+  startDate: '',  // 起止日期
+  endDate: '',    // 起止日期
+  factoryId: '',   // 成衣厂ID
+  number: '',     // 床号
+  categoryId: Number(),  // 工作类型ID
   date: '',
   employeeList: [],
   tableData: [],
   isloading: false,
   factoryList: [],
   categoryList: [],
+
+  selectCategoryList: [],
+  selectEmployeeList: [],
+
   modeList: [],
   total: 0,
   currentPage: 1,
@@ -330,18 +347,13 @@ const data = reactive({
 const queryEmployeeListHandle = async () => {
   const {data: res} = await queryEmployees()
   data.employeeList = res.data
-  data.employeeList = data.employeeList.map(item => ({
-    text: item.name, // Vant 组件显示的文字
-    value: item.id, // 绑定到 v-model 的值
-    modeId: item.modeId
-  }))
-  data.employeeList.unshift({text: '选择员工', value: 0})
+  await selectEmployeeListHandle()
 }
 
 // 获取当前选中员工的modeId
 const handleEmployeeChange = employeeId => {
   const selectedEmployee = data.employeeList.find(
-      item => item.value === employeeId
+      item => item.id === employeeId
   )
   addWorkRef.modeId = selectedEmployee ? selectedEmployee.modeId : ''
 }
@@ -352,6 +364,9 @@ const queryJobListByEmployeeIdAndDateHandle = async () => {
       data.id,
       data.startDate,
       data.endDate,
+      data.factoryId,
+      data.number,
+      data.categoryId,
       data.currentPage,
       data.pageSize
   )
@@ -425,7 +440,54 @@ const queryFactoryListHandle = async () => {
 const queryCategoryListHandle = async () => {
   const {data: res} = await queryCategoryList()
   data.categoryList = res.data
+  await selectCategoryListHandle()
 }
+
+// 绑定员工列表到Vant选项组件中
+const selectEmployeeListHandle = async ()=> {
+  data.selectEmployeeList = data.employeeList.map(item => ({
+    text: item.name, // Vant 组件显示的文字
+    value: item.id, // 绑定到 v-model 的值
+    modeId: item.modeId
+  }))
+  data.selectEmployeeList.unshift({text: '选择员工', value: 0})
+}
+
+// 绑定分类列表到Vant选项组件中
+const selectCategoryListHandle = async ()=> {
+  data.selectCategoryList = data.categoryList.map(item => ({
+    text: item.category, // Vant 组件显示的文字
+    value: item.id, // 绑定到 v-model 的值
+  }))
+  data.selectCategoryList.unshift({text: '选择工作类型', value: 0})
+}
+
+// 表格自定义合计
+const summaryQuantityAndSalary = ({ columns, data }) => {
+  const sums = []
+  columns.forEach((column, index) => {
+    // 第一列显示“合计”
+    if (index === 0) {
+      sums[index] = '合计'
+      return
+    }
+
+    // 只对 quantity 和 salary 两列求和
+    if (['quantity', 'salary'].includes(column.property)) {
+      const total = data.reduce((sum, row) => {
+        const value = Number(row[column.property])
+        return !isNaN(value) ? sum + value : sum
+      }, 0)
+      // 工资列保留两位小数
+      sums[index] =
+          column.property === 'salary' ? total.toFixed(2) : total
+    } else {
+      sums[index] = ''
+    }
+  })
+  return sums
+}
+
 // 查询工作方式列表
 const queryModeListHandle = async () => {
   const {data: res} = await queryModeList()
@@ -453,11 +515,14 @@ const addWorkRef = reactive({
   createdTime: ''
 })
 
-// 重置按钮
+// 重置按钮函数
 const resetQueryConditionForm = () => {
   data.startDate = ''
   data.endDate = ''
   data.id = 0
+  data.factoryId = ''
+  data.number = ''
+  data.categoryId = 0
   queryJobListByEmployeeIdAndDateHandle()
 }
 
