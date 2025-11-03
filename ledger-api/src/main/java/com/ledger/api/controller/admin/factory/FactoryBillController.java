@@ -1,6 +1,7 @@
 package com.ledger.api.controller.admin.factory;
 
 import com.ledger.common.result.Result;
+import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.service.factory.IFactoryBillService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,15 +32,30 @@ public class FactoryBillController {
     @GetMapping("/list")
     public Result<Object> queryFactoryBillListByCondition(
             @RequestParam(required = false) Integer factoryId,
-            @RequestParam(required = false) Integer number,
-            @RequestParam(required = false) Integer styleNumber,
+            @RequestParam(required = false) String number,
+            @RequestParam(required = false) String styleNumber,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false, defaultValue = "0") Integer flag,
             @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
+            @RequestParam(required = false, defaultValue = "5") Integer pageSize
 
     ) {
-        return factoryBillService.queryFactoryBillListByCondition(factoryId, number, styleNumber, categoryId, flag, startDate, endDate);
+        return factoryBillService.queryFactoryBillListByCondition(
+                factoryId, number, styleNumber, categoryId, flag,
+                startDate, endDate, currentPage, pageSize);
+    }
+
+    /**
+     * 保存成衣厂账单信息
+     * @param bill 成衣厂账单实体
+     * @return result
+     */
+    @PostMapping("/save")
+    public Result<Object> saveFactoryBillInfo(@RequestBody FactoryBill bill) {
+
+        return factoryBillService.saveFactoryBillInfo(bill);
     }
 
 }

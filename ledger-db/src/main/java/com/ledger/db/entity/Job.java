@@ -39,7 +39,7 @@ public class Job extends ParentEntity {
     /**
      * 款式编号 比如3101
      */
-    private Integer styleNumber;
+    private String styleNumber;
 
     /**
      * 工作方式，例如 压花、刮胶

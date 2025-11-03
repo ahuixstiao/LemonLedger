@@ -24,9 +24,21 @@ public interface IFactoryBillService extends IService<FactoryBill> {
      * @param flag        删除状态 0否 1是
      * @param startDate   开始日期
      * @param endDate     结束日期
+     * @param currentPage 当前页
+     * @param pageSize    页面条数
      * @return result
      */
-    Result<Object> queryFactoryBillListByCondition(Integer factoryId, Integer number, Integer styleNumber, Integer categoryId, Integer flag, String startDate, String endDate);
+    Result<Object> queryFactoryBillListByCondition(
+            Integer factoryId, String number,
+            String styleNumber, Integer categoryId, Integer flag,
+            String startDate, String endDate,
+            Integer currentPage, Integer pageSize);
 
 
+    /**
+     * 保存账单信息
+     * @param bill 账单实体
+     * @return result
+     */
+    Result<Object> saveFactoryBillInfo(FactoryBill bill);
 }

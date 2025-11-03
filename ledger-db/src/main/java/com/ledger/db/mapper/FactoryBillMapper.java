@@ -1,12 +1,11 @@
 package com.ledger.db.mapper;
 
-import com.ledger.db.entity.FactoryBill;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
 
 /**
  * <p>
@@ -32,9 +31,10 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
      * @param endDate     结束日期
      * @return result
      */
-    List<FactoryBillDto> selectFactoryBillList(
-            @Param("factoryId") Integer factoryId, @Param("number") Integer number,
-            @Param("styleNumber") Integer styleNumber, @Param("categoryId") Integer categoryId,
+    Page<FactoryBillDto> selectFactoryBillList(
+            Page<FactoryBillDto> page,
+            @Param("factoryId") Integer factoryId, @Param("number") String number,
+            @Param("styleNumber") String styleNumber, @Param("categoryId") Integer categoryId,
             @Param("flag") Integer flag,
             @Param("startDate") String startDate, @Param("endDate") String endDate);
 

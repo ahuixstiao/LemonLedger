@@ -5,6 +5,7 @@ import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * @Author: ahui
@@ -36,7 +37,7 @@ public class FactoryBillDto implements Serializable {
     /**
      * 款式编号
      */
-    private Integer styleNumber;
+    private String styleNumber;
 
     /**
      * 类型 小花、大花、裤页
@@ -57,6 +58,9 @@ public class FactoryBillDto implements Serializable {
      */
     private BigDecimal bill;
 
+    private LocalDate createdTime;
+
+    private Integer flag;
 
 
 }

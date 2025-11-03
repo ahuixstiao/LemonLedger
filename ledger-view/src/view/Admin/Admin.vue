@@ -1,9 +1,4 @@
 <template>
-  <div class="nav-container">
-    <RouterLink to="/" style="font-size: 40px; height: 100%; line-height: 80px">
-      回主页
-    </RouterLink>
-  </div>
   <div class="admin-container">
     <div class="right-container">
       <el-menu

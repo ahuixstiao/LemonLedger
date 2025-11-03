@@ -211,8 +211,9 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                     .eq("factory_id", job.getFactoryId())
                     .eq("number", job.getNumber())
                     .eq("style_number", job.getStyleNumber())
+                    .eq("category_id", job.getCategoryId())
                     .eq("created_time", job.getCreatedTime());
-            log.info("================= 构建删除成衣厂账单条件 =================");
+            log.info("================= 构建删除成衣厂账单条件 {} =================", wrapper.getEntity());
             boolean exists = factoryBillService.remove(wrapper);
             if (exists) {
                 log.info("================= 成衣厂账单删除成功 =================");
@@ -255,15 +256,15 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     private void calculateJobSalary(Job job) {
 
         // 通过工作类型和工作方式查询工作报价表获取报价
-        JobQuotation jobQuotation = jobQuotationService.lambdaQuery()
+        BigDecimal quotation = jobQuotationService.lambdaQuery()
                 .eq(JobQuotation::getCategoryId, job.getCategoryId())
                 .eq(JobQuotation::getModeId, job.getModeId())
-                .oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作报价"));
+                .oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作报价信息")).getQuotation();
 
         // 计算本条工作记录的工资 数量 * 工作报价
         job.setSalary(BigDecimal
                 .valueOf(job.getQuantity())
-                .multiply(jobQuotation.getQuotation())
+                .multiply(quotation)
                 .setScale(2, RoundingMode.HALF_UP)
         );
 

@@ -4,13 +4,13 @@
       <van-button type="primary" @click="clickAddEmployee">注册</van-button>
       <van-button type="primary" @click="clickAddWork">添加工作记录</van-button>
       <van-button type="primary" @click="clickSalary">计算工资</van-button>
+      <!-- 日期选择组件 -->
       <van-cell
           title="选择日期"
           :value="data.date"
           @click="data.isShowDate = true"
           class="databutton"
       />
-      <!-- 日期选择组件 -->
       <van-calendar
           v-model:show="data.isShowDate"
           allow-same-day
@@ -19,7 +19,7 @@
           @confirm="onConfirm"
       />
 
-      <!--   员工选择组件   -->
+      <!-- 员工选择组件 -->
       <van-dropdown-menu>
         <van-dropdown-item
             v-model="data.id"
@@ -27,14 +27,14 @@
             :options="data.selectEmployeeList"/>
       </van-dropdown-menu>
 
-      <!--   工作类型选择组件   -->
+      <!-- 工作类型选择组件 -->
       <van-dropdown-menu>
         <van-dropdown-item
             v-model="data.categoryId"
             @change="queryJobListByEmployeeIdAndDateHandle"
             :options="data.selectCategoryList"/>
       </van-dropdown-menu>
-      <!--   成衣厂搜索组件   -->
+      <!-- 成衣厂搜索组件 -->
       <el-select size="large" style="width: 10%" filterable
                  v-model="data.factoryId" placeholder="选择成衣厂"
                  @change="queryJobListByEmployeeIdAndDateHandle">
@@ -44,7 +44,7 @@
             :label="item.factoryName"
             :value="item.id"/>
       </el-select>
-      <!--   床号搜索组件   -->
+      <!-- 床号搜索组件 -->
       <el-input
           v-model="data.number"
           style="width: 10%"
@@ -55,32 +55,28 @@
       <van-button type="primary" @click="resetQueryConditionForm">重置</van-button>
     </div>
 
-    <!--  工作信息列表  -->
     <el-card>
+      <!--  工作信息表格  -->
       <el-row>
         <el-table
-            :data="data.tableData"
-            height="60"
-            stripe
-            fit
-            highlight-current-row
-            show-summary
-            :summary-method="summaryQuantityAndSalary"
-            style="height: 100%">
-          <el-table-column prop="name" label="员工名称"/>
-          <el-table-column prop="factoryName" label="厂名"/>
-          <el-table-column prop="number" label="床号"/>
-          <el-table-column prop="styleNumber" label="款式编号"/>
-          <el-table-column prop="category" label="类型"/>
-          <el-table-column prop="quantity" label="数量"/>
-          <el-table-column prop="salary" width="95" label="本床工资(单位: 元)"/>
-          <el-table-column prop="createdTime" label="日期"/>
-          <el-table-column label="管理">
+            :data="data.tableData" height="60"
+            stripe fit highlight-current-row show-summary
+            :default-sort="{prop: 'number', order: 'descending'}"
+            :summary-method="summaryQuantityAndSalary" style="height: 100%"
+        >
+          <el-table-column sortable prop="name" label="员工名称" align="center"/>
+          <el-table-column sortable prop="factoryName" label="厂名" align="center"/>
+          <el-table-column sortable prop="number" label="床号" align="center"/>
+          <el-table-column prop="styleNumber" label="款式编号" align="center"/>
+          <el-table-column prop="category" label="类型" align="center"/>
+          <el-table-column prop="quantity" label="数量" align="center"/>
+          <el-table-column prop="salary" width="95" label="本床工资(单位: 元)" align="center"/>
+          <el-table-column prop="createdTime" label="日期" align="center"/>
+          <el-table-column label="管理" align="center">
             <template #default="scope">
-              <el-button  type="danger" text @click="deleteJobInfoByIdHandler(scope.row.id)">
+              <el-button type="danger" text @click="deleteJobInfoByIdHandler(scope.row.id)">
                 删除
-              </el-button
-              >
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -129,7 +125,7 @@
         <div class="dialog-footer">
           <el-button @click="data.dialogVisible = false" size="large">取消</el-button>
           <el-button
-              type="primary" :loading="data.isloading"
+              type="primary" :loading="data.isLoading"
               @click="submitForm(ruleFormRef)"
               size="large">确认
           </el-button>
@@ -276,7 +272,8 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="resetSaveJobInfoForm" size="large">取消</el-button>
-          <el-button type="primary" :loading="data.isloading" @click="addWorkSubmitForm(addJobInfoFormRef)" size="large">
+          <el-button type="primary" :loading="data.isLoading" @click="addWorkSubmitForm(addJobInfoFormRef)"
+                     size="large">
             确认
           </el-button>
         </div>
@@ -323,7 +320,7 @@ const data = reactive({
   date: '',
   employeeList: [],
   tableData: [],
-  isloading: false,
+  isLoading: false,
   factoryList: [],
   categoryList: [],
 
@@ -381,8 +378,16 @@ const queryJobListByEmployeeIdAndDateHandle = async () => {
       data.currentPage,
       data.pageSize
   )
-  data.tableData = res.data.records
-  data.total = res.data.total
+  if (res.status === 200) {
+    data.tableData = res.data.records
+    data.total = res.data.total
+  }
+  else {
+      data.tableData = []
+      ElMessage.error(res.message)
+
+  }
+
 }
 
 // 计算工资请求函数
@@ -402,14 +407,14 @@ const salaryInquiry = async () => {
 
 // 员工注册请求函数
 const employeeRegisterHandle = async () => {
-  data.isloading = true
+  data.isLoading = true
   const {data: res} = await saveEmployee(addEmployeeInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
   } else {
     ElMessage.error(res.message)
   }
-  data.isloading = false
+  data.isLoading = false
 }
 
 // 保存工作信息请求函数
@@ -466,7 +471,7 @@ const clickSalary = () => {
 }
 
 // 绑定员工列表到Vant选项组件中
-const selectEmployeeListHandle = async ()=> {
+const selectEmployeeListHandle = async () => {
   data.selectEmployeeList = data.employeeList.map(item => ({
     text: item.name, // Vant 组件显示的文字
     value: item.id, // 绑定到 v-model 的值
@@ -476,7 +481,7 @@ const selectEmployeeListHandle = async ()=> {
 }
 
 // 绑定分类列表到Vant选项组件中
-const selectCategoryListHandle = async ()=> {
+const selectCategoryListHandle = async () => {
   data.selectCategoryList = data.categoryList.map(item => ({
     text: item.category, // Vant 组件显示的文字
     value: item.id, // 绑定到 v-model 的值
@@ -485,7 +490,7 @@ const selectCategoryListHandle = async ()=> {
 }
 
 // 表格自定义合计
-const summaryQuantityAndSalary = ({ columns, data }) => {
+const summaryQuantityAndSalary = ({columns, data}) => {
   const sums = []
   columns.forEach((column, index) => {
     // 第一列显示“合计”

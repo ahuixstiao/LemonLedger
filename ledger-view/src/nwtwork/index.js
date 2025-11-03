@@ -84,29 +84,3 @@ export function querySalaryByCondition(employeeId, startDate, endDate) {
         params: {startDate, endDate}
     })
 }
-
-// 按条件查询成衣厂账单列表
-export function queryFactoryBillList(
-    factoryId,
-    number,
-    startDate,
-    endDate,
-    styleNumber,
-    categoryId,
-    currentPage,
-    pageSize
-) {
-    return request({
-        url: '/factoryBill/list/' + factoryId,
-        method: 'get',
-        params: {
-            number,
-            startDate,
-            endDate,
-            styleNumber,
-            categoryId,
-            currentPage,
-            pageSize
-        }
-    })
-}

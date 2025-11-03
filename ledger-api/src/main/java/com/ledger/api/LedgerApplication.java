@@ -19,7 +19,7 @@ public class LedgerApplication {
     public static void main(String[] args) {
         disableWarning();
         SpringApplication.run(LedgerApplication.class, args);
-        log.info("====================== Ledger Application Started ======================");
+        log.info("====================== LemonLedger Application Started ======================");
     }
 
     // 关闭警告

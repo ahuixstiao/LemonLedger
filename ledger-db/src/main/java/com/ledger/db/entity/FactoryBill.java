@@ -37,7 +37,7 @@ public class FactoryBill extends ParentEntity {
     /**
      * 款式编号
      */
-    private Integer styleNumber;
+    private String styleNumber;
 
     /**
      * 工作类型 1、小花、2、大花、3、裤页

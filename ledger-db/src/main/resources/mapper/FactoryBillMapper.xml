@@ -5,7 +5,8 @@
     <!-- 查询工厂账单集合 -->
     <select id="selectFactoryBillList" resultType="factoryBillDto">
 
-        select fb.id,
+        select
+        fb.id,
         fb.factory_id,      <!-- 成衣厂ID -->
         ft.factory_name,    <!-- 成衣厂名称 -->
         fb.number,          <!-- 床号 -->
@@ -13,45 +14,50 @@
         fb.category_id,     <!-- 工作类型ID -->
         jc.category,        <!-- 工作类型名称 -->
         fb.quantity,        <!-- 数量 -->
-        fb.bill             <!-- 账单 -->
+        fb.bill,             <!-- 账单 -->
+        fb.created_time,
+        fb.flag
         from factory_bill fb
         left join factory ft on fb.factory_id = ft.id
         left join job_category jc on fb.category_id = jc.id
-        where fb.flag = #{flag}
-        <!-- 如果传入工厂ID则按工厂ID查询 -->
-        <if test="factoryId != null and factoryId != '' ">
-            and fb.factory_id = #{factoryId}
-        </if>
-        <!-- 如果传入床号则按床号查询 -->
-        <if test="number != null and number != '' ">
-            and fb.number = #{number}
-        </if>
-        <!-- 如果传入款式编号则按款式编号查询 -->
-        <if test="styleNumber != null and styleNumber != '' ">
-            and fb.style_number = #{styleNumber}
-        </if>
-        <!-- 如果传入工作类型ID则按工作类型ID查询 -->
-        <if test="categoryId != null and categoryId != '' ">
-            and fb.category_id = #{categoryId}
-        </if>
-        <choose>
-            <!-- 如果指定了起止日期 则按起止日期查找-->
-            <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">
-                and job.created_time between #{startDate} and #{endDate}
-            </when>
-            <!-- 如果指定了开始日期 则按开始日期查找成衣厂账单信息-->
-            <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
-                and job.created_time = #{startDate}
-            </when>
-            <!-- 如果只选了结束日期则默认查询小于等于结束日期的成衣厂账单信息 -->
-            <when test="endDate != null and endDate != '' and (startDate == null or startDate == '') ">
-                and job.created_time &lt;= #{endDate}
-            </when>
-            <!-- 如未指定日期则默认查找当天成衣厂账单信息 CURDATE函数的作用是获取当天日期 格式为yyyy-MM-dd -->
-            <otherwise>
-                and job.created_time = CURDATE()
-            </otherwise>
-        </choose>
+        <where>
+            fb.flag = #{flag}
+
+            <!-- 如果传入工厂ID则按工厂ID查询 -->
+            <if test="factoryId != null and factoryId != '' ">
+                and fb.factory_id = #{factoryId}
+            </if>
+            <!-- 如果传入床号则按床号查询 -->
+            <if test="number != null and number != '' ">
+                and fb.number like CONCAT('%', #{number}, '%')
+            </if>
+            <!-- 如果传入款式编号则按款式编号查询 -->
+            <if test="styleNumber != null and styleNumber != '' ">
+                and fb.style_number like CONCAT('%', #{styleNumber}, '%')
+            </if>
+            <!-- 如果传入工作类型ID则按工作类型ID查询 -->
+            <if test="categoryId != null and categoryId != '' ">
+                and fb.category_id = #{categoryId}
+            </if>
+            <choose>
+                <!-- 如果指定了起止日期 则按起止日期查找-->
+                <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">
+                    and fb.created_time between #{startDate} and #{endDate}
+                </when>
+                <!-- 如果指定了开始日期 则按开始日期查找成衣厂账单信息-->
+                <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
+                    and fb.created_time = #{startDate}
+                </when>
+                <!-- 如果只选了结束日期则默认查询小于等于结束日期的成衣厂账单信息 -->
+                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '') ">
+                    and fb.created_time &lt;= #{endDate}
+                </when>
+                <!-- 如未指定日期则默认查找当天成衣厂账单信息 CURDATE函数的作用是获取当天日期 格式为yyyy-MM-dd -->
+                <otherwise>
+                    and fb.created_time = CURDATE()
+                </otherwise>
+            </choose>
+        </where>
         order by ft.factory_name desc
     </select>
 
