@@ -79,28 +79,31 @@
         from job
         left join employee emp on job.employee_id = emp.id
 
-        where employee_id = #{employeeId}
-        and job.flag = #{flag}
-        and emp.flag = #{flag}
+        <where>
+            employee_id = #{employeeId}
+            and job.flag = #{flag}
+            and emp.flag = #{flag}
 
-        <choose>
-            <!-- 判断员工是否指定了时间范围 -->
-            <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-                and job.created_time between #{startDate} and #{endDate}
-            </when>
-            <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
-            <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
-                and job.created_time between #{startDate} and CURDATE()
-            </when>
-            <!-- 判断员工是否指定了结束日期 -->
-            <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
-                and job.created_time &lt;= #{endDate}
-            </when>
-            <!-- 默认查询当月1号至当天的薪资 -->
-            <otherwise>
-                and job.created_time between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
-            </otherwise>
-        </choose>
+            <choose>
+                <!-- 判断员工是否指定了时间范围 -->
+                <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+                    and job.created_time between #{startDate} and #{endDate}
+                </when>
+                <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
+                <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
+                    and job.created_time between #{startDate} and CURDATE()
+                </when>
+                <!-- 判断员工是否指定了结束日期 -->
+                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
+                    and job.created_time &lt;= #{endDate}
+                </when>
+                <!-- 默认查询当月1号至当天的薪资 -->
+                <otherwise>
+                    and job.created_time between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
+                </otherwise>
+            </choose>
+        </where>
+
         <!-- 按id和姓名分组 -->
         group by job.employee_id, emp.name
     </select>

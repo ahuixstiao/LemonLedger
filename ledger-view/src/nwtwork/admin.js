@@ -29,12 +29,23 @@ export function queryFactoryBillList(
     })
 }
 
-
 // 保存成衣厂账单
 export function saveFactoryBillInfo(bill) {
     return request({
         url: '/admin/factoryBill/save',
         method: 'post',
         data: bill
+    })
+}
+
+// 统计指定成衣厂账单
+export function statisticalFactoryBill(factoryId, startDate, endDate) {
+    return request({
+        url: '/admin/factoryBill/bill/' + factoryId,
+        method: 'get',
+        params: {
+            startDate,
+            endDate
+        }
     })
 }

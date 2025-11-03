@@ -1,5 +1,6 @@
 package com.ledger.db.impl.factory;
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -76,6 +77,27 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
     }
 
     /**
+     * 统计成衣厂账单
+     *
+     * @param factoryId 成衣厂ID
+     * @param startDate 起止日期
+     * @param endDate   起止日期
+     * @param flag      状态
+     * @return result
+     */
+    @Override
+    public Result<Object> statisticalBill(Integer factoryId, String startDate, String endDate, Integer flag) {
+        // 统计成衣厂账单
+        FactoryBillDto factoryBillDto = factoryBillMapper.calculateBillByFactoryIdAndDate(factoryId, startDate, endDate, flag);
+
+        if (ObjectUtil.isNotEmpty(factoryBillDto)) {
+            return Result.ok(factoryBillDto);
+        }
+
+        return Result.fail("暂无账单");
+    }
+
+    /**
      * 保存账单信息
      *
      * @param bill 账单实体
@@ -106,7 +128,7 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
                 .eq(FactoryQuotation::getStyleNumber, bill.getStyleNumber())
                 .eq(FactoryQuotation::getCategoryId, bill.getCategoryId())
                 .oneOpt()
-                .orElseThrow(()-> new RuntimeException("找不到对应的成衣厂报价信息"))
+                .orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息"))
                 .getQuotation();
 
         // 计算并保存账单价格
@@ -123,5 +145,22 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
         }
 
         return Result.fail("保存失败");
+    }
+
+    /**
+     * 删除账单信息
+     *
+     * @param factoryBillId 账单ID
+     * @return result
+     */
+    @Override
+    @Transactional(rollbackFor = RuntimeException.class)
+    public Result<Object> deleteFactoryBillInfo(Integer factoryBillId) {
+
+        if (removeById(factoryBillId)) {
+            return Result.ok();
+        }
+
+        return Result.fail("删除失败");
     }
 }

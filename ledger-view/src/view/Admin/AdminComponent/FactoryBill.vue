@@ -5,6 +5,7 @@
       <!-- 筛选条件 -->
       <el-row class="factoryBill-button">
         <el-button type="primary" @click="clickAddBill">添加</el-button>
+        <el-button type="primary" @click="clickBill">账单</el-button>
         <!-- 成衣厂筛选条件 -->
         <el-select
             v-model="data.factoryId"
@@ -84,7 +85,7 @@
           </el-table-column>
           <el-table-column label="操作" align="center">
             <template #default="scope">
-              <el-button type="primary" text @click="billEditHandle(scope.row)"> 编辑</el-button>
+              <el-button type="primary" text @click="billEditHandle(scope.row)">编辑</el-button>
               <el-popconfirm title="确认删除?" @confirm="billDeleteHandle(scope.row.id)">
                 <template #reference>
                   <el-button type="danger" text>删除</el-button>
@@ -173,14 +174,69 @@
         </div>
       </template>
     </el-dialog>
+
+    <!--  工资计算表单  -->
+    <el-dialog v-model="data.billVisible" title="成衣厂账单" width="90%" center>
+      <el-form
+          ref="statisticalBillFormRef"
+          label-position="top"
+          :model="statisticalBillRef"
+          :rules="statisticalBillRules"
+      >
+        <el-form-item label="成衣厂名称:" size="large" prop="factoryId">
+          <el-select v-model="statisticalBillRef.factoryId" placeholder="请选择成衣厂">
+            <el-option
+                v-for="(item, index) in data.factoryList"
+                :label="item.factoryName"
+                :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="计算日期:" size="large">
+          <el-date-picker
+              v-model="statisticalBillRef.startDate"
+              type="date"
+              format="YYYY/MM/DD"
+              value-format="YYYY-MM-DD"
+              placeholder="开始日期"
+          />
+          <el-date-picker
+              v-model="statisticalBillRef.endDate"
+              type="date"
+              format="YYYY/MM/DD"
+              value-format="YYYY-MM-DD"
+              placeholder="结束日期"
+          />
+        </el-form-item>
+        <el-form-item size="large">
+          <el-button
+              type="primary"
+              style="width: 100%"
+              size="large"
+              @click="statisticalBillSubmitForm(statisticalBillFormRef)"
+          >
+            计算
+          </el-button>
+        </el-form-item>
+        <el-form-item size="large">
+          <el-statistic
+              title="账单总和"
+              Transactions
+              :value="outputValue"
+              style="text-align: center; margin: 0 auto; display: block"
+          />
+        </el-form-item>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import {reactive, onMounted, ref} from 'vue'
 import {queryCategoryList, queryFactoryList} from '../../../nwtwork/index.js';
-import {queryFactoryBillList, saveFactoryBillInfo} from "../../../nwtwork/admin.js";
+import {queryFactoryBillList, saveFactoryBillInfo, statisticalFactoryBill} from "../../../nwtwork/admin.js";
 import {ElMessage} from "element-plus";
+import {useTransition} from "@vueuse/core";
 
 
 onMounted(() => {
@@ -190,6 +246,8 @@ onMounted(() => {
 })
 
 const data = reactive({
+  billVisible: false,
+
   tableData: [],
   factoryList: [],
   styleNumberList: [],
@@ -208,13 +266,27 @@ const data = reactive({
   addBillDialogMode: 0 // 0为新增、1为编辑
 })
 
-// 查询厂名列表
+// 账单总数
+const billTotal = ref(0)
+
+// 动画过渡
+const outputValue = useTransition(billTotal, {
+  duration: 1000
+})
+
+// 查询成衣厂列表
 const queryFactoryListHandle = async () => {
   const {data: res} = await queryFactoryList()
   data.factoryList = res.data
 }
 
-// 查询账单信息
+// 查询工作类型列表
+const queryCategoryListHandle = async () => {
+  const {data: res} = await queryCategoryList()
+  data.categoryList = res.data
+}
+
+// 查询成衣厂账单列表
 const queryFactoryBillListHandle = async () => {
   const {data: res} = await queryFactoryBillList(
       data.factoryId, data.number, data.styleNumber, data.categoryId, data.flag,
@@ -230,12 +302,17 @@ const queryFactoryBillListHandle = async () => {
   }
 }
 
-// 查询工作类型
-const queryCategoryListHandle = async () => {
-  const {data: res} = await queryCategoryList()
-  data.categoryList = res.data
+// 统计账单
+const statisticalFactoryBillHandle = async () => {
+  const {data: res} =  await statisticalFactoryBill(
+      statisticalBillRef.factoryId, statisticalBillRef.startDate, statisticalBillRef.endDate)
+  if (res.status === 200) {
+    billTotal.value = res.data.bill;
+  }else {
+    billTotal.value = 0
+    ElMessage.error(res.message)
+  }
 }
-
 
 // 编辑账单数据请求
 const billEditHandle = item => {
@@ -258,7 +335,6 @@ const addFactoryBillInfoHandle = async () => {
   }else {
     ElMessage.error(res.message)
   }
-
 }
 
 // 修改账单请求
@@ -271,7 +347,28 @@ const billDeleteHandle = id => {
 
 }
 
+
+// 查询指定成衣厂账单表单提交校验函数
+const statisticalBillSubmitForm = async formEl => {
+  if (!formEl) return
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      // 校验通过后查询账单
+      statisticalFactoryBillHandle()
+    }
+  })
+}
+
+const statisticalBillFormRef = ref()
 const billFormRef = ref()
+
+// 构建要发送的账单实体
+const statisticalBillRef = reactive({
+  factoryId: '',
+  startDate: '',
+  endDate: ''
+})
+// 构建新增账单实体
 const addFactoryBillInfoRef = reactive({
   id: '',
   factoryId: '',
@@ -282,9 +379,15 @@ const addFactoryBillInfoRef = reactive({
   createdTime: ''
 })
 
+// 新增按钮账单点击事件
 const clickAddBill = () => {
   data.addBillDialogVisible = true
   data.addBillDialogMode = 0
+}
+
+// 账单按钮点击事件
+const clickBill = () => {
+  data.billVisible = true // 打开弹窗
 }
 
 const onlyNumberRule = {
@@ -301,6 +404,11 @@ const addBillInfoRules = reactive({
   styleNumber: [{required: true, message: '请输入款式编号', trigger: 'blur'}],
   quantity: [{required: true, message: '请输入数量', trigger: 'blur'}, onlyNumberRule],
   createdTime: [{required: true, message: '请选择账单日期', trigger: 'blur'}]
+})
+
+// 统计成衣厂账单校验规则
+const statisticalBillRules = reactive({
+  factoryId: [{required: true, message: '请选择成衣厂', trigger: 'blur'}]
 })
 
 // 添加账单记录表单校验
@@ -343,8 +451,13 @@ const resetForm = formEl => {
   border-bottom: 1px solid var(--el-border-color);
 }
 
+.factoryBill-button > *:nth-child(1) {
+  width: 70px;
+  margin-right: -11px;
+}
+
 .factoryBill-button > *:nth-child(2) {
-  width: 150px;
+  width: 70px;
 }
 
 .factoryBill-button > *:nth-child(3) {
@@ -356,15 +469,19 @@ const resetForm = formEl => {
 }
 
 .factoryBill-button > *:nth-child(5) {
-  width: 80px;
+  width: 150px;
 }
 
 .factoryBill-button > *:nth-child(6) {
-  width: 140px;
+  width: 100px;
 }
 
 .factoryBill-button > *:nth-child(7) {
-  width: 140px;
+  width: 150px;
+}
+
+.factoryBill-button > *:nth-child(8) {
+  width: 150px;
 }
 
 .factoryBill-page {
@@ -373,5 +490,14 @@ const resetForm = formEl => {
   align-items: center;
   overflow: hidden;
   height: 50px !important;
+}
+
+:deep(.el-form-item__content) {
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+:deep(.el-statistic__number::after) {
+  content: '元';
 }
 </style>

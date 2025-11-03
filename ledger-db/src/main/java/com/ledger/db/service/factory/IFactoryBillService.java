@@ -34,11 +34,30 @@ public interface IFactoryBillService extends IService<FactoryBill> {
             String startDate, String endDate,
             Integer currentPage, Integer pageSize);
 
+    /**
+     * 统计成衣厂账单
+     *
+     * @param factoryId 成衣厂ID
+     * @param startDate 起止日期
+     * @param endDate   起止日期
+     * @param flag      状态
+     * @return result
+     */
+    Result<Object> statisticalBill(Integer factoryId, String startDate, String endDate, Integer flag);
 
     /**
      * 保存账单信息
+     *
      * @param bill 账单实体
      * @return result
      */
     Result<Object> saveFactoryBillInfo(FactoryBill bill);
+
+    /**
+     * 删除账单信息
+     *
+     * @param factoryBillId 账单ID
+     * @return result
+     */
+    Result<Object> deleteFactoryBillInfo(Integer factoryBillId);
 }

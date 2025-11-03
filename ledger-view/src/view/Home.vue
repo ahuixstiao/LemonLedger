@@ -391,7 +391,7 @@ const queryJobListByEmployeeIdAndDateHandle = async () => {
 }
 
 // 计算工资请求函数
-const salaryInquiry = async () => {
+const salaryInquiryHandle = async () => {
   const {data: res} = await querySalaryByCondition(
       SalaryRef.employeeId,
       SalaryRef.startDate,
@@ -590,7 +590,7 @@ const querySalarySubmitForm = async formEl => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
     if (valid) {
-      salaryInquiry()
+      salaryInquiryHandle()
     } else {
       console.log('error query!', fields)
     }

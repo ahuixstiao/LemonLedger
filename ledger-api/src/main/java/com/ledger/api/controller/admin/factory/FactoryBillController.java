@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * @Author: ahui
  * @Description: TODO 成衣厂账单控制器
@@ -48,7 +50,26 @@ public class FactoryBillController {
     }
 
     /**
+     * 统计成衣厂账单
+     *
+     * @param factoryId 成衣厂ID
+     * @param startDate 起止日期
+     * @param endDate   起止日期
+     * @param flag      状态
+     * @return result
+     */
+    @GetMapping("/bill/{factoryId}")
+    public Result<Object> statisticalFactoryBill(
+            @PathVariable @NotNull Integer factoryId,
+            @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "0") Integer flag) {
+
+        return factoryBillService.statisticalBill(factoryId, startDate, endDate, flag);
+    }
+
+    /**
      * 保存成衣厂账单信息
+     *
      * @param bill 成衣厂账单实体
      * @return result
      */
@@ -56,6 +77,18 @@ public class FactoryBillController {
     public Result<Object> saveFactoryBillInfo(@RequestBody FactoryBill bill) {
 
         return factoryBillService.saveFactoryBillInfo(bill);
+    }
+
+    /**
+     * 删除成衣厂账单信息
+     *
+     * @param factoryBillId 账单ID
+     * @return result
+     */
+    @DeleteMapping("/delete/{factoryBillId}")
+    public Result<Object> deleteFactoryBillInfo(@PathVariable @NotNull Integer factoryBillId) {
+
+        return factoryBillService.deleteFactoryBillInfo(factoryBillId);
     }
 
 }

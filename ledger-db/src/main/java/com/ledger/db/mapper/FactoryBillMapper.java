@@ -29,7 +29,7 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
      * @param flag        删除状态 0否 1是
      * @param startDate   开始日期
      * @param endDate     结束日期
-     * @return result
+     * @return page
      */
     Page<FactoryBillDto> selectFactoryBillList(
             Page<FactoryBillDto> page,
@@ -37,5 +37,20 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
             @Param("styleNumber") String styleNumber, @Param("categoryId") Integer categoryId,
             @Param("flag") Integer flag,
             @Param("startDate") String startDate, @Param("endDate") String endDate);
+
+
+    /**
+     * 获取指定工厂的账单可指定日期范围
+     *
+     * @param factoryId 工厂ID
+     * @param startDate 起止日期
+     * @param endDate   起止日期
+     * @param flag      状态
+     * @return factoryBillDto
+     */
+    FactoryBillDto calculateBillByFactoryIdAndDate(
+            @Param("factoryId") Integer factoryId,
+            @Param("startDate") String startDate, @Param("endDate") String endDate,
+            @Param("flag") Integer flag);
 
 }

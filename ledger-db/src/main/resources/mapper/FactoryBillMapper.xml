@@ -61,5 +61,45 @@
         order by ft.factory_name desc
     </select>
 
+    <!-- 获取指定工厂的账单 -->
+    <select id="calculateBillByFactoryIdAndDate" resultType="factoryBillDto">
+        select
+        fb.factory_id,
+        factory.factory_name,
+        sum(fb.quantity) as quantity,
+        sum(fb.bill) as bill
+
+        from factory_bill fb
+        left join factory on fb.factory_id = factory.id
+
+        <where>
+            fb.factory_id = #{factoryId}
+            and fb.flag = #{flag}
+            and factory.flag = #{flag}
+
+            <choose>
+                <!-- 判断员工是否指定了时间范围 -->
+                <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+                    and fb.created_time between #{startDate} and #{endDate}
+                </when>
+                <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
+                <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
+                    and fb.created_time between #{startDate} and CURDATE()
+                </when>
+                <!-- 判断员工是否指定了结束日期 -->
+                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
+                    and fb.created_time &lt;= #{endDate}
+                </when>
+                <!-- 默认查询当月1号至当天的薪资 -->
+                <otherwise>
+                    and fb.created_time between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
+                </otherwise>
+            </choose>
+        </where>
+
+        <!-- 按工厂ID和工厂名称分组 -->
+        group by fb.factory_id, factory.factory_name
+    </select>
+
 
 </mapper>
