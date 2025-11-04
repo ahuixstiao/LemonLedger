@@ -2,30 +2,30 @@
   <div class="admin-container">
     <div class="right-container">
       <el-menu
-          default-active="/admin/factorylist"
+          default-active="/admin/factoryBillList"
           @open="handleOpen"
           @close="handleClose"
           router
       >
-        <el-menu-item index="/admin/joblist">
+        <el-menu-item index="/admin/jobList">
           <el-icon>
             <setting/>
           </el-icon>
           <span>员工列表</span>
         </el-menu-item>
-        <el-menu-item index="/admin/factorylist">
+        <el-menu-item index="/admin/factoryList">
           <el-icon>
             <setting/>
           </el-icon>
           <span>成衣厂列表</span>
         </el-menu-item>
-        <el-menu-item index="/admin/factorybill">
+        <el-menu-item index="/admin/factoryBillList">
           <el-icon>
             <setting/>
           </el-icon>
           <span>成衣厂账单列表</span>
         </el-menu-item>
-        <el-menu-item index="/admin/factoryquotation">
+        <el-menu-item index="/admin/factoryQuotationList">
           <el-icon>
             <setting/>
           </el-icon>

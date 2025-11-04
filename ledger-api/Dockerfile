@@ -1,11 +1,11 @@
 # 1. 基础镜像使用带JDK17的OpenJDK
-FROM openjdk:17-jdk
+FROM openjdk:17
 
 # 2. 设置工作目录
 WORKDIR /app
 
 # 3. 拷贝后端JAR
-COPY target/LemonLedger.jar /app/LemonLedger.jar
+COPY target/LemonLedger.jar /app/LemonLedger.jardoO
 
 # 4. 运行端口
 EXPOSE 8080

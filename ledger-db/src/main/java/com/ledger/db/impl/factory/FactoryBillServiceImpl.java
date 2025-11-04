@@ -148,6 +148,42 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
     }
 
     /**
+     * 修改账单信息
+     *
+     * @param bill 账单信息实体
+     * @return result
+     */
+    @Override
+    public Result<Object> updateFactoryBillInfo(FactoryBill bill) {
+
+        // 判断传递过来的对象是否为空
+        if (ObjectUtil.isEmpty(bill)) {
+            return Result.fail("参数为空");
+        }
+
+        if (StrUtil.isNotBlank(bill.getStyleNumber()) | ObjectUtil.isNotNull(bill.getCategoryId())){
+            // 获取成衣厂报价
+            BigDecimal quotation = factoryQuotationService.lambdaQuery()
+                    .eq(FactoryQuotation::getFactoryId, bill.getFactoryId())
+                    // 判断是否传递了款式编号或工作类型其中一个否则条件构成失败
+                    .eq(StrUtil.isNotBlank(bill.getStyleNumber()), FactoryQuotation::getStyleNumber, bill.getStyleNumber())
+                    .eq(ObjectUtil.isNotEmpty(bill.getCategoryId()), FactoryQuotation::getCategoryId, bill.getCategoryId())
+                    .oneOpt().orElseThrow(() -> new RuntimeException("暂无报价信息")).getQuotation();
+
+            //数量乘以报价得出总账单
+            bill.setBill(
+                    BigDecimal.valueOf(bill.getQuantity()).multiply(quotation).setScale(2, RoundingMode.HALF_UP)
+            );
+        }
+        // 修改
+        if (updateById(bill)) {
+            return Result.ok();
+        }
+
+        return Result.fail();
+    }
+
+    /**
      * 删除账单信息
      *
      * @param factoryBillId 账单ID

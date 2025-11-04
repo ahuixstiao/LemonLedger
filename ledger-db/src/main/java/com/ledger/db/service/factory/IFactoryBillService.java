@@ -54,6 +54,14 @@ public interface IFactoryBillService extends IService<FactoryBill> {
     Result<Object> saveFactoryBillInfo(FactoryBill bill);
 
     /**
+     * 修改账单信息
+     *
+     * @param bill 账单信息实体
+     * @return result
+     */
+    Result<Object> updateFactoryBillInfo(FactoryBill bill);
+
+    /**
      * 删除账单信息
      *
      * @param factoryBillId 账单ID

@@ -145,8 +145,8 @@
           <el-select v-model="SalaryRef.employeeId" placeholder="请选择员工">
             <el-option
                 v-for="(item, index) in data.employeeList"
-                :label="item.text"
-                :value="item.value"
+                :label="item.name"
+                :value="item.id"
             />
           </el-select>
         </el-form-item>
@@ -522,7 +522,7 @@ const querySalaryFormRef = ref()
 // 添加员工信息表单参数
 const addEmployeeInfoRef = reactive({
   name: '',
-  modeId: Number()
+  modeId: ''
 })
 
 // 添加工作信息表单参数

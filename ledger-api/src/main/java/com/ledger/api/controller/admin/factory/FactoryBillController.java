@@ -80,6 +80,17 @@ public class FactoryBillController {
     }
 
     /**
+     * 更新成衣厂账单信息
+     *
+     * @param bill 成衣厂账单实体
+     * @return result
+     */
+    @PutMapping("/update")
+    public Result<Object> updateFactoryBillInfo(@RequestBody FactoryBill bill) {
+        return factoryBillService.updateFactoryBillInfo(bill);
+    }
+
+    /**
      * 删除成衣厂账单信息
      *
      * @param factoryBillId 账单ID

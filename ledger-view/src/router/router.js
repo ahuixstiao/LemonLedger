@@ -7,19 +7,19 @@ const routes = [
     component: () => import('../view/Admin/Admin.vue'),
     children: [
       {
-        path: '/admin/joblist',
+        path: '/admin/jobList',
         component: () => import('../view/Admin/AdminComponent/JobList.vue')
       },
       {
-        path: '/admin/factorylist',
+        path: '/admin/factoryList',
         component: () => import('../view/Admin/AdminComponent/FactoryList.vue')
       },
       {
-        path: '/admin/factorybill',
+        path: '/admin/factoryBillList',
         component: () => import('../view/Admin/AdminComponent/FactoryBill.vue')
       },
       {
-        path: '/admin/factoryquotation',
+        path: '/admin/factoryQuotationList',
         component: () =>
           import('../view/Admin/AdminComponent/FactoryQuotation.vue')
       }

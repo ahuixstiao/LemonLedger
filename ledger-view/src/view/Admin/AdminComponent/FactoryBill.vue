@@ -109,16 +109,11 @@
       </el-row>
     </el-card>
 
-    <!--  添加成衣厂账单弹窗  -->
-    <el-dialog
-        v-model="data.addBillDialogVisible"
+    <!--  添加或编辑成衣厂账单信息弹窗  -->
+    <el-dialog v-model="data.addBillDialogVisible"
         :title="data.addBillDialogMode === 0? '添加成衣厂账单': data.addBillDialogMode === 1? '修改成衣厂账单': ''"
-        width="50%"
-        center
-    >
-      <el-form ref="billFormRef" :model="addFactoryBillInfoRef" :rules="addBillInfoRules"
-               label-width="auto" label-position="left"
-      >
+        width="50%" center>
+      <el-form ref="billInfoFormRef" :model="addFactoryBillInfoRef" :rules="addBillInfoRules" label-width="auto" label-position="left">
         <el-form-item size="large" label="工厂名称:" prop="factoryId">
           <el-select v-model="addFactoryBillInfoRef.factoryId" placeholder="选择工厂名称">
             <el-option v-for="item in data.factoryList" :label="item.factoryName" :value="item.id"/>
@@ -156,26 +151,20 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="data.addBillDialogVisible = false">取消</el-button>
-          <el-button
-              v-if="data.addBillDialogMode === 0"
-              type="primary"
-              @click="billValidation(billFormRef)"
-          >
+          <el-button @click="resetBillInfoClickEvent">取消</el-button>
+          <el-button type="primary"
+                     v-if="data.addBillDialogMode === 0"  @click="billValidation(billInfoFormRef)">
             确认
           </el-button>
-          <el-button
-              v-if="data.addBillDialogMode === 1"
-              type="primary"
-              @click="billValidation(billFormRef)"
-          >
+          <el-button type="primary"
+              v-if="data.addBillDialogMode === 1" @click="billValidation(billInfoFormRef)">
             保存
           </el-button>
         </div>
       </template>
     </el-dialog>
 
-    <!--  工资计算表单  -->
+    <!--  账单计算表单弹窗  -->
     <el-dialog v-model="data.billVisible" title="成衣厂账单" width="90%" center>
       <el-form
           ref="statisticalBillFormRef"
@@ -339,7 +328,7 @@ const addFactoryBillInfoHandle = async () => {
 
 // 修改账单请求
 const editBillHandle = () => {
-  resetForm(billFormRef)
+  resetForm(billInfoFormRef)
 }
 
 // 删除账单数据请求
@@ -360,7 +349,7 @@ const statisticalBillSubmitForm = async formEl => {
 }
 
 const statisticalBillFormRef = ref()
-const billFormRef = ref()
+const billInfoFormRef = ref()
 
 // 构建要发送的账单实体
 const statisticalBillRef = reactive({
@@ -388,6 +377,14 @@ const clickAddBill = () => {
 // 账单按钮点击事件
 const clickBill = () => {
   data.billVisible = true // 打开弹窗
+}
+
+
+// 编辑账单弹窗取消按钮点击事件
+const resetBillInfoClickEvent = () => {
+  // 清除已填信息
+  billInfoFormRef.value.resetFields()
+  data.addBillDialogVisible = false // 关闭窗口
 }
 
 const onlyNumberRule = {

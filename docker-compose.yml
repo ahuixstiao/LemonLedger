@@ -1,6 +1,6 @@
 services:
   lemonledger:
-    image: 794862853/lemonledger:1.4
+    image: 794862853/lemonledger:latest
     #build: ./ledger-api
     container_name: lemonledger_container
     expose:
