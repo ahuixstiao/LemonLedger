@@ -23,6 +23,8 @@ public interface IFactoryQuotationService extends IService<FactoryQuotation> {
      * @param pageSize    页面条数
      * @return result
      */
-    Result<Object> queryFactoryQuotationListByCondition(Integer factoryId, Integer categoryId, Integer currentPage, Integer pageSize);
+    Result<Object> queryFactoryQuotationListByCondition(
+            Integer factoryId, String styleNumber, Integer categoryId,
+            Integer currentPage, Integer pageSize, Integer flag);
 
 }

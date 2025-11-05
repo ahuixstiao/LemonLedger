@@ -1,14 +1,12 @@
 package com.ledger.db.impl.factory;
 
-import cn.hutool.core.lang.intern.InternUtil;
-import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.FactoryQuotation;
 import com.ledger.db.entity.dto.FactoryQuotationDto;
 import com.ledger.db.mapper.FactoryQuotationMapper;
 import com.ledger.db.service.factory.IFactoryQuotationService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,18 +29,22 @@ public class FactoryQuotationServiceImpl extends ServiceImpl<FactoryQuotationMap
      * 查询成衣厂报价列表 如果有条件则按条件查询
      *
      * @param factoryId   工厂ID
+     * @param styleNumber 款式编号
      * @param categoryId  工作类型ID
      * @param currentPage 当前页
      * @param pageSize    页面条数
+     * @param flag        状态
      * @return result
      */
     @Override
-    public Result<Object> queryFactoryQuotationListByCondition(Integer factoryId, Integer categoryId, Integer currentPage, Integer pageSize) {
+    public Result<Object> queryFactoryQuotationListByCondition(
+            Integer factoryId, String styleNumber, Integer categoryId,
+            Integer currentPage, Integer pageSize, Integer flag) {
 
         // 构建分页对象
         Page<FactoryQuotationDto> page = new Page<>(currentPage, pageSize);
 
-        factoryQuotationMapper.selectFactoryQuotationListBtCondition(page, factoryId, categoryId, 0);
+        factoryQuotationMapper.selectFactoryQuotationListByCondition(page, factoryId, styleNumber, categoryId, flag);
 
         return Result.ok(page);
     }

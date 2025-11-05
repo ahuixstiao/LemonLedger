@@ -4,25 +4,30 @@
 
 
     <!-- 根据条件查询成衣厂报价单表 -->
-    <select id="selectFactoryQuotationListBtCondition" resultType="factoryQuotationDto">
-        select fq.id,
+    <select id="selectFactoryQuotationListByCondition" resultType="factoryQuotationDto">
+        select
+        fq.id,
         fq.factory_id,
-        ft.factory_name,
+        factory.factory_name,
+        fq.style_number,
         fq.category_id,
         jc.category,
         fq.quotation
         from factory_quotation fq
-        left join factory ft on fq.factory_id = ft.id
+        left join factory on fq.factory_id = ft.id
         left join job_category jc on fq.category_id = jc.id
-        where fq.flag = #{flag}
-        <choose>
-            <when test="factoryId != null and factoryId != '' ">
-                and fq.factory_id = #{factoryId}
-            </when>
-            <when test="categoryId != null and categoryId != '' ">
-                and fq.category_id = #{categoryId}
-            </when>
-        </choose>
+        where
+            fq.flag = #{flag}
+        <if test="factoryId != null and factoryId != '' ">
+            and fq.factory_id = #{factoryId}
+        </if>
+        <if test="styleNumber != null and styleNumber != '' ">
+            and fq.style_number = #{styleNumber}
+        </if>
+        <if test="categoryId != null and categoryId != '' ">
+            and fq.category_id = #{categoryId}
+        </if>
+        order by factory.factory_name desc
     </select>
 
 </mapper>

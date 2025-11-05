@@ -11,7 +11,7 @@
  Target Server Version : 80021 (8.0.21)
  File Encoding         : 65001
 
- Date: 03/11/2025 02:24:10
+ Date: 04/11/2025 14:07:19
 */
 
 SET NAMES utf8mb4;
@@ -62,7 +62,7 @@ CREATE TABLE `factory_bill` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT '主键',
   `factory_id` int NOT NULL COMMENT '成衣厂ID',
   `number` varchar(32) NOT NULL COMMENT '床号',
-  `style_number` int NOT NULL COMMENT '款式编号',
+  `style_number` varchar(32) NOT NULL COMMENT '款式编号',
   `category_id` int DEFAULT NULL COMMENT '工作类型 1小花、2大花、3裤页',
   `quantity` int NOT NULL COMMENT '数量',
   `bill` decimal(8,2) DEFAULT NULL COMMENT '本床账单',
@@ -76,7 +76,7 @@ CREATE TABLE `factory_bill` (
   PRIMARY KEY (`id`),
   KEY `factory_bill_number_index` (`number`),
   KEY `factory_bill_style_number_index` (`style_number`)
-) ENGINE=InnoDB AUTO_INCREMENT=128 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂账单表';
+) ENGINE=InnoDB AUTO_INCREMENT=132 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂账单表';
 
 -- ----------------------------
 -- Table structure for factory_quotation
@@ -85,8 +85,9 @@ DROP TABLE IF EXISTS `factory_quotation`;
 CREATE TABLE `factory_quotation` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT '主键',
   `factory_id` int NOT NULL COMMENT '成衣厂ID',
+  `style_number` varchar(32) DEFAULT NULL COMMENT '款式编号',
   `category_id` int NOT NULL COMMENT '工作类型 1小花、2大花、3裤页',
-  `quotation` decimal(8,2) NOT NULL COMMENT '报价',
+  `quotation` decimal(8,2) NOT NULL COMMENT '单个报价',
   `version` int DEFAULT '0' COMMENT '乐观锁',
   `created_by` varchar(64) DEFAULT NULL COMMENT '创建人',
   `created_time` date DEFAULT NULL COMMENT '创建时间',
@@ -94,7 +95,8 @@ CREATE TABLE `factory_quotation` (
   `updated_time` date COMMENT '修改时间',
   `flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '删除状态 0否 1是',
   `remark` varchar(255) DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_factory_quotation` (`factory_id`,`style_number`,`category_id`,`quotation`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂报价表';
 
 -- ----------------------------
@@ -106,7 +108,7 @@ CREATE TABLE `job` (
   `employee_id` int NOT NULL COMMENT '员工ID',
   `factory_id` int NOT NULL COMMENT '成衣厂ID',
   `number` varchar(32) NOT NULL COMMENT '床号',
-  `style_number` int DEFAULT NULL COMMENT '款式编号 比如3101',
+  `style_number` varchar(32) DEFAULT NULL COMMENT '款式编号 比如3101',
   `mode_id` int NOT NULL COMMENT '工作方式，例如 压花、刮胶',
   `category_id` int NOT NULL COMMENT '工作类型，例如 小花、大花、裤页',
   `quantity` int NOT NULL COMMENT '数量',
@@ -122,7 +124,7 @@ CREATE TABLE `job` (
   KEY `job_category_id_index` (`category_id`),
   KEY `job_employee_id_index` (`employee_id`),
   KEY `job_factory_id_index` (`factory_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=356 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作内容表';
+) ENGINE=InnoDB AUTO_INCREMENT=364 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作内容表';
 
 -- ----------------------------
 -- Table structure for job_category
