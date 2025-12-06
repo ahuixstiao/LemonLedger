@@ -40,30 +40,11 @@ public class ParentEntity implements Serializable {
     private Integer version;
 
     /**
-     * 创建人
+     * 创建日期
      */
-    @TableField(value = "created_by", fill = FieldFill.INSERT) // 创建时自动填充 需要配合字段填充处理器使用
-    private String createdBy;
-
-    /**
-     * 创建时间
-     */
-    @TableField(value = "created_time", fill = FieldFill.INSERT)
+    @TableField(value = "created_date", fill = FieldFill.INSERT)
     @JsonFormat(pattern = PATTERN, timezone = TIMEZONE)
-    private LocalDate createdTime;
-
-    /**
-     * 修改人
-     */
-    @TableField(value = "updated_by", fill = FieldFill.INSERT_UPDATE)
-    private String updatedBy;
-
-    /**
-     * 修改时间
-     */
-    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
-    @JsonFormat(pattern = PATTERN, timezone = TIMEZONE)
-    private LocalDate updatedTime;
+    private LocalDate createdDate;
 
     /**
      * 逻辑删除状态 0:正常 1:禁用

@@ -15,7 +15,7 @@
         jc.category,        <!-- 工作类型名称 -->
         fb.quantity,        <!-- 数量 -->
         fb.bill,             <!-- 账单 -->
-        fb.created_time,
+        fb.created_date,
         fb.flag
         from factory_bill fb
         left join factory ft on fb.factory_id = ft.id
@@ -42,19 +42,19 @@
             <choose>
                 <!-- 如果指定了起止日期 则按起止日期查找-->
                 <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">
-                    and fb.created_time between #{startDate} and #{endDate}
+                    and fb.created_date between #{startDate} and #{endDate}
                 </when>
                 <!-- 如果指定了开始日期 则按开始日期查找成衣厂账单信息-->
                 <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
-                    and fb.created_time = #{startDate}
+                    and fb.created_date = #{startDate}
                 </when>
                 <!-- 如果只选了结束日期则默认查询小于等于结束日期的成衣厂账单信息 -->
                 <when test="endDate != null and endDate != '' and (startDate == null or startDate == '') ">
-                    and fb.created_time &lt;= #{endDate}
+                    and fb.created_date &lt;= #{endDate}
                 </when>
                 <!-- 如未指定日期则默认查找当天成衣厂账单信息 CURDATE函数的作用是获取当天日期 格式为yyyy-MM-dd -->
                 <otherwise>
-                    and fb.created_time = CURDATE()
+                    and fb.created_date = CURDATE()
                 </otherwise>
             </choose>
         </where>
@@ -80,19 +80,19 @@
             <choose>
                 <!-- 判断员工是否指定了时间范围 -->
                 <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-                    and fb.created_time between #{startDate} and #{endDate}
+                    and fb.created_date between #{startDate} and #{endDate}
                 </when>
                 <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
                 <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
-                    and fb.created_time between #{startDate} and CURDATE()
+                    and fb.created_date between #{startDate} and CURDATE()
                 </when>
                 <!-- 判断员工是否指定了结束日期 -->
                 <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
-                    and fb.created_time &lt;= #{endDate}
+                    and fb.created_date &lt;= #{endDate}
                 </when>
                 <!-- 默认查询当月1号至当天的薪资 -->
                 <otherwise>
-                    and fb.created_time between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
+                    and fb.created_date between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
                 </otherwise>
             </choose>
         </where>

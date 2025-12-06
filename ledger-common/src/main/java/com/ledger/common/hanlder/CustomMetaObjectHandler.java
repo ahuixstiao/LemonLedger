@@ -23,9 +23,9 @@ public class CustomMetaObjectHandler implements MetaObjectHandler {
      */
     @Override
     public void insertFill(MetaObject metaObject) {
-        log.info(">>>>>>>>>>>>>>>>> 开始插入填充字段 >>>>>>>>>>>>>>>>>");
+        log.info(">>>>>>>>>>>>>>>>> 插入操作 自动填充字段 >>>>>>>>>>>>>>>>>");
         // 创建时间
-        this.strictInsertFill(metaObject, "createdTime", LocalDate::now, LocalDate.class);
+        this.strictInsertFill(metaObject, "createdDate", LocalDate::now, LocalDate.class);
     }
 
     /**
@@ -35,8 +35,8 @@ public class CustomMetaObjectHandler implements MetaObjectHandler {
      */
     @Override
     public void updateFill(MetaObject metaObject) {
-        log.info(">>>>>>>>>>>>>>>>> 开始更新填充字段 >>>>>>>>>>>>>>>>>");
+        //log.info(">>>>>>>>>>>>>>>>> 更新操作 自动填充字段 >>>>>>>>>>>>>>>>>");
         // 修改时间
-        this.strictUpdateFill(metaObject, "updatedTime", LocalDate::now, LocalDate.class);
+        //this.strictUpdateFill(metaObject, "updatedTime", LocalDate::now, LocalDate.class);
     }
 }

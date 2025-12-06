@@ -1,13 +1,11 @@
 package com.ledger.api.controller.admin.factory;
 
 import com.ledger.common.result.Result;
+import com.ledger.db.entity.FactoryQuotation;
 import com.ledger.db.service.factory.IFactoryQuotationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @Author: ahui
@@ -44,6 +42,32 @@ public class FactoryQuotationController {
 
 
         return factoryQuotationService.queryFactoryQuotationListByCondition(factoryId, styleNumber, categoryId, currentPage, pageSize, flag);
+    }
+
+
+    /**
+     * 保存成衣厂报价信息
+     *
+     * @param factoryQuotation 报价表实体
+     * @return result
+     */
+    @PostMapping("/save")
+    public Result<Object> saveFactoryQuotationInfo(@RequestBody FactoryQuotation factoryQuotation) {
+
+        return factoryQuotationService.saveFactoryQuotationInfo(factoryQuotation);
+    }
+
+
+    /**
+     * 删除成衣厂报价信息
+     *
+     * @param factoryQuotationId 成衣厂报价ID
+     * @return result
+     */
+    @DeleteMapping("/delete/{factoryQuotationId}")
+    public Result<Object> deleteFactoryQuotationInfo(@PathVariable Integer factoryQuotationId) {
+
+        return factoryQuotationService.deleteFactoryQuotationById(factoryQuotationId);
     }
 
 }

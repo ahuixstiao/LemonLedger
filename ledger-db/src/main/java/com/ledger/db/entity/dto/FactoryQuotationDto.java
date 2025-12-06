@@ -29,6 +29,10 @@ public class FactoryQuotationDto implements Serializable {
      */
     private String factoryName;
 
+    /**
+     * 款式编号
+     */
+    private String styleNumber;
 
     /**
      * 工作类型 1小花、2大花、3裤页

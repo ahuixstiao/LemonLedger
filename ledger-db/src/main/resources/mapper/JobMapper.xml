@@ -18,7 +18,7 @@
         job.mode_id,
         jm.mode,            <!-- 工作方式 1压花、2刮胶 -->
         job.salary,         <!-- 工资 -->
-        job.created_time
+        job.created_date
 
         from job
         left join employee emp on job.employee_id = emp.id
@@ -48,19 +48,19 @@
             <choose>
                 <!-- 如果员工指定了起止日期 则按起止日期查找-->
                 <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">
-                    and job.created_time between #{startDate} and #{endDate}
+                    and job.created_date between #{startDate} and #{endDate}
                 </when>
                 <!-- 如果员工指定了开始日期 则按开始日期查找工作记录 -->
                 <when test=" startDate != null and startDate != '' and (endDate == null or endDate == '') ">
-                    and job.created_time = #{startDate}
+                    and job.created_date = #{startDate}
                 </when>
                 <!-- 如果员工只选了结束日期则默认查询小于等于结束日期的工作记录 -->
                 <when test="endDate != null and endDate != '' and (startDate == null or startDate == '') ">
-                    and job.created_time &lt;= #{endDate}
+                    and job.created_date &lt;= #{endDate}
                 </when>
                 <!-- 如员工未指定日期则默认查找当天工作记录 CURDATE函数的作用是获取当天日期 格式为yyyy-MM-dd -->
                 <otherwise>
-                    and job.created_time = CURDATE()
+                    and job.created_date = CURDATE()
                 </otherwise>
             </choose>
         </where>
@@ -87,19 +87,19 @@
             <choose>
                 <!-- 判断员工是否指定了时间范围 -->
                 <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-                    and job.created_time between #{startDate} and #{endDate}
+                    and job.created_date between #{startDate} and #{endDate}
                 </when>
                 <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
                 <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
-                    and job.created_time between #{startDate} and CURDATE()
+                    and job.created_date between #{startDate} and CURDATE()
                 </when>
                 <!-- 判断员工是否指定了结束日期 -->
                 <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
-                    and job.created_time &lt;= #{endDate}
+                    and job.created_date &lt;= #{endDate}
                 </when>
                 <!-- 默认查询当月1号至当天的薪资 -->
                 <otherwise>
-                    and job.created_time between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
+                    and job.created_date between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
                 </otherwise>
             </choose>
         </where>

@@ -87,19 +87,20 @@ public class FactoryBillController {
      */
     @PutMapping("/update")
     public Result<Object> updateFactoryBillInfo(@RequestBody FactoryBill bill) {
+
         return factoryBillService.updateFactoryBillInfo(bill);
     }
 
     /**
      * 删除成衣厂账单信息
      *
-     * @param factoryBillId 账单ID
+     * @param id 账单ID
      * @return result
      */
-    @DeleteMapping("/delete/{factoryBillId}")
-    public Result<Object> deleteFactoryBillInfo(@PathVariable @NotNull Integer factoryBillId) {
+    @DeleteMapping("/delete/{id}")
+    public Result<Object> deleteFactoryBillInfo(@PathVariable @NotNull Integer id) {
 
-        return factoryBillService.deleteFactoryBillInfo(factoryBillId);
+        return factoryBillService.deleteFactoryBillInfo(id);
     }
 
 }

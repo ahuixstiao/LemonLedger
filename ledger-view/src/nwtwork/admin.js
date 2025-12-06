@@ -58,3 +58,28 @@ export function editFactoryBillInfo(bill) {
     data: bill
   })
 }
+
+// 删除成衣厂账单
+export function deleteFactoryBillInfo(id) {
+    return request({
+        url: '/admin/factoryBill/delete/' + id,
+        method: 'delete'
+    })
+}
+
+
+// 按条件查询成衣厂报价单列表
+export function queryFactoryQuotationList(factoryId, styleNumber, categoryId, currentPage, pageSize, flag) {
+    return request({
+        url: '/admin/factoryQuotation/list',
+        method: 'get',
+        params: {
+            factoryId,
+            styleNumber,
+            categoryId,
+            currentPage,
+            pageSize,
+            flag
+        }
+    })
+}

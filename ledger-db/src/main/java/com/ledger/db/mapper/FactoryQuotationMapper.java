@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.db.entity.FactoryQuotation;
 import com.ledger.db.entity.dto.FactoryQuotationDto;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * <p>
@@ -28,6 +29,9 @@ public interface FactoryQuotationMapper extends BaseMapper<FactoryQuotation> {
      */
     Page<FactoryQuotationDto> selectFactoryQuotationListByCondition(
             Page<FactoryQuotationDto> page,
-            Integer factoryId, String styleNumber, Integer categoryId, Integer flag);
+            @Param("factoryId") Integer factoryId,
+            @Param("styleNumber")String styleNumber,
+            @Param("categoryId") Integer categoryId,
+            @Param("flag") Integer flag);
 
 }

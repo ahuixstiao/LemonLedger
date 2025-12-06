@@ -43,6 +43,7 @@ public class FactoryBillDto implements Serializable {
      * 类型 小花、大花、裤页
      */
     private Integer categoryId;
+
     /**
      * 工作类型名称
      */
@@ -58,7 +59,7 @@ public class FactoryBillDto implements Serializable {
      */
     private BigDecimal bill;
 
-    private LocalDate createdTime;
+    private LocalDate createdDate;
 
     private Integer flag;
 

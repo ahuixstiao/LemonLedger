@@ -85,6 +85,6 @@ public class JobDTO implements Serializable {
     /**
      * 创建时间
      */
-    private String createdTime;
+    private String createdDate;
 
 }

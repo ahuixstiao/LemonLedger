@@ -212,7 +212,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                     .eq("number", job.getNumber())
                     .eq("style_number", job.getStyleNumber())
                     .eq("category_id", job.getCategoryId())
-                    .eq("created_time", job.getCreatedTime());
+                    .eq("created_date", job.getCreatedDate());
             log.info("================= 构建删除成衣厂账单条件 {} =================", wrapper.getEntity());
             boolean exists = factoryBillService.remove(wrapper);
             if (exists) {
@@ -243,7 +243,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 .eq(Job::getStyleNumber, job.getStyleNumber())
                 .eq(Job::getNumber, job.getNumber())
                 .eq(Job::getModeId, job.getModeId())
-                .eq(Job::getCreatedTime, job.getCreatedTime())
+                .eq(Job::getCreatedDate, job.getCreatedDate())
                 .eq(Job::getFlag, 0)
                 .exists();
     }
@@ -283,7 +283,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 .eq(FactoryBill::getNumber, job.getNumber())
                 .eq(FactoryBill::getStyleNumber, job.getStyleNumber())
                 .eq(FactoryBill::getCategoryId, job.getCategoryId())
-                .eq(FactoryBill::getCreatedTime, job.getCreatedTime())
+                .eq(FactoryBill::getCreatedDate, job.getCreatedDate())
                 .eq(FactoryBill::getFlag, 0)
                 .exists();
     }
@@ -307,7 +307,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         factoryBill.setStyleNumber(job.getStyleNumber());   // 款式编号
         factoryBill.setCategoryId(job.getCategoryId());     // 工作类型
         factoryBill.setQuantity(job.getQuantity());         // 数量
-        factoryBill.setCreatedTime(job.getCreatedTime());   // 日期
+        factoryBill.setCreatedDate(job.getCreatedDate());   // 日期
         // 成衣厂账单参数 由管理员手动在后台中选择工作类型后得出
 
         if (factoryBillService.save(factoryBill)) {

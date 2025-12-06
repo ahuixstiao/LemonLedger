@@ -64,8 +64,8 @@ public interface IFactoryBillService extends IService<FactoryBill> {
     /**
      * 删除账单信息
      *
-     * @param factoryBillId 账单ID
+     * @param id 账单ID
      * @return result
      */
-    Result<Object> deleteFactoryBillInfo(Integer factoryBillId);
+    Result<Object> deleteFactoryBillInfo(Integer id);
 }

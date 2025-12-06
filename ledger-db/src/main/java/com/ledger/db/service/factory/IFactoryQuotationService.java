@@ -27,4 +27,20 @@ public interface IFactoryQuotationService extends IService<FactoryQuotation> {
             Integer factoryId, String styleNumber, Integer categoryId,
             Integer currentPage, Integer pageSize, Integer flag);
 
+    /**
+     * 保存成衣厂报价单信息
+     *
+     * @param factoryQuotation 成衣厂报价单实体
+     * @return result
+     */
+    Result<Object> saveFactoryQuotationInfo(FactoryQuotation factoryQuotation);
+
+    /**
+     * 删除成衣厂报价单信息
+     *
+     * @param factoryQuotationId 成衣厂报价单ID
+     * @return result
+     */
+    Result<Object> deleteFactoryQuotationById(Integer factoryQuotationId);
+
 }
