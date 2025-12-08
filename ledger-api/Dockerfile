@@ -5,7 +5,7 @@ FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
 # 3. 拷贝后端JAR
-COPY target/LemonLedger.jar /app/LemonLedger.jardoO
+COPY target/LemonLedger.jar /app/LemonLedger.jar
 
 # 4. 运行端口
 EXPOSE 8080

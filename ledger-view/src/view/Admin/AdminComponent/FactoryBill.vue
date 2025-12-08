@@ -168,6 +168,7 @@
       >
         <el-form-item size="large" label="工厂名称:" prop="factoryId">
           <el-select
+              filterable
               v-model="factoryBillInfoRef.factoryId"
               placeholder="选择工厂名称"
           >
@@ -188,6 +189,7 @@
 
         <el-form-item size="large" label="款式编号:" prop="styleNumber">
           <el-select
+              filterable
               v-model="factoryBillInfoRef.styleNumber"
               placeholder="输入款式编号"
               @click="queryFactoryStyleNumberListHandle(factoryBillInfoRef.factoryId)"

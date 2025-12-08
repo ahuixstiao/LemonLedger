@@ -71,7 +71,7 @@
           <el-table-column prop="category" label="类型" align="center"/>
           <el-table-column prop="quantity" label="数量" align="center"/>
           <el-table-column prop="salary" width="95" label="本床工资(单位: 元)" align="center"/>
-          <el-table-column prop="createdTime" label="日期" align="center"/>
+          <el-table-column prop="createdDate" label="日期" align="center"/>
           <el-table-column label="管理" align="center">
             <template #default="scope">
               <el-button type="danger" text @click="deleteJobInfoByIdHandler(scope.row.id)">
@@ -707,7 +707,7 @@ const querySalaryRule = reactive({
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  padding: 20px 0;
+  padding: 25px 0;
 }
 
 :deep(.van-cell) {

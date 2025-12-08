@@ -128,11 +128,6 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> saveJobInfo(Job job) {
 
-        // 重复问题： 员工可以提交多条相同的记录 保存之前要做查询处理存在则不允许保存实现去重
-        // 工厂账单问题多个员工提交同一份工作记录时会出现多份相同账单，也要做去重处理 
-        // 比如A和B是搭档做的是同一床，那么他们两个就会提交一份同样的工作记录，导致成衣厂账单出现两份相同的
-        // 由于员工的工作类型和成衣厂账单的工作类型需求不一致所以需要后台手动填写成衣厂账单的工作类型才能得出账单价格
-
         // 判断对象是否为空
         if (ObjectUtil.isNull(job)) {
             return Result.fail("工作信息不能为空");

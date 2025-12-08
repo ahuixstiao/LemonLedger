@@ -102,6 +102,7 @@
       >
         <el-form-item size="large" label="工厂名称:" prop="factoryId">
           <el-select
+              filterable
               v-model="factoryQuotationInfoRef.factoryId"
               placeholder="选择工厂名称"
           >
