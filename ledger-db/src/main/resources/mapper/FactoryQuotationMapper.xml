@@ -22,7 +22,7 @@
             and fq.factory_id = #{factoryId}
         </if>
         <if test="styleNumber != null and styleNumber != '' ">
-            and fq.style_number = #{styleNumber}
+            and fq.style_number like CONCAT('%', #{styleNumber}, '%')
         </if>
         <if test="categoryId != null and categoryId != '' ">
             and fq.category_id = #{categoryId}

@@ -59,15 +59,28 @@ public class FactoryQuotationController {
 
 
     /**
-     * 删除成衣厂报价信息
+     * 更新成衣厂报价信息
      *
-     * @param factoryQuotationId 成衣厂报价ID
+     * @param factoryQuotation 报价表实体
      * @return result
      */
-    @DeleteMapping("/delete/{factoryQuotationId}")
-    public Result<Object> deleteFactoryQuotationInfo(@PathVariable Integer factoryQuotationId) {
+    @PutMapping("/update")
+    public Result<Object> updateFactoryQuotationInfo(@RequestBody FactoryQuotation factoryQuotation) {
 
-        return factoryQuotationService.deleteFactoryQuotationById(factoryQuotationId);
+        return factoryQuotationService.updateFactoryQuotationInfo(factoryQuotation);
+    }
+
+
+    /**
+     * 删除成衣厂报价信息
+     *
+     * @param id 成衣厂报价ID
+     * @return result
+     */
+    @DeleteMapping("/delete/{id}")
+    public Result<Object> deleteFactoryQuotationInfo(@PathVariable Integer id) {
+
+        return factoryQuotationService.deleteFactoryQuotationById(id);
     }
 
 }

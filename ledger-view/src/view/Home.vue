@@ -81,8 +81,9 @@
           </el-table-column>
         </el-table>
       </el-row>
-      <!-- 分页控制 -->
-      <el-row class="page-help">
+
+      <!-- 分页组件 -->
+      <el-row class="home-page">
         <el-pagination
             background
             :total="data.total"
@@ -90,10 +91,11 @@
             v-model:page-size="data.pageSize"
             :page-sizes="[5, 10, 20, 50, 100]"
             layout="sizes, prev, pager, next, jumper, ->"
-            @current-change="queryJobListByEmployeeIdAndDateHandle()"
-            @size-change="queryJobListByEmployeeIdAndDateHandle()"
+            @current-change="queryJobListByEmployeeIdAndDateHandle"
+            @size-change="queryJobListByEmployeeIdAndDateHandle"
         />
       </el-row>
+
     </el-card>
 
     <!--  员工注册表单  -->
@@ -700,12 +702,12 @@ const querySalaryRule = reactive({
   overflow: auto;
 }
 
-.page-help {
+.home-page {
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  height: 50px !important;
+  padding: 20px 0;
 }
 
 :deep(.van-cell) {

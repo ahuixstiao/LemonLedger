@@ -83,3 +83,30 @@ export function queryFactoryQuotationList(factoryId, styleNumber, categoryId, cu
         }
     })
 }
+
+
+// 保存成衣厂报价单信息
+export function saveFactoryQuotationInfo(quotation) {
+    return request({
+        url: '/admin/factoryQuotation/save',
+        method: 'post',
+        data: quotation
+    })
+}
+
+// 修改成衣厂报价单信息
+export function updateFactoryQuotationInfo(quotation) {
+    return request({
+        url: '/admin/factoryQuotation/update',
+        method: 'put',
+        data: quotation
+    })
+}
+
+// 删除成衣厂报价单信息
+export function deleteFactoryQuotationInfo(id) {
+    return request({
+        url: '/admin/factoryQuotation/delete/' + id,
+        method: 'delete'
+    })
+}

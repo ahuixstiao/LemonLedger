@@ -40,6 +40,7 @@ public class FactoryQuotationServiceImpl extends ServiceImpl<FactoryQuotationMap
      * @return result
      */
     @Override
+    @Transactional(readOnly = true)
     public Result<Object> queryFactoryQuotationListByCondition(
             Integer factoryId, String styleNumber, Integer categoryId,
             Integer currentPage, Integer pageSize, Integer flag) {
@@ -84,17 +85,33 @@ public class FactoryQuotationServiceImpl extends ServiceImpl<FactoryQuotationMap
     }
 
     /**
-     * 删除成衣厂报价单信息
+     * 更新成衣厂报价单信息
      *
-     * @param factoryQuotationId 成衣厂报价单ID
+     * @param factoryQuotation 成衣厂报价单实体
      * @return result
      */
     @Override
     @Transactional(rollbackFor = RuntimeException.class)
-    public Result<Object> deleteFactoryQuotationById(Integer factoryQuotationId) {
+    public Result<Object> updateFactoryQuotationInfo(FactoryQuotation factoryQuotation) {
 
+        if (updateById(factoryQuotation)) {
+            return Result.ok();
+        }
 
-        if (removeById(factoryQuotationId)) {
+        return Result.fail();
+    }
+
+    /**
+     * 删除成衣厂报价单信息
+     *
+     * @param id 成衣厂报价单ID
+     * @return result
+     */
+    @Override
+    @Transactional(rollbackFor = RuntimeException.class)
+    public Result<Object> deleteFactoryQuotationById(Integer id) {
+
+        if (removeById(id)) {
             return Result.ok();
         }
 

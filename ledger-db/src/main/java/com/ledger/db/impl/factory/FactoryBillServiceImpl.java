@@ -185,6 +185,7 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
                 );
             }
         } catch (RuntimeException runtimeException) {
+            log.error("找不到对应的成衣厂报价信息");
             return Result.fail("找不到对应的成衣厂报价信息, 请检查款式编号与工作类型是否正确");
         }
 

@@ -89,7 +89,7 @@
               v-model="scope.row.styleNumber"
               placeholder="选择款式编号"
               @click="queryFactoryStyleNumberListHandle(scope.row.factoryId)"
-              @change="updateBillStyleOrCategoryHandle(scope.row.id, scope.row.factoryId, scope.row.styleNumber, '', scope.row.quantity)"
+              @change="updateBillStyleOrCategoryHandle(scope.row.id, scope.row.factoryId, scope.row.styleNumber, scope.row.categoryId, scope.row.quantity)"
           >
             <el-option
                 v-for="item in data.styleNumberList"
@@ -103,13 +103,13 @@
       <el-table-column prop="category" label="工作类型" align="center">
         <template #default="scope">
           <el-select
-              v-model="scope.row.category"
+              v-model="scope.row.categoryId"
               placeholder="选择工作类型"
-              @change="updateBillStyleOrCategoryHandle(scope.row)"
+              @change="updateBillStyleOrCategoryHandle(scope.row.id, scope.row.factoryId, scope.row.styleNumber, scope.row.categoryId, scope.row.quantity)"
           >
             <el-option
                 v-for="item in data.categoryList"
-                :key="item.value"
+                :key="item.id"
                 :label="item.category"
                 :value="item.id"
             />
@@ -130,7 +130,7 @@
           <el-button type="primary" text @click="showUpdateBillInfoDialog(scope.row)">编辑</el-button>
           <el-popconfirm title="确认删除?" @confirm="billDeleteHandle(scope.row.id)">
             <template #reference>
-              <el-button type="danger" text>删除</el-button>
+              <el-button v-if="scope.row.flag === 0" type="danger" text>删除</el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -359,6 +359,7 @@ const queryFactoryListHandle = async () => {
 const queryCategoryListHandle = async () => {
   const {data: res} = await queryCategoryList()
   data.categoryList = res.data
+  console.log(res.data)
 }
 
 // 查询成衣厂款式编号列表
@@ -421,8 +422,8 @@ const addFactoryBillInfoHandle = async () => {
 }
 
 // 修改账单请求
-const updateBillInfoHandle = async (bill) => {
-  const {data: res} = await editFactoryBillInfo(bill)
+const updateBillInfoHandle = async () => {
+  const {data: res} = await editFactoryBillInfo(factoryBillInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
     await queryFactoryBillListHandle()
@@ -513,7 +514,7 @@ const billValidation = async formEl => {
         addFactoryBillInfoHandle()
       } else if (data.addBillDialogMode === 1) {
         // 编辑
-        updateBillInfoHandle(factoryBillInfoRef)
+        updateBillInfoHandle()
       }
     } else {
       ElMessage.error('请检查是否填写正确')

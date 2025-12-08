@@ -36,11 +36,19 @@ public interface IFactoryQuotationService extends IService<FactoryQuotation> {
     Result<Object> saveFactoryQuotationInfo(FactoryQuotation factoryQuotation);
 
     /**
-     * 删除成衣厂报价单信息
+     * 更新成衣厂报价单信息
      *
-     * @param factoryQuotationId 成衣厂报价单ID
+     * @param factoryQuotation 成衣厂报价单实体
      * @return result
      */
-    Result<Object> deleteFactoryQuotationById(Integer factoryQuotationId);
+    Result<Object> updateFactoryQuotationInfo(FactoryQuotation factoryQuotation);
+
+    /**
+     * 删除成衣厂报价单信息
+     *
+     * @param id 成衣厂报价单ID
+     * @return result
+     */
+    Result<Object> deleteFactoryQuotationById(Integer id);
 
 }
