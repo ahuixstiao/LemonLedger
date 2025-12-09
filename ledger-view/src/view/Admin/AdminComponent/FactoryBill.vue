@@ -69,6 +69,8 @@
           placeholder="结束日期"
           @change="queryFactoryBillListHandle"
       />
+      <!-- 重置按钮 -->
+      <el-button type="primary" @click="resetQueryCondition">重置</el-button>
     </div>
 
     <!-- 成衣厂账单表格 -->
@@ -192,7 +194,7 @@
               filterable
               v-model="factoryBillInfoRef.styleNumber"
               placeholder="输入款式编号"
-              @click="queryFactoryStyleNumberListHandle(factoryBillInfoRef.factoryId)"
+              @focus="queryFactoryStyleNumberListHandle(factoryBillInfoRef.factoryId)"
           >
             <el-option
                 v-for="item in data.styleNumberList"
@@ -237,11 +239,11 @@
           <el-button @click="resetBillInfoClickEvent(billInfoFormRef)">取消</el-button>
           <el-button type="primary" v-if="data.addBillDialogMode === 0"
                      @click="billValidation(billInfoFormRef)">
-            确认
+            新增
           </el-button>
           <el-button type="primary"
                      v-if="data.addBillDialogMode === 1" @click="billValidation(billInfoFormRef)">
-            保存
+            编辑
           </el-button>
         </div>
       </template>
@@ -308,7 +310,12 @@
 <script setup>
 import {reactive, onMounted, ref} from 'vue'
 import {queryCategoryList, queryFactoryList} from '../../../nwtwork/index.js'
-import {deleteFactoryBillInfo, editFactoryBillInfo, queryFactoryQuotationList} from '../../../nwtwork/admin.js'
+import {
+  deleteFactoryBillInfo,
+  editFactoryBillInfo,
+  queryFactoryQuotationList,
+  queryFactoryQuotationStyleNumberList
+} from '../../../nwtwork/admin.js'
 import {
   queryFactoryBillList,
   saveFactoryBillInfo,
@@ -351,30 +358,29 @@ const outputValue = useTransition(billTotal, {
   duration: 1000
 })
 
-// 查询成衣厂列表
+// TODO 查询成衣厂列表
 const queryFactoryListHandle = async () => {
   const {data: res} = await queryFactoryList()
   data.factoryList = res.data
 }
 
-// 查询工作类型列表
+// TODO 查询工作类型列表
 const queryCategoryListHandle = async () => {
   const {data: res} = await queryCategoryList()
   data.categoryList = res.data
-  console.log(res.data)
 }
 
-// 查询成衣厂款式编号列表
+// TODO 查询成衣厂报价单的款式编号列表
 const queryFactoryStyleNumberListHandle = async (factoryId) => {
-  const {data: res} = await queryFactoryQuotationList(factoryId)
+  const {data: res} = await queryFactoryQuotationStyleNumberList(factoryId)
   if (res.status === 200) {
-    data.styleNumberList = res.data.records
+    data.styleNumberList = res.data
   } else {
     ElMessage.error(res.message)
   }
 }
 
-// 查询成衣厂账单列表
+// TODO 查询成衣厂账单列表
 const queryFactoryBillListHandle = async () => {
   const {data: res} = await queryFactoryBillList(
       data.factoryId,
@@ -396,7 +402,7 @@ const queryFactoryBillListHandle = async () => {
   }
 }
 
-// 统计账单
+// TODO 统计账单
 const statisticalFactoryBillHandle = async () => {
   const {data: res} = await statisticalFactoryBill(
       statisticalBillRef.factoryId,
@@ -411,7 +417,7 @@ const statisticalFactoryBillHandle = async () => {
   }
 }
 
-// 新增账单请求
+// TODO 新增账单请求
 const addFactoryBillInfoHandle = async () => {
   //resetForm(billFormRef)
   const {data: res} = await saveFactoryBillInfo(factoryBillInfoRef)
@@ -423,7 +429,7 @@ const addFactoryBillInfoHandle = async () => {
   }
 }
 
-// 修改账单请求
+// TODO 修改账单请求
 const updateBillInfoHandle = async () => {
   const {data: res} = await editFactoryBillInfo(factoryBillInfoRef)
   if (res.status === 200) {
@@ -435,7 +441,7 @@ const updateBillInfoHandle = async () => {
   data.addBillDialogVisible = false
 }
 
-// 修改账单款式编号或工作类型请求
+// TODO 修改账单款式编号或工作类型请求
 const updateBillStyleOrCategoryHandle = async (id, factoryId, styleNumber, categoryId, quantity) => {
   const billInfo = {id, factoryId, styleNumber, categoryId, quantity}
   const {data: res} = await editFactoryBillInfo(billInfo)
@@ -448,7 +454,7 @@ const updateBillStyleOrCategoryHandle = async (id, factoryId, styleNumber, categ
   data.addBillDialogVisible = false
 }
 
-// 删除账单数据请求
+// TODO 删除账单数据请求
 const billDeleteHandle = async (id) => {
   const {data: res} = await deleteFactoryBillInfo(id)
   if (res.status === 200) {
@@ -533,6 +539,17 @@ const clickAddBill = () => {
 // 账单按钮点击事件
 const clickBill = () => {
   data.billVisible = true // 打开弹窗
+}
+
+// 重置按钮点击事件
+const resetQueryCondition = () => {
+  data.factoryId = ''
+  data.styleNumber = ''
+  data.categoryId = ''
+  data.flag = 0
+  data.startDate = ''
+  data.endDate = ''
+  queryFactoryBillListHandle()
 }
 
 // 编辑账单弹窗取消按钮点击事件

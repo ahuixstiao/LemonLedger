@@ -84,6 +84,18 @@ export function queryFactoryQuotationList(factoryId, styleNumber, categoryId, cu
     })
 }
 
+// 按成衣厂ID查询成衣厂报价单款式编号列表
+export function queryFactoryQuotationStyleNumberList(factoryId, flag) {
+    return request({
+        url: '/admin/factoryQuotation/styleNumberList',
+        method: 'get',
+        params: {
+            factoryId,
+            flag
+        }
+    })
+}
+
 
 // 保存成衣厂报价单信息
 export function saveFactoryQuotationInfo(quotation) {

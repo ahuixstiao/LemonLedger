@@ -213,7 +213,6 @@ const queryCategoryListHandle = async () => {
   data.categoryList = res.data
 }
 
-
 // TODO 查询成衣厂报价单列表
 const queryFactoryQuotationListHandle = async () => {
 
@@ -227,7 +226,6 @@ const queryFactoryQuotationListHandle = async () => {
   )
   // 判断请求是否成功
   if (res.status === 200) {
-    console.log(res.data.records)
     data.tableData = res.data.records
     data.total = res.data.total
   } else {
@@ -243,7 +241,7 @@ const addFactoryQuotationInfoHandle = async () => {
     ElMessage.success(res.message)
     await queryFactoryQuotationListHandle()
   } else {
-    ElMessage.success(res.message)
+    ElMessage.error(res.message)
   }
 
 }

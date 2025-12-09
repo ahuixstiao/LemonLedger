@@ -44,6 +44,22 @@ public class FactoryQuotationController {
         return factoryQuotationService.queryFactoryQuotationListByCondition(factoryId, styleNumber, categoryId, currentPage, pageSize, flag);
     }
 
+    /**
+     * 按成衣厂ID获取对应工厂的报价单款式编号列表
+     *
+     * @param factoryId 工厂ID
+     * @param flag      状态
+     * @return result
+     */
+    @GetMapping("/styleNumberList")
+    public Result<Object> queryFactoryQuotationStyleNumberListByFactoryId(
+            @RequestParam(required = false) Integer factoryId,
+            @RequestParam(required = false, defaultValue = "0") Integer flag) {
+
+
+        return factoryQuotationService.queryStyleNumberListByFactoryId(factoryId, flag);
+    }
+
 
     /**
      * 保存成衣厂报价信息

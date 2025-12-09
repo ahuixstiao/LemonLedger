@@ -54,6 +54,23 @@ public class FactoryQuotationServiceImpl extends ServiceImpl<FactoryQuotationMap
     }
 
     /**
+     * 按工厂ID查询对应工厂的报价单款式编号列表
+     *
+     * @param factoryId 工厂ID
+     * @param flag      状态
+     * @return result
+     */
+    @Override
+    public Result<Object> queryStyleNumberListByFactoryId(Integer factoryId, Integer flag) {
+
+        return Result.ok(
+                lambdaQuery()
+                        .eq(FactoryQuotation::getFactoryId, factoryId)
+                        .eq(FactoryQuotation::getFlag, flag).list()
+        );
+    }
+
+    /**
      * 保存成衣厂报价单信息
      *
      * @param factoryQuotation 成衣厂报价单实体
@@ -68,7 +85,6 @@ public class FactoryQuotationServiceImpl extends ServiceImpl<FactoryQuotationMap
                 .eq(FactoryQuotation::getFactoryId, factoryQuotation.getFactoryId())
                 .eq(StrUtil.isNotEmpty(factoryQuotation.getStyleNumber()), FactoryQuotation::getStyleNumber, factoryQuotation.getStyleNumber())
                 .eq(ObjectUtil.isNotEmpty(factoryQuotation.getCategoryId()), FactoryQuotation::getCategoryId, factoryQuotation.getCategoryId())
-                .eq(FactoryQuotation::getQuotation, factoryQuotation.getQuotation())
                 .exists();
 
         // 存在返回提示

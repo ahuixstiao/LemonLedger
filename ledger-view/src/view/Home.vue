@@ -52,7 +52,7 @@
           placeholder="要查询的床号"
           @input="queryJobListByEmployeeIdAndDateHandle"/>
 
-      <van-button type="primary" @click="resetQueryConditionForm">重置</van-button>
+      <van-button type="primary" @click="resetQueryCondition">重置</van-button>
     </div>
 
     <el-card>
@@ -540,7 +540,7 @@ const addJobInfoRef = reactive({
 })
 
 // 重置按钮函数
-const resetQueryConditionForm = () => {
+const resetQueryCondition = () => {
   data.startDate = ''
   data.endDate = ''
   data.id = 0
