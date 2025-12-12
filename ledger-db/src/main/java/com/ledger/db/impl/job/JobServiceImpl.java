@@ -138,7 +138,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
             return Result.fail("工作记录重复");
         }
 
-        // 判断前端是否传递了modeId
+        // 判断前端是否传递了 modeId
         if(ObjectUtil.isNull(job.getModeId()) || job.getModeId().equals(0)) {
             job.setModeId(
                     employeeService.lambdaQuery()
@@ -156,8 +156,6 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
             // 保存 工作记录
             if (save(job)) {
                 log.info("================= 工作记录保存成功: {} =================", job);
-                // 保存 成衣厂账单
-                saveFactoryBillIfNotExists(job);
             }else {
                 log.info("================= 工作记录保存失败: {} =================", job);
             }
@@ -264,52 +262,4 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         );
 
     }
-
-    /**
-     * 判断该成衣厂账单是否存在重复 以工厂ID、床号、款式编号、日期来判断
-     *
-     * @param job 工作信息
-     * @return boolean
-     */
-    private boolean isFactoryBillDuplicate(Job job) {
-
-        return factoryBillService.lambdaQuery()
-                .eq(FactoryBill::getFactoryId, job.getFactoryId())
-                .eq(FactoryBill::getNumber, job.getNumber())
-                .eq(FactoryBill::getStyleNumber, job.getStyleNumber())
-                .eq(FactoryBill::getCategoryId, job.getCategoryId())
-                .eq(FactoryBill::getCreatedDate, job.getCreatedDate())
-                .eq(FactoryBill::getFlag, 0)
-                .exists();
-    }
-
-    /**
-     * 保存成衣厂账单信息
-     *
-     * @param job 工作信息
-     */
-    private void saveFactoryBillIfNotExists(Job job) {
-
-        // 判断是否已经存在相同的成衣厂账单
-        if (isFactoryBillDuplicate(job)) {
-            return;
-        }
-
-        //构建 成衣厂账单对象
-        FactoryBill factoryBill = new FactoryBill();        // 构建对象
-        factoryBill.setFactoryId(job.getFactoryId());       // 成衣厂
-        factoryBill.setNumber(job.getNumber());             // 床号
-        factoryBill.setStyleNumber(job.getStyleNumber());   // 款式编号
-        factoryBill.setCategoryId(job.getCategoryId());     // 工作类型
-        factoryBill.setQuantity(job.getQuantity());         // 数量
-        factoryBill.setCreatedDate(job.getCreatedDate());   // 日期
-        // 成衣厂账单参数 由管理员手动在后台中选择工作类型后得出
-
-        if (factoryBillService.save(factoryBill)) {
-            log.info("================= 成衣厂账单保存成功: {} =================", factoryBill);
-        }else {
-            log.info("================= 成衣厂账单保存失败: {} =================", factoryBill);
-        }
-    }
-
 }

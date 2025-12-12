@@ -50,6 +50,13 @@ export function statisticalFactoryBill(factoryId, startDate, endDate) {
   })
 }
 
+// 导出成衣厂账单
+export function exportFactoryBill(billId) {
+    return request({
+
+    })
+}
+
 // 修改成衣厂账单
 export function editFactoryBillInfo(bill) {
   return request({

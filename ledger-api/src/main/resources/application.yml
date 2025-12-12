@@ -7,7 +7,7 @@ spring:
   mvc:
     format:
       date: yyyy-MM-dd
-  jackson:
+  Jackson:
     date-format: yyyy-MM-dd
     time-zone: GMT+8
   # 表示启用指定配置文件 若不指定则其他配置文件的配置不生效。

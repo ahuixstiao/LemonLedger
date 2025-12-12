@@ -26,10 +26,19 @@ export function saveJobInfo(job) {
     })
 }
 
+// 修改工作记录
+export function updateJobInfo(job) {
+    return request({
+        url: '/emp/job/update',
+        method: 'put',
+        data: job
+    })
+}
+
 // 删除工作记录
 export function deleteJobInfoById(id) {
     return request({
-        url: 'emp/job/delete/' + id,
+        url: '/emp/job/delete/' + id,
         method: 'delete'
     })
 }

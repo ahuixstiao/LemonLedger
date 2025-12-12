@@ -80,7 +80,9 @@
         stripe
         fit
         highlight-current-row
+        show-summary
         empty-text="暂无数据"
+        :summary-method="summaryQuantityAndBill"
     >
       <el-table-column prop="factoryName" sortable label="厂名" align="center"/>
       <el-table-column prop="number" sortable label="床号" align="center"/>
@@ -239,7 +241,7 @@
           <el-button @click="resetBillInfoClickEvent(billInfoFormRef)">取消</el-button>
           <el-button type="primary" v-if="data.addBillDialogMode === 0"
                      @click="billValidation(billInfoFormRef)">
-            新增
+            添加
           </el-button>
           <el-button type="primary"
                      v-if="data.addBillDialogMode === 1" @click="billValidation(billInfoFormRef)">
@@ -288,9 +290,19 @@
               type="primary"
               style="width: 100%"
               size="large"
-              @click="statisticalBillSubmitForm(statisticalBillFormRef)"
+              @click="statisticalBillForm(statisticalBillFormRef)"
           >
             计算
+          </el-button>
+        </el-form-item>
+        <el-form-item size="large">
+          <el-button
+              type="primary"
+              style="width: 100%"
+              size="large"
+              @click=""
+          >
+            导出账单
           </el-button>
         </el-form-item>
         <el-form-item size="large">
@@ -312,7 +324,7 @@ import {reactive, onMounted, ref} from 'vue'
 import {queryCategoryList, queryFactoryList} from '../../../nwtwork/index.js'
 import {
   deleteFactoryBillInfo,
-  editFactoryBillInfo,
+  editFactoryBillInfo, exportFactoryBill,
   queryFactoryQuotationList,
   queryFactoryQuotationStyleNumberList
 } from '../../../nwtwork/admin.js'
@@ -417,6 +429,13 @@ const statisticalFactoryBillHandle = async () => {
   }
 }
 
+// TODO 导出账单
+const exportFactoryBillHandle = async () => {
+
+
+
+}
+
 // TODO 新增账单请求
 const addFactoryBillInfoHandle = async () => {
   //resetForm(billFormRef)
@@ -466,7 +485,7 @@ const billDeleteHandle = async (id) => {
 }
 
 // 查询指定成衣厂账单表单提交校验函数
-const statisticalBillSubmitForm = async formEl => {
+const statisticalBillForm = async formEl => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
     if (valid) {
@@ -479,14 +498,14 @@ const statisticalBillSubmitForm = async formEl => {
 const statisticalBillFormRef = ref()
 const billInfoFormRef = ref()
 
-// 构建要发送的账单实体
+// 构建统计的账单实体
 const statisticalBillRef = reactive({
   factoryId: '',
   startDate: '',
   endDate: ''
 })
 
-// 构建新增账单实体
+// 构建账单实体
 const factoryBillInfoRef = reactive({
   id: '',
   factoryId: '',
@@ -528,6 +547,32 @@ const billValidation = async formEl => {
       ElMessage.error('请检查是否填写正确')
     }
   })
+}
+
+// 表格自定义合计
+const summaryQuantityAndBill = ({columns, data}) => {
+  const sums = []
+  columns.forEach((column, index) => {
+    // 第一列显示“合计”
+    if (index === 0) {
+      sums[index] = '合计'
+      return
+    }
+
+    // 只对 quantity 和 salary 两列求和
+    if (['quantity', 'bill'].includes(column.property)) {
+      const total = data.reduce((sum, row) => {
+        const value = Number(row[column.property])
+        return !isNaN(value) ? sum + value : sum
+      }, 0)
+      // 工资列保留两位小数
+      sums[index] =
+          column.property === 'bill' ? total.toFixed(2) : total
+    } else {
+      sums[index] = ''
+    }
+  })
+  return sums
 }
 
 // 新增按钮账单点击事件
