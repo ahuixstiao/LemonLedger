@@ -119,8 +119,8 @@ public class FactoryBillController {
         // 构建文件名
         String fileName = list.get(0).getFactoryName() + "成衣厂账单.xlsx";
 
-        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
-        ;
+        // 格式化文件名，处理中文乱码问题
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");;
 
         // TODO 构建文件流供浏览器下载
 
@@ -132,10 +132,10 @@ public class FactoryBillController {
         response.setHeader("Cache-Control", "No-cache"); // 不缓存
         response.setHeader("Pragma", "No-cache");
 
-        // 构建excel字体样式对象
+        // 构建Excel字体样式对象
         WriteFont commonFont = new WriteFont();
         // 配置字体大小
-        commonFont.setFontHeightInPoints((short) 15);
+        commonFont.setFontHeightInPoints((short) 16);
         // 创建单元格样式，并关联字体
         WriteCellStyle commonStyle = new WriteCellStyle();
         commonStyle.setWriteFont(commonFont);

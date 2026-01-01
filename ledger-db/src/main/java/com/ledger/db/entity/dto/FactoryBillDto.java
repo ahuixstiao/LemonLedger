@@ -68,8 +68,14 @@ public class FactoryBillDto implements Serializable {
     /**
      * 工作类型名称
      */
-    @ExcelProperty("类型")
+    @ExcelIgnore
     private String category;
+
+    /**
+     * 单个报价
+     */
+    @ExcelProperty("单价")
+    private BigDecimal quotation;
 
     /**
      * 数量

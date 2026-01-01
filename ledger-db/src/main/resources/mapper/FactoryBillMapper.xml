@@ -109,14 +109,18 @@
         factory.factory_name as factoryName,
         fb.number,
         fb.style_number,
-        jc.category,
         fb.quantity,
+        fq.quotation,
         fb.bill,
         fb.created_date
 
         from factory_bill fb
         left join factory on fb.factory_id = factory.id
         left join job_category jc on fb.category_id = jc.id
+        left join factory_quotation fq
+        on fb.factory_id = fq.factory_id
+        and fb.style_number = fq.style_number
+        and fb.category_id = fq.category_id
 
         <where>
             fb.factory_id = #{factoryId}
