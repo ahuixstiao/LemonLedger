@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * <p>
@@ -212,5 +213,18 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
         }
 
         return Result.fail("删除失败");
+    }
+
+    /**
+     * 按条件查询要导出的成衣厂账单信息
+     *
+     * @param factoryId 成衣厂ID
+     * @param startDate 起始日期
+     * @param endDate   截止日期
+     */
+    @Override
+    public List<FactoryBillDto> exportFactoryBillExcelByCondition(Integer factoryId, String startDate, String endDate) {
+
+        return factoryBillMapper.selectExportFactoryBillExcelByCondition(factoryId, startDate, endDate);
     }
 }

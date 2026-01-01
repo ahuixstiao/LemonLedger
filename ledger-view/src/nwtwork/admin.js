@@ -51,9 +51,15 @@ export function statisticalFactoryBill(factoryId, startDate, endDate) {
 }
 
 // 导出成衣厂账单
-export function exportFactoryBill(billId) {
+export function exportFactoryBillExcel(factoryId, startDate, endDate) {
     return request({
-
+        url: '/admin/factoryBill/excel/' + factoryId,
+        method: 'get',
+        responseType: "blob", //后台响应类型为二进制流
+        params: {
+            startDate,
+            endDate
+        }
     })
 }
 

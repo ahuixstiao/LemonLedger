@@ -102,4 +102,47 @@
     </select>
 
 
+    <!-- 导出指定工厂的账单 -->
+    <select id="selectExportFactoryBillExcelByCondition" resultType="factoryBillDto">
+        select
+        fb.factory_id,
+        factory.factory_name as factoryName,
+        fb.number,
+        fb.style_number,
+        jc.category,
+        fb.quantity,
+        fb.bill,
+        fb.created_date
+
+        from factory_bill fb
+        left join factory on fb.factory_id = factory.id
+        left join job_category jc on fb.category_id = jc.id
+
+        <where>
+            fb.factory_id = #{factoryId}
+            and fb.flag = 0
+            and factory.flag = 0
+
+            <choose>
+                <!-- 判断员工是否指定了时间范围 -->
+                <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+                    and fb.created_date between #{startDate} and #{endDate}
+                </when>
+                <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
+                <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
+                    and fb.created_date between #{startDate} and CURDATE()
+                </when>
+                <!-- 判断员工是否指定了结束日期 -->
+                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
+                    and fb.created_date &lt;= #{endDate}
+                </when>
+                <!-- 默认查询当月1号至当天的账单 -->
+                <otherwise>
+                    and fb.created_date between DATE_FORMAT(CURDATE(), '%Y-%m-01') and CURDATE()
+                </otherwise>
+            </choose>
+        </where>
+        order by fb.created_date asc
+    </select>
+
 </mapper>

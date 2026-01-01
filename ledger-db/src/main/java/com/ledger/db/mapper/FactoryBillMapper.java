@@ -7,6 +7,8 @@ import com.ledger.db.entity.dto.FactoryBillDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * <p>
  * 成衣厂账单表 Mapper 接口
@@ -51,6 +53,21 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
     FactoryBillDto calculateBillByFactoryIdAndDate(
             @Param("factoryId") Integer factoryId,
             @Param("startDate") String startDate, @Param("endDate") String endDate,
-            @Param("flag") Integer flag);
+            @Param("flag") Integer flag
+    );
+
+    /**
+     * 按条件获取要导出的成衣厂账单信息
+     *
+     * @param factoryId 工厂ID
+     * @param startDate 起始日期
+     * @param endDate   结束日期
+     * @return list
+     */
+    List<FactoryBillDto> selectExportFactoryBillExcelByCondition(
+            @Param("factoryId") Integer factoryId,
+            @Param("startDate") String startDate,
+            @Param("endDate") String endDate
+    );
 
 }

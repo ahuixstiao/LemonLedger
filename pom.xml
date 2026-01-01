@@ -48,6 +48,8 @@
 
         <!-- spring boot 版本 -->
         <spring-boot.version>2.7.0</spring-boot.version>
+
+        <fastexcel.version>1.0.0</fastexcel.version>
     </properties>
 
     <!-- 全局依赖 2个及以上的子模块依赖的第三方组件就放在该处 -->
@@ -99,6 +101,13 @@
                 <groupId>com.alibaba.fastjson2</groupId>
                 <artifactId>fastjson2-extension</artifactId>
                 <version>${fastjson2.version}</version>
+            </dependency>
+
+            <!-- fast excel easy excel的迭代 -->
+            <dependency>
+                <groupId>cn.idev.excel</groupId>
+                <artifactId>fastexcel</artifactId>
+                <version>${fastexcel.version}</version>
             </dependency>
 
         </dependencies>

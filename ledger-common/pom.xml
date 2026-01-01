@@ -98,6 +98,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- fastexcel -->
+        <dependency>
+            <groupId>cn.idev.excel</groupId>
+            <artifactId>fastexcel</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

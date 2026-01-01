@@ -1,13 +1,26 @@
 package com.ledger.api.controller.admin.factory;
 
+import cn.idev.excel.FastExcel;
+import cn.idev.excel.write.metadata.style.WriteCellStyle;
+import cn.idev.excel.write.metadata.style.WriteFont;
+import cn.idev.excel.write.style.HorizontalCellStyleStrategy;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.FactoryBill;
+import com.ledger.db.entity.dto.FactoryBillDto;
 import com.ledger.db.service.factory.IFactoryBillService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * @Author: ahui
@@ -17,6 +30,7 @@ import javax.validation.constraints.NotNull;
 @RestController
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @RequestMapping("/admin/factoryBill")
+@Slf4j
 public class FactoryBillController {
 
     private final IFactoryBillService factoryBillService;
@@ -65,6 +79,82 @@ public class FactoryBillController {
             @RequestParam(required = false, defaultValue = "0") Integer flag) {
 
         return factoryBillService.statisticalBill(factoryId, startDate, endDate, flag);
+    }
+
+    /**
+     * 按条件导出成衣厂账单 Excel
+     *
+     * @param factoryId 成衣厂ID
+     * @param startDate 起始日期
+     * @param endDate   截止日期
+     */
+    @GetMapping("/excel/{factoryId}")
+    public void exportFactoryBillExcelByCondition(
+            HttpServletResponse response,
+            @PathVariable @NotNull Integer factoryId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
+    ) {
+        // 查询数据
+        List<FactoryBillDto> list = factoryBillService.exportFactoryBillExcelByCondition(factoryId, startDate, endDate);
+
+        // 获取总计
+        double totalAmount = list.stream()
+                .map(FactoryBillDto::getBill)      // 1. 提取金额字段（BigDecimal 类型）
+                .filter(Objects::nonNull)          // 2. 过滤掉可能的 null 值，避免空指针
+                .mapToDouble(BigDecimal::doubleValue) // 3. 转换为 double 流以便求和
+                .sum();
+
+        // 创建一个特殊的“总计行”对象，其字段根据需要设置
+        FactoryBillDto summaryRow = new FactoryBillDto();
+        // 设置一个特殊行的标识，例如工厂名称为“账单总计”
+        summaryRow.setFactoryName("账单总计");
+        // 其他文本列可以留空或设为你需要的提示
+        summaryRow.setBill(BigDecimal.valueOf(totalAmount)); // 在金额列放入总计
+        // 添加一个空行作为间隔
+        list.add(new FactoryBillDto());
+        // 将总计行添加到列表末尾
+        list.add(summaryRow);
+
+        // 构建文件名
+        String fileName = list.get(0).getFactoryName() + "成衣厂账单.xlsx";
+
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        ;
+
+        // TODO 构建文件流供浏览器下载
+
+        // 设置响应内容文件类型
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); // 设为输出 excel文件
+        response.setCharacterEncoding("utf-8");
+        // 添加响应头信息
+        response.setHeader("Content-disposition", "attachment;filename=" + encodedFileName); // 设置头
+        response.setHeader("Cache-Control", "No-cache"); // 不缓存
+        response.setHeader("Pragma", "No-cache");
+
+        // 构建excel字体样式对象
+        WriteFont commonFont = new WriteFont();
+        // 配置字体大小
+        commonFont.setFontHeightInPoints((short) 15);
+        // 创建单元格样式，并关联字体
+        WriteCellStyle commonStyle = new WriteCellStyle();
+        commonStyle.setWriteFont(commonFont);
+
+
+        try {
+            // TODO 写入本地
+            log.info("开始导出成衣厂账单 Excel 数据量: {}", list.size());
+            log.info("文件名: {}", encodedFileName);
+            log.info("响应状态: {}", response.getStatus());
+            FastExcel
+                    .write(response.getOutputStream(), FactoryBillDto.class)
+                    .registerWriteHandler(new HorizontalCellStyleStrategy(commonStyle, commonStyle))
+                    .sheet("账单")
+                    .doWrite(list);
+        } catch (IOException ioException) {
+            // 打印异常信息
+            log.error(ioException.getMessage());
+        }
     }
 
     /**

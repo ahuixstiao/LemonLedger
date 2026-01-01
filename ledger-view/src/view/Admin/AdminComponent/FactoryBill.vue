@@ -285,6 +285,7 @@
               placeholder="结束日期"
           />
         </el-form-item>
+        <!-- 计算账单 -->
         <el-form-item size="large">
           <el-button
               type="primary"
@@ -292,17 +293,7 @@
               size="large"
               @click="statisticalBillForm(statisticalBillFormRef)"
           >
-            计算
-          </el-button>
-        </el-form-item>
-        <el-form-item size="large">
-          <el-button
-              type="primary"
-              style="width: 100%"
-              size="large"
-              @click=""
-          >
-            导出账单
+            计算并导出账单
           </el-button>
         </el-form-item>
         <el-form-item size="large">
@@ -324,8 +315,7 @@ import {reactive, onMounted, ref} from 'vue'
 import {queryCategoryList, queryFactoryList} from '../../../nwtwork/index.js'
 import {
   deleteFactoryBillInfo,
-  editFactoryBillInfo, exportFactoryBill,
-  queryFactoryQuotationList,
+  editFactoryBillInfo, exportFactoryBillExcel,
   queryFactoryQuotationStyleNumberList
 } from '../../../nwtwork/admin.js'
 import {
@@ -414,25 +404,69 @@ const queryFactoryBillListHandle = async () => {
   }
 }
 
-// TODO 统计账单
-const statisticalFactoryBillHandle = async () => {
+// TODO 统计并导出账单
+const statisticalAndExportFactoryBillHandle = async () => {
   const {data: res} = await statisticalFactoryBill(
       statisticalBillRef.factoryId,
       statisticalBillRef.startDate,
       statisticalBillRef.endDate
   )
+  // 判断账单是否计算成功
   if (res.status === 200) {
+    // 将计算结果赋值给账单总数
     billTotal.value = res.data.bill
+
+    // 导出账单
+    await exportFactoryBillExcelHandle()
+
   } else {
     billTotal.value = 0
     ElMessage.error(res.message)
   }
 }
 
-// TODO 导出账单
-const exportFactoryBillHandle = async () => {
+// TODO 导出账单Excel
+const exportFactoryBillExcelHandle = async () => {
+  // 计算成功后导出账单
+  const res = await exportFactoryBillExcel(
+      statisticalBillRef.factoryId,
+      statisticalBillRef.startDate,
+      statisticalBillRef.endDate
+  )
 
+  // 获取响应头中的文件名
+  let fileName = '成衣厂账单.xlsx'
+  const contentDisposition = res.headers['content-disposition']
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+    if (match && match[1]) {
+      fileName = decodeURIComponent(match[1].replace(/['"]/g, ''))
+    }
+  }
 
+  // 创建 blob 对象
+  const blob = new Blob([res.data], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  })
+
+  // 创建下载链接
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+
+  // 设置下载文件名
+  link.download = fileName
+
+  // 添加到 DOM 并触发点击
+  document.body.appendChild(link)
+  link.click()
+
+  // 清理
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+
+  // 提示下载成功
+  ElMessage.success('下载成功')
 
 }
 
@@ -489,8 +523,8 @@ const statisticalBillForm = async formEl => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
     if (valid) {
-      // 校验通过后查询账单
-      statisticalFactoryBillHandle()
+      // 校验通过后查询并导出账单
+      statisticalAndExportFactoryBillHandle()
     }
   })
 }

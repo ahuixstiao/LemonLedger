@@ -3,6 +3,9 @@ package com.ledger.db.service.factory;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.FactoryBill;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ledger.db.entity.dto.FactoryBillDto;
+
+import java.util.List;
 
 /**
  * <p>
@@ -68,4 +71,17 @@ public interface IFactoryBillService extends IService<FactoryBill> {
      * @return result
      */
     Result<Object> deleteFactoryBillInfo(Integer id);
+
+    /**
+     * 按条件导出成衣厂账单 Excel
+     *
+     * @param factoryId 成衣厂ID
+     * @param startDate 起始日期
+     * @param endDate   截止日期
+     */
+    List<FactoryBillDto> exportFactoryBillExcelByCondition(
+            Integer factoryId,
+            String startDate,
+            String endDate
+    );
 }
