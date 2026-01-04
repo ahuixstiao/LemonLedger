@@ -58,7 +58,8 @@
                 </otherwise>
             </choose>
         </where>
-        order by ft.factory_name desc
+        <!-- 按日期、成衣厂名称、床号排序 -->
+        order by fb.created_date asc, ft.factory_name collate utf8mb4_zh_0900_as_cs asc, fb.number asc
     </select>
 
     <!-- 获取指定工厂的账单 -->

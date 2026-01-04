@@ -61,17 +61,16 @@
         <el-table
             :data="data.tableData" height="60"
             stripe fit highlight-current-row show-summary
-            :default-sort="{prop: 'number', order: 'descending'}"
             :summary-method="summaryQuantityAndSalary" style="height: 100%"
         >
           <el-table-column sortable prop="name" label="员工名称" align="center"/>
           <el-table-column sortable prop="factoryName" label="厂名" align="center"/>
           <el-table-column sortable prop="number" label="床号" align="center"/>
-          <el-table-column prop="styleNumber" label="款式编号" align="center"/>
-          <el-table-column prop="category" label="类型" align="center"/>
+          <el-table-column sortable prop="styleNumber" label="款式编号" align="center"/>
+          <el-table-column sortable prop="category" label="类型" align="center"/>
           <el-table-column prop="quantity" label="数量" align="center"/>
           <el-table-column prop="salary" width="95" label="本床工资(单位: 元)" align="center"/>
-          <el-table-column prop="createdDate" label="日期" align="center"/>
+          <el-table-column sortable prop="createdDate" label="日期" align="center"/>
           <el-table-column label="管理" align="center">
             <template #default="scope">
               <el-button type="primary" text @click="showUpdateJobInfoDialog(scope.row)">
@@ -278,12 +277,12 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="resetJobInfoFormData" size="large">取消</el-button>
-          <el-button type="primary" :loading="data.isLoading" v-if="data.dialogMode === 0"
+          <el-button type="default" size="large" @click="handleCancelJobDialog">取消</el-button>
+          <el-button type="primary" size="large" :loading="data.isLoading" v-if="data.dialogMode === 0"
                      @click="validationJobInfoForm(jobInfoFormRef)">
             新增
           </el-button>
-          <el-button type="primary" :loading="data.isLoading"
+          <el-button type="primary" size="large" :loading="data.isLoading"
                      v-if="data.dialogMode === 1" @click="validationJobInfoForm(jobInfoFormRef)">
             修改
           </el-button>
@@ -436,10 +435,10 @@ const saveJobInfoHandle = async () => {
   const {data: res} = await saveJobInfo(jobInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    // 保存成功后 关闭弹窗
-    //data.editJobDialogVisible = false
     // 保存成功后清除填写的工作信息
     //resetJobInfoFormData()
+    // 保存成功后 关闭弹窗
+    //data.editJobDialogVisible = false
     await queryJobListByEmployeeIdAndDateHandle()
   } else {
     ElMessage.error(res.message)
@@ -451,10 +450,11 @@ const updateJobInfoHandle = async ()=> {
   const {data: res} = await updateJobInfo(jobInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    // 修改成功后 关闭弹窗
-    data.editJobDialogVisible = false
     // 修改成功后清除填写的工作信息
     resetJobInfoFormData()
+    // 清除原信息后 关闭弹窗
+    data.editJobDialogVisible = false
+    // 刷新表格数据
     await queryJobListByEmployeeIdAndDateHandle()
   } else {
     ElMessage.error(res.message)
@@ -483,33 +483,31 @@ const handleEmployeeChange = employeeId => {
 
 // 注册员工按钮点击事件
 const clickAddEmployee = () => {
-  data.employeeDialogVisible = true // 打开弹窗
   queryModeListHandle()     // 查询工作方式列表
+  data.employeeDialogVisible = true // 打开弹窗
 }
 
 // 添加工作信息按钮点击事件
 const clickAddWork = () => {
-  data.editJobDialogVisible = true // 打开弹窗
+  // 设置为添加模式
+  data.dialogMode = 0
+  // 清空表单数据
+  Object.assign(jobInfoRef, jobInfoCreateInit)
+  jobInfoFormRef.value?.clearValidate()
+  data.editJobDialogVisible = true
   queryEmployeeListHandle()  // 查询员工列表
   queryFactoryListHandle()   // 查询成衣厂列表
   queryCategoryListHandle()  // 查询工作类型列表
 }
 
-// 打开修改弹窗
+// 显示修改弹窗
 const showUpdateJobInfoDialog = (job) => {
-  data.editJobDialogVisible = true
+  // 设置为编辑模式
   data.dialogMode = 1
-
-  jobInfoRef.id = job.id
-  jobInfoRef.employeeId = job.employeeId
-  jobInfoRef.modeId = job.modeId
-  jobInfoRef.factoryId = job.factoryId
-  jobInfoRef.number = job.number
-  jobInfoRef.categoryId = job.categoryId
-  jobInfoRef.styleNumber = job.styleNumber
-  jobInfoRef.quantity = job.quantity
-  jobInfoRef.salary = job.salary
-  jobInfoRef.createdDate = job.createdDate
+  // 填充表单数据
+  Object.assign(jobInfoRef, job)
+  // 显示弹窗
+  data.editJobDialogVisible = true
 }
 
 // 计算工资按钮点击事件
@@ -572,20 +570,6 @@ const addEmployeeInfoRef = reactive({
   modeId: ''
 })
 
-// 添加工作信息表单参数
-const jobInfoRef = reactive({
-  id: '',
-  employeeId: '',
-  factoryId: '',
-  categoryId: '',
-  modeId: '',
-  number: '',
-  styleNumber: '',
-  quantity: '',
-  salary: '',
-  createdDate: ''
-})
-
 // 重置按钮函数
 const resetQueryCondition = () => {
   data.startDate = ''
@@ -597,9 +581,45 @@ const resetQueryCondition = () => {
   queryJobListByEmployeeIdAndDateHandle()
 }
 
-// 清除添加工作信息表单填写的参数
+// 工作信息表单参数初始化
+const jobInfoInit = {
+  id: '',
+  employeeId: '',
+  factoryId: '',
+  categoryId: '',
+  modeId: '',
+  number: '',
+  styleNumber: '',
+  quantity: '',
+  salary: '',
+  createdDate: ''
+}
+
+// 新增工作信息表单参数初始化
+const jobInfoCreateInit = {
+  id: '',
+  factoryId: '',
+  number: '',
+  categoryId: '',
+  styleNumber: '',
+  quantity: '',
+  salary: '',
+  createdDate: ''
+}
+
+// 工作信息表单参数
+const jobInfoRef = reactive({...jobInfoInit})
+
+// 清除工作信息表单填写的参数
 const resetJobInfoFormData = () => {
-  jobInfoFormRef.value.resetFields()
+  Object.assign(jobInfoRef, jobInfoInit)
+  jobInfoFormRef.value?.clearValidate()
+}
+
+// 取消按钮
+const handleCancelJobDialog = () => {
+  // 清除表单填写的参数
+  resetJobInfoFormData()
   data.editJobDialogVisible = false
 }
 
@@ -681,10 +701,7 @@ const jobRules = reactive({
   factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
   categoryId: [{required: true, message: '请选择工作类型', trigger: 'blur'}],
   number: [{required: true, message: '请输入床号', trigger: 'blur'}],
-  styleNumber: [
-    {required: true, message: '请输入款式编号', trigger: 'blur'},
-    onlyNumberRule
-  ],
+  styleNumber: [{required: true, message: '请输入款式编号', trigger: 'blur'}],
   quantity: [
     {required: true, message: '请输入数量', trigger: 'blur'},
     onlyNumberRule

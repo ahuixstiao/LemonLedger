@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.db.mapper.JobMapper">
 
-    <!-- 根据员工ID 查询工作信息列表 -->
-    <select id="selectJobListByEmployeeId" resultType="jobDTO">
+    <!-- 根据条件查询工作信息列表 -->
+    <select id="selectJobListByCondition" resultType="jobDTO">
         select
         job.id,
         job.employee_id,
@@ -64,8 +64,8 @@
                 </otherwise>
             </choose>
         </where>
-        <!-- 按员工名称排序 -->
-        order by emp.name desc
+        <!-- 按日期和员工名称排序 -->
+        order by job.created_date asc, emp.name collate utf8mb4_zh_0900_as_cs asc
     </select>
 
 

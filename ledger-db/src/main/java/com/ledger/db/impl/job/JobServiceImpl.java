@@ -86,7 +86,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         Page<JobDTO> page = new Page<>(currentPage, pageSize);
 
         // 查询
-        page = jobMapper.selectJobListByEmployeeId(page,
+        page = jobMapper.selectJobListByCondition(page,
                 employeeId, startDate, endDate,
                 factoryId, number, categoryId,
                 flag);
@@ -140,6 +140,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
 
         // 判断前端是否传递了 modeId
         if(ObjectUtil.isNull(job.getModeId()) || job.getModeId().equals(0)) {
+            // 如果未传递则向数据库查询
             job.setModeId(
                     employeeService.lambdaQuery()
                             .eq(Employee::getId, job.getEmployeeId())
@@ -169,6 +170,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     }
 
     /**
+     * 更新工作信息
      * @param job 工作记录
      * @return result
      */
@@ -176,6 +178,15 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> updateJobInfo(Job job) {
 
+        // 判断对象是否为空
+        if (ObjectUtil.isNull(job)) {
+            return Result.fail("工作信息不能为空");
+        }
+
+        // 计算工作工资
+        calculateJobSalary(job);
+
+        // 更新工作记录
         if (updateById(job)) {
             return Result.ok();
         }

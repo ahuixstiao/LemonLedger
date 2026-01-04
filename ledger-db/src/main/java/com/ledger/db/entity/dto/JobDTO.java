@@ -43,7 +43,7 @@ public class JobDTO implements Serializable {
     /**
      * 款式编号 比如3101
      */
-    private Integer styleNumber;
+    private String styleNumber;
 
     /**
      * 工作方式ID

@@ -3,7 +3,7 @@
     <!-- 筛选条件 -->
     <div class="factoryBill-button">
       <el-button type="primary" @click="clickAddBill">添加</el-button>
-      <el-button type="primary" @click="clickBill">账单</el-button>
+      <el-button type="primary" @click="data.billVisible = true">账单</el-button>
       <!-- 成衣厂筛选条件 -->
       <el-select
           v-model="data.factoryId"
@@ -86,7 +86,7 @@
     >
       <el-table-column prop="factoryName" sortable label="厂名" align="center"/>
       <el-table-column prop="number" sortable label="床号" align="center"/>
-      <el-table-column prop="styleNumber" label="款式编号" align="center">
+      <el-table-column prop="styleNumber" sortable label="款式编号" align="center">
         <template #default="scope">
           <el-select
               filterable
@@ -104,7 +104,7 @@
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column prop="category" label="工作类型" align="center">
+      <el-table-column prop="category" sortable label="工作类型" align="center">
         <template #default="scope">
           <el-select
               v-model="scope.row.categoryId"
@@ -122,7 +122,7 @@
       </el-table-column>
       <el-table-column prop="quantity" label="数量" align="center"/>
       <el-table-column prop="bill" label="账单" align="center"/>
-      <el-table-column prop="createdDate" label="日期" align="center"/>
+      <el-table-column prop="createdDate" sortable label="日期" align="center"/>
       <el-table-column prop="flag" label="状态" align="center">
         <template #default="scope">
           <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
@@ -155,14 +155,9 @@
     </div>
 
     <!--  添加或编辑成衣厂账单信息弹窗  -->
-    <el-dialog
-        v-model="data.addBillDialogVisible"
-        :title="
-        data.addBillDialogMode === 0 ? '添加成衣厂账单' : data.addBillDialogMode === 1 ? '修改成衣厂账单': ''"
-        width="50%"
-        center
-        @closed="resetForm(billInfoFormRef)"
-    >
+    <el-dialog v-model="data.addBillDialogVisible"
+        :title="data.addBillDialogMode === 0 ? '添加成衣厂账单' : data.addBillDialogMode === 1 ? '修改成衣厂账单': ''"
+        width="50%" center>
       <el-form
           ref="billInfoFormRef"
           :model="factoryBillInfoRef"
@@ -238,7 +233,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="resetBillInfoClickEvent(billInfoFormRef)">取消</el-button>
+          <el-button @click="handleCancelJobDialog">取消</el-button>
           <el-button type="primary" v-if="data.addBillDialogMode === 0"
                      @click="billValidation(billInfoFormRef)">
             添加
@@ -529,60 +524,6 @@ const statisticalBillForm = async formEl => {
   })
 }
 
-const statisticalBillFormRef = ref()
-const billInfoFormRef = ref()
-
-// 构建统计的账单实体
-const statisticalBillRef = reactive({
-  factoryId: '',
-  startDate: '',
-  endDate: ''
-})
-
-// 构建账单实体
-const factoryBillInfoRef = reactive({
-  id: '',
-  factoryId: '',
-  number: '',
-  styleNumber: '',
-  categoryId: '',
-  quantity: '',
-  createdDate: ''
-})
-
-// 显示修改弹窗
-const showUpdateBillInfoDialog = (bill) => {
-  data.addBillDialogVisible = true
-  data.addBillDialogMode = 1
-  // 自动填写原信息
-  factoryBillInfoRef.id = bill.id
-  factoryBillInfoRef.factoryId = bill.factoryId
-  factoryBillInfoRef.categoryId = bill.categoryId
-  factoryBillInfoRef.number = bill.number
-  factoryBillInfoRef.styleNumber = bill.styleNumber
-  factoryBillInfoRef.createdDate = bill.createdDate
-  factoryBillInfoRef.quantity = bill.quantity
-}
-
-// 判断账单表单处于新增或是编辑状态
-const billValidation = async formEl => {
-  if (!formEl) return
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      // 判断是新增还是修改  0 新增 1 编辑
-      if (data.addBillDialogMode === 0) {
-        // 添加
-        addFactoryBillInfoHandle()
-      } else if (data.addBillDialogMode === 1) {
-        // 编辑
-        updateBillInfoHandle()
-      }
-    } else {
-      ElMessage.error('请检查是否填写正确')
-    }
-  })
-}
-
 // 表格自定义合计
 const summaryQuantityAndBill = ({columns, data}) => {
   const sums = []
@@ -609,16 +550,6 @@ const summaryQuantityAndBill = ({columns, data}) => {
   return sums
 }
 
-// 新增按钮账单点击事件
-const clickAddBill = () => {
-  data.addBillDialogVisible = true
-  data.addBillDialogMode = 0
-}
-
-// 账单按钮点击事件
-const clickBill = () => {
-  data.billVisible = true // 打开弹窗
-}
 
 // 重置按钮点击事件
 const resetQueryCondition = () => {
@@ -631,9 +562,83 @@ const resetQueryCondition = () => {
   queryFactoryBillListHandle()
 }
 
-// 编辑账单弹窗取消按钮点击事件
-const resetBillInfoClickEvent = () => {
-  data.addBillDialogVisible = false // 关闭窗口
+
+const statisticalBillFormRef = ref()
+const billInfoFormRef = ref()
+
+// 构建统计的账单实体
+const statisticalBillRef = reactive({
+  factoryId: '',
+  startDate: '',
+  endDate: ''
+})
+
+
+// 成衣厂账单表单初始化数据
+const factoryBillInfoInit = {
+  id: '',
+  factoryId: '',
+  number: '',
+  styleNumber: '',
+  categoryId: '',
+  quantity: '',
+  createdDate: ''
+}
+
+// 构建账单实体
+const factoryBillInfoRef = reactive({...factoryBillInfoInit})
+
+// 显示修改弹窗
+const showUpdateBillInfoDialog = (bill) => {
+  // 填充表单数据
+  Object.assign(factoryBillInfoRef, bill)
+  // 1 为编辑模式
+  data.addBillDialogMode = 1
+  // 显示弹窗
+  data.addBillDialogVisible = true
+}
+
+// 新增账单按钮点击事件
+const clickAddBill = () => {
+  // 重置表单信息
+  Object.assign(factoryBillInfoRef, factoryBillInfoInit)
+  // 0 为新增模式
+  data.addBillDialogMode = 0
+  // 显示弹窗
+  data.addBillDialogVisible = true
+
+}
+
+// 清除账单信息表单填写的参数
+const restBillInfoFormData = () => {
+  // 清除信息
+  Object.assign(factoryBillInfoRef, factoryBillInfoInit)
+  billInfoFormRef.value?.clearValidate()
+}
+
+// 取消按钮
+const handleCancelJobDialog = () => {
+  restBillInfoFormData()
+  data.addBillDialogVisible = false
+}
+
+// 判断账单表单处于新增或是编辑状态
+const billValidation = async formEl => {
+  if (!formEl) return
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      // 判断是新增还是修改  0 新增 1 编辑
+      if (data.addBillDialogMode === 0) {
+        // 添加
+        addFactoryBillInfoHandle()
+      } else if (data.addBillDialogMode === 1) {
+        // 编辑
+        updateBillInfoHandle()
+      }
+    } else {
+      ElMessage.error('请检查是否填写正确')
+    }
+  })
 }
 
 const onlyNumberRule = {
@@ -660,11 +665,6 @@ const statisticalBillRules = reactive({
   factoryId: [{required: true, message: '请选择成衣厂', trigger: 'blur'}]
 })
 
-// 清空表单
-const resetForm = formEl => {
-  if (!formEl) return
-  formEl.resetFields()
-}
 </script>
 
 <style scoped>

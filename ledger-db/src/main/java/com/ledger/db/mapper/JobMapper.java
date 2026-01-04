@@ -30,7 +30,7 @@ public interface JobMapper extends BaseMapper<Job> {
      * @param categoryId  指定工作类型
      * @return 以分页后的方式返回工作信息列表
      */
-    Page<JobDTO> selectJobListByEmployeeId(
+    Page<JobDTO> selectJobListByCondition(
             Page<JobDTO> page,
             @Param("employeeId") Integer employeeId,
             @Param("startDate") String startDate,
