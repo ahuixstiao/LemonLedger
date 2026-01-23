@@ -12,14 +12,14 @@
         fb.number,          <!-- 床号 -->
         fb.style_number,    <!-- 款式编号 -->
         fb.category_id,     <!-- 工作类型ID -->
-        jc.category,        <!-- 工作类型名称 -->
+        fjc.category,        <!-- 工作类型名称 -->
         fb.quantity,        <!-- 数量 -->
         fb.bill,             <!-- 账单 -->
         fb.created_date,
         fb.flag
         from factory_bill fb
         left join factory ft on fb.factory_id = ft.id
-        left join job_category jc on fb.category_id = jc.id
+        left join factory_job_category fjc on fb.category_id = fjc.id
         <where>
             fb.flag = #{flag}
 
@@ -110,6 +110,8 @@
         factory.factory_name as factoryName,
         fb.number,
         fb.style_number,
+        fjc.id as categoryId,
+        fjc.category,
         fb.quantity,
         fq.quotation,
         fb.bill,
@@ -117,7 +119,7 @@
 
         from factory_bill fb
         left join factory on fb.factory_id = factory.id
-        left join job_category jc on fb.category_id = jc.id
+        left join factory_job_category fjc on fb.category_id = fjc.id
         left join factory_quotation fq
         on fb.factory_id = fq.factory_id
         and fb.style_number = fq.style_number

@@ -165,7 +165,7 @@
 import {onMounted, reactive, ref} from "vue";
 import {queryCategoryList, queryFactoryList} from "../../../nwtwork/index.js";
 import {
-  deleteFactoryQuotationInfo,
+  deleteFactoryQuotationInfo, queryFactoryJobCategoryList,
   queryFactoryQuotationList,
   saveFactoryQuotationInfo,
   updateFactoryQuotationInfo
@@ -209,7 +209,7 @@ const queryFactoryListHandle = async () => {
 
 // TODO 查询工作类型列表
 const queryCategoryListHandle = async () => {
-  const {data: res} = await queryCategoryList()
+  const {data: res} = await queryFactoryJobCategoryList()
   data.categoryList = res.data
 }
 

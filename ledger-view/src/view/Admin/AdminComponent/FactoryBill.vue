@@ -310,7 +310,7 @@ import {reactive, onMounted, ref} from 'vue'
 import {queryCategoryList, queryFactoryList} from '../../../nwtwork/index.js'
 import {
   deleteFactoryBillInfo,
-  editFactoryBillInfo, exportFactoryBillExcel,
+  editFactoryBillInfo, exportFactoryBillExcel, queryFactoryJobCategoryList,
   queryFactoryQuotationStyleNumberList
 } from '../../../nwtwork/admin.js'
 import {
@@ -363,7 +363,7 @@ const queryFactoryListHandle = async () => {
 
 // TODO 查询工作类型列表
 const queryCategoryListHandle = async () => {
-  const {data: res} = await queryCategoryList()
+  const {data: res} = await queryFactoryJobCategoryList()
   data.categoryList = res.data
 }
 

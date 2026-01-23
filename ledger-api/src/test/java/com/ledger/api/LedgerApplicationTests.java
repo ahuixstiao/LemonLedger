@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.generator.config.rules.DateType;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
 import com.ledger.common.entity.ParentEntity;
-import com.ledger.db.mapper.JobMapper;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +31,10 @@ class LedgerApplicationTests {
     @Value("${db.password}")
     private String password;
 
-    private final JobMapper jobMapper;
-
     @Test
     void contextLoads() {
         // 逆向工程
-        //codeGenerator("factory_quotation");
+        //codeGenerator("factory_job_category");
 
         //System.out.println(LocalDateTime.parse("2025-10-05T08:21:26.663105").format(DateTimeFormatter.ISO_DATE));
         //System.out.println(LocalDate.parse("2025-10-01").format(DateTimeFormatter.ISO_DATE));
@@ -122,7 +119,6 @@ class LedgerApplicationTests {
 
                         // 构建mapper接口配置
                         .mapperBuilder()
-                        .enableMapperAnnotation() // 使用@Mapper注解
 
                         // 构建完成
                         .build()

@@ -68,7 +68,7 @@ public class FactoryBillDto implements Serializable {
     /**
      * 工作类型名称
      */
-    @ExcelIgnore
+    @ExcelProperty("类型")
     private String category;
 
     /**

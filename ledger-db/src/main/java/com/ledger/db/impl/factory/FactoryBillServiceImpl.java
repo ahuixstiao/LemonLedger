@@ -63,6 +63,7 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
             endDate = LocalDate.parse(endDate).format(DateTimeFormatter.ISO_DATE);
         }
 
+        // 配置分页参数
         Page<FactoryBillDto> page = new Page<>(currentPage, pageSize);
 
         page = factoryBillMapper.selectFactoryBillList(

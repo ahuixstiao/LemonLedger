@@ -135,3 +135,11 @@ export function deleteFactoryQuotationInfo(id) {
         method: 'delete'
     })
 }
+
+// 查询成衣厂工作类型列表
+export function queryFactoryJobCategoryList() {
+    return request({
+        url: '/admin/factoryJobCategory/list',
+        method: 'get'
+    })
+}

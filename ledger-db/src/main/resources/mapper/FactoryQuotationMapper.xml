@@ -11,11 +11,11 @@
         factory.factory_name,
         fq.style_number,
         fq.category_id,
-        jc.category,
+        fjc.category,
         fq.quotation
         from factory_quotation fq
         left join factory on fq.factory_id = factory.id
-        left join job_category jc on fq.category_id = jc.id
+        left join factory_job_category fjc on fq.category_id = fjc.id
         where
             fq.flag = #{flag}
         <if test="factoryId != null and factoryId != '' ">
