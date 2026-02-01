@@ -143,6 +143,7 @@ public class FactoryBillController {
 
         try {
             // TODO 写入本地
+            log.info("即将导出的数据: {}", list);
             log.info("开始导出成衣厂账单 Excel 数据量: {}", list.size());
             log.info("文件名: {}", encodedFileName);
             log.info("响应状态: {}", response.getStatus());

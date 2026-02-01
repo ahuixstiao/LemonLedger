@@ -14,8 +14,8 @@
         fjc.category,
         fq.quotation
         from factory_quotation fq
-        left join factory on fq.factory_id = factory.id
-        left join factory_job_category fjc on fq.category_id = fjc.id
+        left join factory on fq.factory_id = factory.id and factory.flag = 0
+        left join factory_job_category fjc on fq.category_id = fjc.id and fjc.flag = 0
         where
             fq.flag = #{flag}
         <if test="factoryId != null and factoryId != '' ">

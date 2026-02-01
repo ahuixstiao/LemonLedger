@@ -21,10 +21,10 @@
         job.created_date
 
         from job
-        left join employee emp on job.employee_id = emp.id
-        left join factory fac on job.factory_id = fac.id
-        left join job_category jc on job.category_id = jc.id
-        left join job_mode jm on job.mode_id = jm.id
+        left join employee emp on job.employee_id = emp.id and emp.flag = 0
+        left join factory fac on job.factory_id = fac.id and fac.flag = 0
+        left join job_category jc on job.category_id = jc.id and jc.flag = 0
+        left join job_mode jm on job.mode_id = jm.id and jm.flag = 0
 
         <!-- 按员工ID 查找员工未处于删除状态下的工作记录 -->
         <where>
@@ -77,7 +77,7 @@
         sum(job.quantity) as quantity,  <!-- 计算数量 -->
         sum(job.salary) as salary       <!-- 工资总额 -->
         from job
-        left join employee emp on job.employee_id = emp.id
+        left join employee emp on job.employee_id = emp.id and emp.flag = 0
 
         <where>
             employee_id = #{employeeId}

@@ -19,6 +19,14 @@
         />
       </el-select>
 
+      <!-- 床号筛选条件 -->
+      <el-input
+          clearable
+          v-model="data.number"
+          placeholder="床号"
+          @input="queryFactoryBillListHandle"
+      >
+      </el-input>
       <!-- 款式编号筛选条件 -->
       <el-input
           clearable
@@ -255,7 +263,7 @@
           :rules="statisticalBillRules"
       >
         <el-form-item label="成衣厂名称:" size="large" prop="factoryId">
-          <el-select v-model="statisticalBillRef.factoryId" placeholder="请选择成衣厂">
+          <el-select filterable v-model="statisticalBillRef.factoryId" placeholder="请选择成衣厂">
             <el-option
                 v-for="(item) in data.factoryList"
                 :label="item.factoryName"
@@ -693,15 +701,15 @@ const statisticalBillRules = reactive({
 }
 
 .factoryBill-button > *:nth-child(3) {
-  width: 150px;
+  width: 140px;
 }
 
 .factoryBill-button > *:nth-child(4) {
-  width: 150px;
+  width: 120px;
 }
 
 .factoryBill-button > *:nth-child(5) {
-  width: 150px;
+  width: 120px;
 }
 
 .factoryBill-button > *:nth-child(6) {
@@ -709,10 +717,14 @@ const statisticalBillRules = reactive({
 }
 
 .factoryBill-button > *:nth-child(7) {
-  width: 150px;
+  width: 100px;
 }
 
 .factoryBill-button > *:nth-child(8) {
+  width: 150px;
+}
+
+.factoryBill-button > *:nth-child(9) {
   width: 150px;
 }
 

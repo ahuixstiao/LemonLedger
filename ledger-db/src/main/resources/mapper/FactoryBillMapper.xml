@@ -8,7 +8,7 @@
         select
         fb.id,
         fb.factory_id,      <!-- 成衣厂ID -->
-        ft.factory_name,    <!-- 成衣厂名称 -->
+        factory.factory_name,    <!-- 成衣厂名称 -->
         fb.number,          <!-- 床号 -->
         fb.style_number,    <!-- 款式编号 -->
         fb.category_id,     <!-- 工作类型ID -->
@@ -18,8 +18,8 @@
         fb.created_date,
         fb.flag
         from factory_bill fb
-        left join factory ft on fb.factory_id = ft.id
-        left join factory_job_category fjc on fb.category_id = fjc.id
+        left join factory on fb.factory_id = factory.id and factory.flag = 0
+        left join factory_job_category fjc on fb.category_id = fjc.id and fjc.flag = 0
         <where>
             fb.flag = #{flag}
 
@@ -71,12 +71,11 @@
         sum(fb.bill) as bill
 
         from factory_bill fb
-        left join factory on fb.factory_id = factory.id
+        left join factory on fb.factory_id = factory.id and factory.flag = 0
 
         <where>
             fb.factory_id = #{factoryId}
             and fb.flag = #{flag}
-            and factory.flag = #{flag}
 
             <choose>
                 <!-- 判断员工是否指定了时间范围 -->
@@ -118,18 +117,17 @@
         fb.created_date
 
         from factory_bill fb
-        left join factory on fb.factory_id = factory.id
-        left join factory_job_category fjc on fb.category_id = fjc.id
+        left join factory on fb.factory_id = factory.id and factory.flag = 0
+        left join factory_job_category fjc on fb.category_id = fjc.id and fjc.flag = 0
         left join factory_quotation fq
         on fb.factory_id = fq.factory_id
         and fb.style_number = fq.style_number
         and fb.category_id = fq.category_id
+        and fq.flag = 0
 
         <where>
             fb.factory_id = #{factoryId}
             and fb.flag = 0
-            and factory.flag = 0
-
             <choose>
                 <!-- 判断员工是否指定了时间范围 -->
                 <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
