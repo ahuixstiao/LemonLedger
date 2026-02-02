@@ -4,7 +4,6 @@
 
     <!-- 查询工厂账单集合 -->
     <select id="selectFactoryBillList" resultType="factoryBillDto">
-
         select
         fb.id,
         fb.factory_id,      <!-- 成衣厂ID -->
@@ -22,7 +21,6 @@
         left join factory_job_category fjc on fb.category_id = fjc.id and fjc.flag = 0
         <where>
             fb.flag = #{flag}
-
             <!-- 如果传入工厂ID则按工厂ID查询 -->
             <if test="factoryId != null and factoryId != '' ">
                 and fb.factory_id = #{factoryId}
@@ -59,7 +57,7 @@
             </choose>
         </where>
         <!-- 按日期、成衣厂名称、床号排序 -->
-        order by fb.created_date asc, ft.factory_name collate utf8mb4_zh_0900_as_cs asc, fb.number asc
+        order by fb.created_date asc, factory.factory_name collate utf8mb4_zh_0900_as_cs asc, fb.number asc
     </select>
 
     <!-- 获取指定工厂的账单 -->

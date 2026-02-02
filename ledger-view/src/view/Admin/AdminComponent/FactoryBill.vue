@@ -2,7 +2,7 @@
   <div class="factoryBill-container">
     <!-- 筛选条件 -->
     <div class="factoryBill-button">
-      <el-button type="primary" @click="clickAddBill">添加</el-button>
+      <el-button type="primary" @click="clickAddButton">添加</el-button>
       <el-button type="primary" @click="data.billVisible = true">账单</el-button>
       <!-- 成衣厂筛选条件 -->
       <el-select
@@ -163,8 +163,8 @@
     </div>
 
     <!--  添加或编辑成衣厂账单信息弹窗  -->
-    <el-dialog v-model="data.addBillDialogVisible"
-        :title="data.addBillDialogMode === 0 ? '添加成衣厂账单' : data.addBillDialogMode === 1 ? '修改成衣厂账单': ''"
+    <el-dialog v-model="data.editBillDialogVisible"
+        :title="data.editBillDialogMode === 0 ? '添加成衣厂账单' : data.editBillDialogMode === 1 ? '修改成衣厂账单': ''"
         width="50%" center>
       <el-form
           ref="billInfoFormRef"
@@ -242,12 +242,12 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="handleCancelJobDialog">取消</el-button>
-          <el-button type="primary" v-if="data.addBillDialogMode === 0"
+          <el-button type="primary" v-if="data.editBillDialogMode === 0"
                      @click="billValidation(billInfoFormRef)">
             添加
           </el-button>
           <el-button type="primary"
-                     v-if="data.addBillDialogMode === 1" @click="billValidation(billInfoFormRef)">
+                     v-if="data.editBillDialogMode === 1" @click="billValidation(billInfoFormRef)">
             编辑
           </el-button>
         </div>
@@ -351,8 +351,8 @@ const data = reactive({
   currentPage: 1,
   pageSize: 10,
   total: 0,
-  addBillDialogVisible: false,
-  addBillDialogMode: 0, // 0为新增、1为编辑
+  editBillDialogVisible: false,
+  editBillDialogMode: 0, // 0为新增、1为编辑
 })
 
 // 账单总数
@@ -494,11 +494,12 @@ const updateBillInfoHandle = async () => {
   } else {
     ElMessage.error(res.message)
   }
-  data.addBillDialogVisible = false
+  data.editBillDialogVisible = false
 }
 
 // TODO 修改账单款式编号或工作类型请求
 const updateBillStyleOrCategoryHandle = async (id, factoryId, styleNumber, categoryId, quantity) => {
+  // 构建对象
   const billInfo = {id, factoryId, styleNumber, categoryId, quantity}
   const {data: res} = await editFactoryBillInfo(billInfo)
   if (res.status === 200) {
@@ -507,7 +508,7 @@ const updateBillStyleOrCategoryHandle = async (id, factoryId, styleNumber, categ
   } else {
     ElMessage.error(res.message)
   }
-  data.addBillDialogVisible = false
+  data.editBillDialogVisible = false
 }
 
 // TODO 删除账单数据请求
@@ -581,7 +582,6 @@ const statisticalBillRef = reactive({
   endDate: ''
 })
 
-
 // 成衣厂账单表单初始化数据
 const factoryBillInfoInit = {
   id: '',
@@ -596,28 +596,28 @@ const factoryBillInfoInit = {
 // 构建账单实体
 const factoryBillInfoRef = reactive({...factoryBillInfoInit})
 
-// 显示修改弹窗
+// 点击编辑按钮事件
 const showUpdateBillInfoDialog = (bill) => {
   // 填充表单数据
   Object.assign(factoryBillInfoRef, bill)
   // 1 为编辑模式
-  data.addBillDialogMode = 1
+  data.editBillDialogMode = 1
   // 显示弹窗
-  data.addBillDialogVisible = true
+  data.editBillDialogVisible = true
 }
 
-// 新增账单按钮点击事件
-const clickAddBill = () => {
+// 点击新增按钮事件
+const clickAddButton = () => {
   // 重置表单信息
   Object.assign(factoryBillInfoRef, factoryBillInfoInit)
   // 0 为新增模式
-  data.addBillDialogMode = 0
+  data.editBillDialogMode = 0
   // 显示弹窗
-  data.addBillDialogVisible = true
+  data.editBillDialogVisible = true
 
 }
 
-// 清除账单信息表单填写的参数
+// 清除表单参数
 const restBillInfoFormData = () => {
   // 清除信息
   Object.assign(factoryBillInfoRef, factoryBillInfoInit)
@@ -627,7 +627,7 @@ const restBillInfoFormData = () => {
 // 取消按钮
 const handleCancelJobDialog = () => {
   restBillInfoFormData()
-  data.addBillDialogVisible = false
+  data.editBillDialogVisible = false
 }
 
 // 判断账单表单处于新增或是编辑状态
@@ -636,10 +636,10 @@ const billValidation = async formEl => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       // 判断是新增还是修改  0 新增 1 编辑
-      if (data.addBillDialogMode === 0) {
+      if (data.editBillDialogMode === 0) {
         // 添加
         addFactoryBillInfoHandle()
-      } else if (data.addBillDialogMode === 1) {
+      } else if (data.editBillDialogMode === 1) {
         // 编辑
         updateBillInfoHandle()
       }

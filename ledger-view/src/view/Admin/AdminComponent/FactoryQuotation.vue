@@ -86,12 +86,11 @@
 
     <!--  添加或编辑成衣厂账单信息弹窗  -->
     <el-dialog
-        v-model="data.addQuotationDialogVisible"
+        v-model="data.editQuotationDialogVisible"
         :title="
-        data.addQuotationDialogMode === 0 ? '添加成衣厂报价单' : data.addQuotationDialogMode === 1 ? '修改成衣厂报价单': ''"
+        data.editQuotationDialogMode === 0 ? '添加成衣厂报价单' : data.editQuotationDialogMode === 1 ? '修改成衣厂报价单': ''"
         width="50%"
         center
-        @closed="resetForm(quotationInfoFormRef)"
     >
       <el-form
           ref="quotationInfoFormRef"
@@ -143,13 +142,13 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="restQuotationInfoClickEvent(quotationInfoFormRef)">取消</el-button>
-          <el-button type="primary" v-if="data.addQuotationDialogMode === 0"
+          <el-button @click="cancelQuotationInfoClickEvent(quotationInfoFormRef)">取消</el-button>
+          <el-button type="primary" v-if="data.editQuotationDialogMode === 0"
                      @click="quotationValidation(quotationInfoFormRef)">
             新增
           </el-button>
           <el-button type="primary"
-                     v-if="data.addQuotationDialogMode === 1" @click="quotationValidation(quotationInfoFormRef)">
+                     v-if="data.editQuotationDialogMode === 1" @click="quotationValidation(quotationInfoFormRef)">
             修改
           </el-button>
         </div>
@@ -195,11 +194,9 @@ const data = reactive({
   pageSize: 10,
   total: 0,
 
-  addQuotationDialogVisible: false,
-  addQuotationDialogMode: 0,
+  editQuotationDialogVisible: false,
+  editQuotationDialogMode: 0,
 })
-
-const quotationInfoFormRef = ref()
 
 // TODO 查询成衣厂列表
 const queryFactoryListHandle = async () => {
@@ -256,7 +253,7 @@ const updateQuotationInfoHandle = async () => {
   } else {
     ElMessage.success(res.message)
   }
-  data.addQuotationDialogVisible = false
+  data.editQuotationDialogVisible = false
 }
 
 // TODO 删除成衣厂报价单信息
@@ -278,10 +275,10 @@ const quotationValidation = async formEl => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       // 判断是新增还是修改  0 新增 1 编辑
-      if (data.addQuotationDialogMode === 0) {
+      if (data.editQuotationDialogMode === 0) {
         // 添加
         addFactoryQuotationInfoHandle()
-      } else if (data.addQuotationDialogMode === 1) {
+      } else if (data.editQuotationDialogMode === 1) {
         // 编辑
         updateQuotationInfoHandle()
       }
@@ -291,42 +288,54 @@ const quotationValidation = async formEl => {
   })
 }
 
-// 构建报价单实体
-const factoryQuotationInfoRef = reactive({
+const quotationInfoFormRef = ref()
+
+// 成衣厂报价单实体初始化
+const factoryQuotationInfoInit = {
   id: '',
   factoryId: '',
   styleNumber: '',
   categoryId: '',
   quotation: ''
-})
-
-// 显示修改弹窗
-const showUpdateDialog = (quotationInfo) => {
-  data.addQuotationDialogVisible = true
-  data.addQuotationDialogMode = 1
-  // 自动填写原信息
-  factoryQuotationInfoRef.id = quotationInfo.id
-  factoryQuotationInfoRef.factoryId = quotationInfo.factoryId
-  factoryQuotationInfoRef.styleNumber = quotationInfo.styleNumber
-  factoryQuotationInfoRef.categoryId = quotationInfo.categoryId
-  factoryQuotationInfoRef.quotation = quotationInfo.quotation
 }
 
-// 新增按钮账单点击事件
+// 构建报价单实体
+const factoryQuotationInfoRef = reactive({...factoryQuotationInfoInit})
+
+
+// 点击新增按钮事件
 const clickAddButton = () => {
-  data.addQuotationDialogVisible = true
-  data.addQuotationDialogMode = 0
+  // 重置表单信息
+  Object.assign(factoryQuotationInfoRef, factoryQuotationInfoInit)
+  // 新增模式
+  data.editQuotationDialogMode = 0
+  // 显示弹窗
+  data.editQuotationDialogVisible = true
 }
 
-// 编辑账单弹窗取消按钮点击事件
-const restQuotationInfoClickEvent = () => {
-  data.addQuotationDialogVisible = false // 关闭窗口
+// 点击编辑按钮事件
+const showUpdateDialog = (quotationInfo) => {
+  // 填充表单数据
+  Object.assign(factoryQuotationInfoRef, quotationInfo)
+  // 编辑模式
+  data.editQuotationDialogMode = 1
+  // 显示弹窗
+  data.editQuotationDialogVisible = true
 }
 
-// 清空表单
-const resetForm = formEl => {
-  if (!formEl) return
-  formEl.resetFields()
+// 清除表单参数
+const restQuotationInfoFormData = () => {
+  // 清除信息
+  Object.assign(factoryQuotationInfoRef, factoryQuotationInfoInit)
+  quotationInfoFormRef.value?.clearValidate()
+}
+
+// 取消按钮点击事件
+const cancelQuotationInfoClickEvent = () => {
+  // 清除表单参数
+  restQuotationInfoFormData()
+  // 关闭窗口
+  data.editQuotationDialogVisible = false
 }
 
 // 添加账单记录校验规则
