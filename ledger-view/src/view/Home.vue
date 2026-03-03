@@ -1,315 +1,70 @@
 <template>
   <div class="home-container">
-    <div class="nav-container">
-      <van-button type="primary" @click="clickAddEmployee">注册</van-button>
-      <van-button type="primary" @click="clickAddWork">添加工作记录</van-button>
-      <van-button type="primary" @click="clickSalary">计算工资</van-button>
-      <!-- 日期选择组件 -->
-      <van-cell
-          title="选择日期"
-          :value="data.date"
-          @click="data.isShowDate = true"
-          class="databutton"
+    <CommonFilterBar
+      v-model="homeFilters"
+      :actions="homeFilterActions"
+      :fields="homeFilterFields"
+      :initial-value="homeFilterInitialValue"
+      @action="onHomeFilterAction"
+      @query="queryJobListByEmployeeIdAndDateHandle"
+      @reset="onHomeFilterReset"
+    />
+
+    <div class="home-table-section">
+      <WorkRecordTable
+        :table-data="data.tableData"
+        :total="data.total"
+        :current-page="data.currentPage"
+        :page-size="data.pageSize"
+        @update:currentPage="val => (data.currentPage = val)"
+        @update:pageSize="val => (data.pageSize = val)"
+        @query="queryJobListByEmployeeIdAndDateHandle"
+        @edit="showUpdateJobInfoDialog"
+        @delete="deleteJobInfoByIdHandler"
       />
-      <van-calendar
-          v-model:show="data.isShowDate"
-          allow-same-day
-          :min-date="new Date(2020, 0, 1)"
-          type="range"
-          @confirm="onConfirm"
-      />
-
-      <!-- 员工选择组件 -->
-      <van-dropdown-menu>
-        <van-dropdown-item
-            v-model="data.id"
-            @change="queryJobListByEmployeeIdAndDateHandle"
-            :options="data.selectEmployeeList"/>
-      </van-dropdown-menu>
-
-      <!-- 工作类型选择组件 -->
-      <van-dropdown-menu>
-        <van-dropdown-item
-            v-model="data.categoryId"
-            @change="queryJobListByEmployeeIdAndDateHandle"
-            :options="data.selectCategoryList"/>
-      </van-dropdown-menu>
-      <!-- 成衣厂搜索组件 -->
-      <el-select size="large" style="width: 10%" filterable
-                 v-model="data.factoryId" placeholder="选择成衣厂"
-                 @change="queryJobListByEmployeeIdAndDateHandle">
-        <el-option
-            v-for="(item, index) in data.factoryList"
-            :key="item.id"
-            :label="item.factoryName"
-            :value="item.id"/>
-      </el-select>
-      <!-- 床号搜索组件 -->
-      <el-input
-          v-model="data.number"
-          style="width: 10%"
-          size="large"
-          placeholder="要查询的床号"
-          @input="queryJobListByEmployeeIdAndDateHandle"/>
-
-      <van-button type="primary" @click="resetQueryCondition">重置</van-button>
     </div>
 
-    <el-card>
-      <!--  工作信息表格  -->
-      <el-row>
-        <el-table
-            :data="data.tableData" height="60"
-            stripe fit highlight-current-row show-summary
-            :summary-method="summaryQuantityAndSalary" style="height: 100%"
-        >
-          <el-table-column sortable prop="name" label="员工名称" align="center"/>
-          <el-table-column sortable prop="factoryName" label="厂名" align="center"/>
-          <el-table-column sortable prop="number" label="床号" align="center"/>
-          <el-table-column sortable prop="styleNumber" label="款式编号" align="center"/>
-          <el-table-column sortable prop="category" label="类型" align="center"/>
-          <el-table-column prop="quantity" label="数量" align="center"/>
-          <el-table-column prop="salary" width="95" label="本床工资(单位: 元)" align="center"/>
-          <el-table-column sortable prop="createdDate" label="日期" align="center"/>
-          <el-table-column label="管理" align="center">
-            <template #default="scope">
-              <el-button type="primary" text @click="showUpdateJobInfoDialog(scope.row)">
-                修改
-              </el-button>
-              <el-button type="danger" text @click="deleteJobInfoByIdHandler(scope.row.id)">
-                删除
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-row>
+    <SalaryDialog
+      :visible="data.SalaryVisible"
+      :employee-list="data.employeeList"
+      @update:visible="val => (data.SalaryVisible = val)"
+      @submit="salaryInquiryHandle"
+    />
 
-      <!-- 分页组件 -->
-      <el-row class="home-page">
-        <el-pagination
-            background
-            :total="data.total"
-            v-model:current-page="data.currentPage"
-            v-model:page-size="data.pageSize"
-            :page-sizes="[5, 10, 20, 50, 100]"
-            layout="sizes, prev, pager, next, jumper, ->"
-            @current-change="queryJobListByEmployeeIdAndDateHandle"
-            @size-change="queryJobListByEmployeeIdAndDateHandle"
-        />
-      </el-row>
-
-    </el-card>
-
-    <!--  员工注册表单  -->
-    <el-dialog v-model="data.employeeDialogVisible" title="员工注册" width="90%" center>
-      <el-form
-          ref="ruleFormRef"
-          :model="addEmployeeInfoRef"
-          :rules="rules"
-          label-position="top"
-      >
-        <el-form-item label="员工姓名:" prop="name">
-          <el-input
-              v-model="addEmployeeInfoRef.name"
-              autocomplete="off"
-              size="large"
-          />
-        </el-form-item>
-        <el-form-item label="选择工作方式:" size="large" prop="modeId">
-          <el-select v-model="addEmployeeInfoRef.modeId" placeholder="请选择工作类型">
-            <el-option
-                v-for="(item, index) in data.modeList"
-                :label="item.mode"
-                :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="data.employeeDialogVisible = false" size="large">取消</el-button>
-          <el-button
-              type="primary" :loading="data.isLoading"
-              @click="submitForm(ruleFormRef)"
-              size="large">确认
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
-
-    <!--  工资计算表单  -->
-    <el-dialog v-model="data.SalaryVisible" title="工资计算" width="90%" center>
-      <el-form
-          ref="querySalaryFormRef"
-          label-position="top"
-          :model="salaryRef"
-          :rules="querySalaryRule"
-      >
-        <el-form-item label="员工姓名:" size="large" prop="employeeId">
-          <el-select v-model="salaryRef.employeeId" placeholder="请选择员工">
-            <el-option
-                v-for="(item, index) in data.employeeList"
-                :label="item.name"
-                :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="计算日期:" size="large">
-          <el-date-picker
-              v-model="salaryRef.startDate"
-              type="date"
-              format="YYYY/MM/DD"
-              value-format="YYYY-MM-DD"
-              placeholder="开始日期"
-          />
-          <el-date-picker
-              v-model="salaryRef.endDate"
-              type="date"
-              format="YYYY/MM/DD"
-              value-format="YYYY-MM-DD"
-              placeholder="结束日期"
-          />
-        </el-form-item>
-        <el-form-item size="large">
-          <el-button
-              type="primary"
-              style="width: 100%"
-              size="large"
-              @click="querySalarySubmitForm(querySalaryFormRef)"
-          >
-            计算
-          </el-button>
-        </el-form-item>
-        <el-form-item size="large">
-          <el-statistic
-              title="工资总和"
-              Transactions
-              :value="outputValue"
-              style="text-align: center; margin: 0 auto; display: block"
-          />
-        </el-form-item>
-      </el-form>
-    </el-dialog>
-
-    <!--   添加工作信息表单   -->
-    <el-dialog v-model="data.editJobDialogVisible"
-               :title="data.dialogMode === 0 ? '添加工作记录' : data.dialogMode === 1 ? '修改工作记录': ''"
-               width="90%" center>
-      <el-form
-          ref="jobInfoFormRef"
-          :model="jobInfoRef"
-          :rules="jobRules"
-          label-position="top"
-      >
-        <el-form-item label="员工姓名:" size="large" prop="employeeId">
-          <el-select
-              filterable
-              v-model="jobInfoRef.employeeId"
-              placeholder="请选择员工姓名"
-              @change="handleEmployeeChange"
-          >
-            <el-option
-                v-for="item in data.employeeList"
-                :key="item.modeId"
-                :label="item.name"
-                :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="选择厂名:" size="large" prop="factoryId">
-          <el-select filterable v-model="jobInfoRef.factoryId" placeholder="请选择厂名">
-            <el-option
-                v-for="(item, index) in data.factoryList"
-                :key="item.id"
-                :label="item.factoryName"
-                :value="item.id"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="床号：" prop="number">
-          <el-input
-              v-model="jobInfoRef.number"
-              autocomplete="off"
-              size="large"
-              placeholder="请输入床号"
-              type="text"
-          />
-        </el-form-item>
-        <el-form-item label="选择工作类型:" size="large" prop="categoryId">
-          <el-select
-              v-model="jobInfoRef.categoryId"
-              placeholder="请选择工作类型"
-          >
-            <el-option
-                v-for="(item, index) in data.categoryList"
-                :label="item.category"
-                :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="款式编号：" prop="styleNumber">
-          <el-input
-              v-model="jobInfoRef.styleNumber"
-              autocomplete="off"
-              size="large"
-              placeholder="请输入款式编号"
-              type="text"
-          />
-        </el-form-item>
-        <el-form-item label="数量：" prop="quantity">
-          <el-input
-              v-model="jobInfoRef.quantity"
-              autocomplete="off"
-              size="large"
-              placeholder="请输入数量"
-              type="text"
-          />
-        </el-form-item>
-        <el-form-item label="工作日期:" size="large" prop="createdDate">
-          <el-date-picker
-              :editable="false"
-              v-model="jobInfoRef.createdDate"
-              type="date"
-              format="YYYY/MM/DD"
-              value-format="YYYY-MM-DD"
-              placeholder="工作记录日期"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button type="default" size="large" @click="handleCancelJobDialog">取消</el-button>
-          <el-button type="primary" size="large" :loading="data.isLoading" v-if="data.dialogMode === 0"
-                     @click="validationJobInfoForm(jobInfoFormRef)">
-            新增
-          </el-button>
-          <el-button type="primary" size="large" :loading="data.isLoading"
-                     v-if="data.dialogMode === 1" @click="validationJobInfoForm(jobInfoFormRef)">
-            修改
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
-
+    <JobEditDialog
+      :visible="data.editJobDialogVisible"
+      :dialog-mode="data.dialogMode"
+      :loading="data.isLoading"
+      :job-info="jobInfoRef"
+      :employee-list="data.employeeList"
+      :factory-list="data.factoryList"
+      :category-list="data.categoryList"
+      @update:visible="val => (data.editJobDialogVisible = val)"
+      @employee-change="handleEmployeeChange"
+      @cancel="handleCancelJobDialog"
+      @submit="submitJobInfo"
+    />
   </div>
 </template>
 
 <script setup>
-import {reactive, onMounted, ref} from 'vue'
+import { reactive, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import CommonFilterBar from './components/CommonFilterBar.vue'
+import WorkRecordTable from './HomeComponent/WorkRecordTable.vue'
+import SalaryDialog from './HomeComponent/SalaryDialog.vue'
+import JobEditDialog from './HomeComponent/JobEditDialog.vue'
 import {
   queryEmployees,
-  saveEmployee,
-  queryFactoryList,
-  saveJobInfo,
-  queryCategoryList,
-  queryModeList,
+  updateJobInfo,
+  deleteJobInfoById,
   queryJobListByEmployeeIdAndDate,
-  querySalaryByCondition,
-  deleteJobInfoById, updateJobInfo
-} from '../nwtwork/index.js'
-import {ElMessage} from 'element-plus'
-import {useTransition} from '@vueuse/core'
+  queryFactoryList,
+  queryCategoryList,
+  querySalaryByCondition
+} from '../network/index.js'
 
-// 进入页面时执行
 onMounted(() => {
   queryEmployeeListHandle()
   queryFactoryListHandle()
@@ -317,260 +72,204 @@ onMounted(() => {
   queryJobListByEmployeeIdAndDateHandle()
 })
 
-const data = reactive({
-  employeeDialogVisible: false,
-  editJobDialogVisible: false,
-  dialogMode: 0, // 0: 添加模式 1: 修改模式
+const router = useRouter()
 
+const data = reactive({
+  editJobDialogVisible: false,
+  dialogMode: 1,
   SalaryVisible: false,
-  isShowDate: false,
-  id: Number(),
-  startDate: '',  // 起止日期
-  endDate: '',    // 起止日期
-  factoryId: '',   // 成衣厂ID
-  number: '',     // 床号
-  categoryId: Number(),  // 工作类型ID
-  date: '',
+  id: 0,
+  startDate: '',
+  endDate: '',
+  factoryId: '',
+  number: '',
+  categoryId: 0,
   employeeList: [],
   tableData: [],
   isLoading: false,
   factoryList: [],
   categoryList: [],
-
   selectCategoryList: [],
   selectEmployeeList: [],
-
-  modeList: [],
   total: 0,
   currentPage: 1,
   pageSize: 10
 })
 
-const salaryTotal = ref(0)
+const homeFilterInitialValue = {
+  startDate: '',
+  endDate: '',
+  employeeId: 0,
+  categoryId: 0,
+  factoryId: '',
+  number: ''
+}
 
-// 动画过渡
-const outputValue = useTransition(salaryTotal, {
-  duration: 1000
+const homeFilters = computed({
+  get: () => ({
+    startDate: data.startDate,
+    endDate: data.endDate,
+    employeeId: data.id,
+    categoryId: data.categoryId,
+    factoryId: data.factoryId,
+    number: data.number
+  }),
+  set: value => {
+    data.startDate = value.startDate ?? ''
+    data.endDate = value.endDate ?? ''
+    data.id = value.employeeId ?? 0
+    data.categoryId = value.categoryId ?? 0
+    data.factoryId = value.factoryId ?? ''
+    data.number = value.number ?? ''
+  }
 })
 
-// TODO 查询员工列表
+const homeFilterActions = [
+  { key: 'claimWorkOrder', label: '认领工单', type: 'primary' },
+  { key: 'salary', label: '计算工资', type: 'primary' }
+]
+
+const homeFilterFields = computed(() => [
+  {
+    key: 'factoryId',
+    type: 'select',
+    placeholder: '选择成衣厂',
+    filterable: true,
+    options: data.factoryList,
+    optionLabel: 'factoryName',
+    optionValue: 'id'
+  },
+  {
+    key: 'number',
+    type: 'input',
+    placeholder: '要查询的床号'
+  },
+  {
+    key: 'categoryId',
+    type: 'select',
+    placeholder: '选择工作类型',
+    options: data.selectCategoryList,
+    optionLabel: 'text',
+    optionValue: 'value'
+  },
+  {
+    key: 'employeeId',
+    type: 'select',
+    placeholder: '选择员工',
+    filterable: true,
+    options: data.selectEmployeeList,
+    optionLabel: 'text',
+    optionValue: 'value'
+  },
+  {
+    key: 'startDate',
+    type: 'date',
+    placeholder: '开始日期',
+    popperClass: 'month-only-picker'
+  },
+  {
+    key: 'endDate',
+    type: 'date',
+    placeholder: '结束日期',
+    popperClass: 'month-only-picker'
+  }
+])
+
 const queryEmployeeListHandle = async () => {
-  const {data: res} = await queryEmployees()
-  data.employeeList = res.data
-  await selectEmployeeListHandle()
+  const { data: res } = await queryEmployees()
+  data.employeeList = res.data || []
+  data.selectEmployeeList = data.employeeList.map(item => ({ text: item.name, value: item.id, modeId: item.modeId }))
+  data.selectEmployeeList.unshift({ text: '选择员工', value: 0 })
 }
 
-// TODO 查询成衣厂列表
 const queryFactoryListHandle = async () => {
-  const {data: res} = await queryFactoryList()
-  data.factoryList = res.data
+  const { data: res } = await queryFactoryList()
+  data.factoryList = res.data || []
 }
 
-// TODO 查询工作类型列表
 const queryCategoryListHandle = async () => {
-  const {data: res} = await queryCategoryList()
-  data.categoryList = res.data
-  await selectCategoryListHandle()
+  const { data: res } = await queryCategoryList()
+  data.categoryList = res.data || []
+  data.selectCategoryList = data.categoryList.map(item => ({ text: item.category, value: item.id }))
+  data.selectCategoryList.unshift({ text: '选择工作类型', value: 0 })
 }
 
-// TODO 查询工作方式列表
-const queryModeListHandle = async () => {
-  const {data: res} = await queryModeList()
-  data.modeList = res.data
-}
-
-// TODO 查询工作信息列表
 const queryJobListByEmployeeIdAndDateHandle = async () => {
-  const {data: res} = await queryJobListByEmployeeIdAndDate(
-      data.id,
-      data.startDate,
-      data.endDate,
-      data.factoryId,
-      data.number,
-      data.categoryId,
-      data.currentPage,
-      data.pageSize
+  const { data: res } = await queryJobListByEmployeeIdAndDate(
+    data.id,
+    data.startDate,
+    data.endDate,
+    data.factoryId,
+    data.number,
+    data.categoryId,
+    data.currentPage,
+    data.pageSize
   )
   if (res.status === 200) {
     data.tableData = res.data.records
     data.total = res.data.total
-  }
-  else {
-      data.tableData = []
-      ElMessage.error(res.message)
-
-  }
-
-}
-
-// TODO 计算工资请求函数
-const salaryInquiryHandle = async () => {
-  const {data: res} = await querySalaryByCondition(
-      salaryRef.employeeId,
-      salaryRef.startDate,
-      salaryRef.endDate
-  )
-  if (res.status === 200) {
-    salaryTotal.value = res.data.salary
   } else {
-    salaryTotal.value = 0
+    data.tableData = []
     ElMessage.error(res.message)
   }
 }
 
-// TODO 员工注册请求函数
-const employeeRegisterHandle = async () => {
-  data.isLoading = true
-  const {data: res} = await saveEmployee(addEmployeeInfoRef)
+const salaryInquiryHandle = async payload => {
+  const { data: res } = await querySalaryByCondition(payload.employeeId, payload.startDate, payload.endDate)
   if (res.status === 200) {
-    ElMessage.success(res.message)
-  } else {
-    ElMessage.error(res.message)
+    payload.onResult?.(res.data.salary)
+    return
   }
-  data.isLoading = false
+  ElMessage.error(res.message)
+  payload.onResult?.(0)
 }
 
-// TODO 保存工作信息请求函数
-const saveJobInfoHandle = async () => {
-  const {data: res} = await saveJobInfo(jobInfoRef)
-  if (res.status === 200) {
-    ElMessage.success(res.message)
-    // 保存成功后清除填写的工作信息
-    //resetJobInfoFormData()
-    // 保存成功后 关闭弹窗
-    //data.editJobDialogVisible = false
-    await queryJobListByEmployeeIdAndDateHandle()
-  } else {
-    ElMessage.error(res.message)
-  }
+const goClaimWorkOrderPage = () => {
+  router.push('/workOrder')
 }
 
-// TODO 修改工作信息请求函数
-const updateJobInfoHandle = async ()=> {
-  const {data: res} = await updateJobInfo(jobInfoRef)
+const updateJobInfoHandle = async () => {
+  const { data: res } = await updateJobInfo(jobInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    // 修改成功后清除填写的工作信息
     resetJobInfoFormData()
-    // 清除原信息后 关闭弹窗
     data.editJobDialogVisible = false
-    // 刷新表格数据
     await queryJobListByEmployeeIdAndDateHandle()
-  } else {
-    ElMessage.error(res.message)
-  }
-
+  } else ElMessage.error(res.message)
 }
 
-// TODO 删除工作信息请求函数
 const deleteJobInfoByIdHandler = async id => {
-  const {data: res} = await deleteJobInfoById(id)
-  if (res.status === 200) {
-    ElMessage.success(res.message)
-  } else {
-    ElMessage.error(res.message)
-  }
+  const { data: res } = await deleteJobInfoById(id)
+  if (res.status === 200) ElMessage.success(res.message)
+  else ElMessage.error(res.message)
   await queryJobListByEmployeeIdAndDateHandle()
 }
 
-// 获取当前选中员工的modeId
 const handleEmployeeChange = employeeId => {
-  const selectedEmployee = data.employeeList.find(
-      item => item.id === employeeId
-  )
+  const selectedEmployee = data.employeeList.find(item => item.id === employeeId)
   jobInfoRef.modeId = selectedEmployee ? selectedEmployee.modeId : ''
 }
 
-// 注册员工按钮点击事件
-const clickAddEmployee = () => {
-  queryModeListHandle()     // 查询工作方式列表
-  data.employeeDialogVisible = true // 打开弹窗
-}
-
-// 添加工作信息按钮点击事件
-const clickAddWork = () => {
-  // 设置为添加模式
-  data.dialogMode = 0
-  // 清空表单数据
-  Object.assign(jobInfoRef, jobInfoCreateInit)
-  jobInfoFormRef.value?.clearValidate()
-  data.editJobDialogVisible = true
-  queryEmployeeListHandle()  // 查询员工列表
-  queryFactoryListHandle()   // 查询成衣厂列表
-  queryCategoryListHandle()  // 查询工作类型列表
-}
-
-// 显示修改弹窗
-const showUpdateJobInfoDialog = (job) => {
-  // 设置为编辑模式
-  data.dialogMode = 1
-  // 填充表单数据
-  Object.assign(jobInfoRef, job)
-  // 显示弹窗
-  data.editJobDialogVisible = true
-}
-
-// 计算工资按钮点击事件
 const clickSalary = () => {
-  data.SalaryVisible = true // 打开弹窗
+  data.SalaryVisible = true
 }
 
-// 绑定员工列表到Vant选项组件中
-const selectEmployeeListHandle = async () => {
-  data.selectEmployeeList = data.employeeList.map(item => ({
-    text: item.name, // Vant 组件显示的文字
-    value: item.id, // 绑定到 v-model 的值
-    modeId: item.modeId
-  }))
-  data.selectEmployeeList.unshift({text: '选择员工', value: 0})
+const onHomeFilterAction = action => {
+  if (action === 'claimWorkOrder') {
+    goClaimWorkOrderPage()
+    return
+  }
+  if (action === 'salary') {
+    clickSalary()
+  }
 }
 
-// 绑定分类列表到Vant选项组件中
-const selectCategoryListHandle = async () => {
-  data.selectCategoryList = data.categoryList.map(item => ({
-    text: item.category, // Vant 组件显示的文字
-    value: item.id, // 绑定到 v-model 的值
-  }))
-  data.selectCategoryList.unshift({text: '选择工作类型', value: 0})
+const showUpdateJobInfoDialog = job => {
+  data.dialogMode = 1
+  Object.assign(jobInfoRef, job)
+  data.editJobDialogVisible = true
 }
 
-// 表格自定义合计
-const summaryQuantityAndSalary = ({columns, data}) => {
-  const sums = []
-  columns.forEach((column, index) => {
-    // 第一列显示“合计”
-    if (index === 0) {
-      sums[index] = '合计'
-      return
-    }
-
-    // 只对 quantity 和 salary 两列求和
-    if (['quantity', 'salary'].includes(column.property)) {
-      const total = data.reduce((sum, row) => {
-        const value = Number(row[column.property])
-        return !isNaN(value) ? sum + value : sum
-      }, 0)
-      // 工资列保留两位小数
-      sums[index] =
-          column.property === 'salary' ? total.toFixed(2) : total
-    } else {
-      sums[index] = ''
-    }
-  })
-  return sums
-}
-
-const ruleFormRef = ref()
-const jobInfoFormRef = ref()
-const querySalaryFormRef = ref()
-
-// 添加员工信息表单参数
-const addEmployeeInfoRef = reactive({
-  name: '',
-  modeId: ''
-})
-
-// 重置按钮函数
 const resetQueryCondition = () => {
   data.startDate = ''
   data.endDate = ''
@@ -578,243 +277,69 @@ const resetQueryCondition = () => {
   data.factoryId = ''
   data.number = ''
   data.categoryId = 0
+  data.currentPage = 1
   queryJobListByEmployeeIdAndDateHandle()
 }
 
-// 工作信息表单参数初始化
+const onHomeFilterReset = () => {
+  resetQueryCondition()
+}
+
 const jobInfoInit = {
-  id: '',
-  employeeId: '',
-  factoryId: '',
-  categoryId: '',
-  modeId: '',
-  number: '',
-  styleNumber: '',
-  quantity: '',
-  salary: '',
-  createdDate: ''
+  id: '', employeeId: '', factoryId: '', categoryId: '', modeId: '', number: '', styleNumber: '', quantity: '', salary: '', createdDate: ''
 }
 
-// 新增工作信息表单参数初始化
-const jobInfoCreateInit = {
-  id: '',
-  factoryId: '',
-  number: '',
-  categoryId: '',
-  styleNumber: '',
-  quantity: '',
-  salary: '',
-  createdDate: ''
-}
+const jobInfoRef = reactive({ ...jobInfoInit })
 
-// 工作信息表单参数
-const jobInfoRef = reactive({...jobInfoInit})
-
-// 清除工作信息表单填写的参数
 const resetJobInfoFormData = () => {
   Object.assign(jobInfoRef, jobInfoInit)
-  jobInfoFormRef.value?.clearValidate()
 }
 
-// 取消按钮
 const handleCancelJobDialog = () => {
-  // 清除表单填写的参数
   resetJobInfoFormData()
   data.editJobDialogVisible = false
 }
 
-// 构建查询员工薪资对象
-const salaryRef = reactive({
-  employeeId: '',
-  startDate: '',
-  endDate: ''
-})
-
-
-// 校验并判断工作信息表单处于新增或是编辑状态
-const validationJobInfoForm = async formEl => {
-  if (!formEl) return
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      // 判断是新增还是修改  0 新增 1 编辑
-      if (data.dialogMode === 0) {
-        // 添加
-        saveJobInfoHandle()
-      } else if (data.dialogMode === 1) {
-        // 编辑
-        updateJobInfoHandle()
-      }
-    } else {
-      ElMessage.error('请检查是否填写正确')
-    }
-  })
+const submitJobInfo = () => {
+  updateJobInfoHandle()
 }
-
-
-// 查询计算工资表单校验
-const querySalarySubmitForm = async formEl => {
-  if (!formEl) return
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      salaryInquiryHandle()
-    } else {
-      console.log('error query!', fields)
-    }
-  })
-}
-
-// 日期格式化函数
-const formatDate = date => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-// 按区间/id查询方法
-const onConfirm = values => {
-  const [start, end] = values
-  data.isShowDate = false
-  data.startDate = formatDate(start)
-  data.endDate = formatDate(end)
-  queryJobListByEmployeeIdAndDateHandle()
-}
-
-const onlyNumberRule = {
-  pattern: /^[0-9]+$/,
-  message: '只能输入数字',
-  trigger: 'blur'
-}
-
-// 注册表单校验规则
-const rules = reactive({
-  name: [
-    {required: true, message: '请输入员工姓名', trigger: 'blur'},
-    {min: 2, max: 30, message: '长度在 2 到 6 个字符', trigger: 'blur'}
-  ],
-  modeId: [{required: true, message: '请选择工作方式', trigger: 'blur'}]
-})
-
-// 添加工作记录表单校验规则
-const jobRules = reactive({
-  employeeId: [{required: true, message: '请选择员工姓名', trigger: 'blur'}],
-  factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
-  categoryId: [{required: true, message: '请选择工作类型', trigger: 'blur'}],
-  number: [{required: true, message: '请输入床号', trigger: 'blur'}],
-  styleNumber: [{required: true, message: '请输入款式编号', trigger: 'blur'}],
-  quantity: [
-    {required: true, message: '请输入数量', trigger: 'blur'},
-    onlyNumberRule
-  ],
-  createdDate: [{required: true, message: '请选择工作日期', trigger: 'blur'}]
-})
-
-// 计算工资表单校验规则
-const querySalaryRule = reactive({
-  employeeId: [
-    {required: true, message: '请选择员工姓名', trigger: 'blur'},
-    {
-      validator: (rule, value, callback) => {
-        if (value === 0) {
-          callback(new Error('请选择有效的员工姓名'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur'
-    }
-  ]
-})
 </script>
 
 <style scoped>
 .home-container {
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: 100vh; /* 占满视口高度 */
-}
-
-.nav-container {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  padding: 20px 20px 0 20px;
-}
-
-:deep(.el-card) {
-  margin: 20px;
-  height: calc(100% - 85px);
-}
-
-:deep(.van-dropdown-menu__title::after) {
-  display: none;
-}
-
-:deep(.el-card__body) {
-  height: calc(100% - 40px);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-:deep(.el-row) {
-  overflow: auto;
-}
-
-.home-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  padding: var(--section-padding-lg);
+  box-sizing: border-box;
+  gap: var(--layout-gap-lg);
   overflow: hidden;
-  padding: 25px 0;
 }
 
-:deep(.van-cell) {
-  width: auto;
+.home-table-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
 }
 
-:deep(.van-cell__value) {
-  flex: 0;
+.home-table-section > * {
+  flex: 1;
+  min-height: 0;
 }
 
-:deep(.van-dropdown-menu__bar) {
-  background-color: #1989fa;
-  border-radius: 4px;
-  height: 45px;
-  color: white;
-}
+@media (max-width: 768px) {
+  .home-container {
+    height: auto;
+    min-height: auto;
+    padding: var(--section-padding-sm);
+    gap: var(--layout-gap-sm);
+    overflow: visible;
+  }
 
-:deep(.van-dropdown-menu__title) {
-  color: white;
-}
-
-:deep(.el-table__inner-wrapper) {
-  font-size: 16px;
-}
-
-:deep(.el-form-item__label) {
-  font-size: 16px;
-}
-
-.databutton {
-  background-color: #1989fa;
-  border-radius: 4px;
-  height: 45px;
-  color: white;
-}
-
-.drlist-item {
-  padding: 10px 15px;
-}
-
-:deep(.el-form-item__content) {
-  flex-wrap: nowrap;
-  gap: 10px;
-}
-
-:deep(.el-statistic__number::after) {
-  content: '元';
+  .home-table-section {
+    overflow: visible;
+  }
 }
 </style>

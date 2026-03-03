@@ -35,14 +35,9 @@ public class FactoryBill extends ParentEntity {
     private String number;
 
     /**
-     * 款式编号
+     * 报价ID（关联成衣厂报价表主键）
      */
-    private String styleNumber;
-
-    /**
-     * 工作类型 1、小花、2、大花、3、裤页
-     */
-    private Integer categoryId;
+    private Integer quotationId;
 
     /**
      * 数量

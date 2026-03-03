@@ -1,5 +1,7 @@
 package com.ledger.api.controller.admin;
 
+import cn.hutool.core.util.StrUtil;
+import com.ledger.common.dto.admin.EmployeeQueryDTO;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Employee;
 import com.ledger.db.service.IEmployeeService;
@@ -25,29 +27,17 @@ public class AdminEmployeeController {
      * @param flag 删除状态 0否 1是
      * @return result
      */
-    @GetMapping("/list")
-    public Result<Object> queryEmployees(@RequestParam(required = false, defaultValue = "0") Integer flag) {
-
-        return employeeService.queryEmployeeList(flag);
-    }
-
-    /**
-     * 按条件查询员工列表
-     *
-     * @param name 员工名称
-     * @param currentPage 当前页
-     * @param pageSize 页面条数
-     * @param flag 删除状态 0否 1是
-     * @return result
-     */
-    @GetMapping("/list/{name}")
-    public Result<Object> queryEmployeeListByCondition(
-            @PathVariable(required = false) String name,
-            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
-            @RequestParam(required = false, defaultValue = "0") Integer flag) {
-
-        return employeeService.queryEmployeeListByCondition(name, currentPage, pageSize, flag);
+    @GetMapping
+    public Result<Object> queryEmployees(EmployeeQueryDTO queryDTO) {
+        if (StrUtil.isBlank(queryDTO.getName())) {
+            return employeeService.queryEmployeeList(queryDTO.getFlag());
+        }
+        return employeeService.queryEmployeeListByCondition(
+                queryDTO.getName().trim(),
+                queryDTO.getCurrentPage(),
+                queryDTO.getPageSize(),
+                queryDTO.getFlag()
+        );
     }
 
     /**
@@ -56,9 +46,8 @@ public class AdminEmployeeController {
      * @param employee 员工实体
      * @return result
      */
-    @PostMapping("/save")
+    @PostMapping
     public Result<Object> saveEmployee(@RequestBody Employee employee) {
-
         return employeeService.saveEmployee(employee);
     }
 

@@ -7,19 +7,19 @@
         @close="handleClose"
         router
       >
-<!--        <el-menu-item index="/admin/jobList">
+        <el-menu-item index="/admin/jobList">
           <el-icon>
             <setting />
           </el-icon>
           <span>员工列表</span>
-        </el-menu-item>-->
+        </el-menu-item>
 
-<!--        <el-menu-item index="/admin/factoryList">
+        <el-menu-item index="/admin/factoryList">
           <el-icon>
             <setting />
           </el-icon>
           <span>成衣厂列表</span>
-        </el-menu-item>-->
+        </el-menu-item>
 
         <el-menu-item index="/admin/factoryBillList">
           <el-icon>
@@ -35,26 +35,26 @@
           <span>成衣厂报价列表</span>
         </el-menu-item>
 
-<!--        <el-menu-item index="/admin/2">
+        <el-menu-item index="/admin/jobQuotationList">
           <el-icon>
             <setting />
           </el-icon>
           <span>工作报价</span>
-        </el-menu-item>-->
+        </el-menu-item>
 
-<!--        <el-menu-item index="/admin/3">
+        <el-menu-item index="/admin/jobCategoryList">
           <el-icon>
             <setting />
           </el-icon>
-          <span>工作分类列表</span>
-        </el-menu-item>-->
+          <span>工作类型列表</span>
+        </el-menu-item>
 
-<!--        <el-menu-item index="/admin/4">
+        <el-menu-item index="/admin/jobModeList">
           <el-icon>
             <setting />
           </el-icon>
           <span>工作方式列表</span>
-        </el-menu-item>-->
+        </el-menu-item>
 
       </el-menu>
     </div>

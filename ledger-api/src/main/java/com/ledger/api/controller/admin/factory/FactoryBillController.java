@@ -4,23 +4,30 @@ import cn.idev.excel.FastExcel;
 import cn.idev.excel.write.metadata.style.WriteCellStyle;
 import cn.idev.excel.write.metadata.style.WriteFont;
 import cn.idev.excel.write.style.HorizontalCellStyleStrategy;
+
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import com.ledger.db.service.factory.IFactoryBillService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+
+import static org.springframework.util.StringUtils.hasText;
+
+import com.sun.istack.NotNull;
 
 /**
  * @Author: ahui
@@ -45,22 +52,28 @@ public class FactoryBillController {
      * @param flag        删除状态 0否 1是
      * @return result
      */
-    @GetMapping("/list")
+    @GetMapping
     public Result<Object> queryFactoryBillListByCondition(
-            @RequestParam(required = false) Integer factoryId,
+            @RequestParam(required = false) String factoryId,
             @RequestParam(required = false) String number,
             @RequestParam(required = false) String styleNumber,
-            @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false, defaultValue = "0") Integer flag,
+            @RequestParam(required = false) String categoryId,
+            @RequestParam(required = false, defaultValue = "0") String flag,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
-            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "5") Integer pageSize
+            @RequestParam(required = false, defaultValue = "1") String currentPage,
+            @RequestParam(required = false, defaultValue = "5") String pageSize
 
     ) {
+        Integer parsedFactoryId = parseIntegerParam(factoryId);
+        Integer parsedCategoryId = parseIntegerParam(categoryId);
+        Integer parsedFlag = parseIntegerParam(flag, 0);
+        Integer parsedCurrentPage = parseIntegerParam(currentPage, 1);
+        Integer parsedPageSize = parseIntegerParam(pageSize, 5);
+
         return factoryBillService.queryFactoryBillListByCondition(
-                factoryId, number, styleNumber, categoryId, flag,
-                startDate, endDate, currentPage, pageSize);
+                parsedFactoryId, number, styleNumber, parsedCategoryId, parsedFlag,
+                startDate, endDate, parsedCurrentPage, parsedPageSize);
     }
 
     /**
@@ -164,9 +177,8 @@ public class FactoryBillController {
      * @param bill 成衣厂账单实体
      * @return result
      */
-    @PostMapping("/save")
+    @PostMapping
     public Result<Object> saveFactoryBillInfo(@RequestBody FactoryBill bill) {
-
         return factoryBillService.saveFactoryBillInfo(bill);
     }
 
@@ -176,9 +188,9 @@ public class FactoryBillController {
      * @param bill 成衣厂账单实体
      * @return result
      */
-    @PutMapping("/update")
-    public Result<Object> updateFactoryBillInfo(@RequestBody FactoryBill bill) {
-
+    @PutMapping("/{id}")
+    public Result<Object> updateFactoryBillInfo(@PathVariable Integer id, @RequestBody FactoryBill bill) {
+        bill.setId(id);
         return factoryBillService.updateFactoryBillInfo(bill);
     }
 
@@ -188,10 +200,24 @@ public class FactoryBillController {
      * @param id 账单ID
      * @return result
      */
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     public Result<Object> deleteFactoryBillInfo(@PathVariable @NotNull Integer id) {
-
         return factoryBillService.deleteFactoryBillInfo(id);
+    }
+
+    private Integer parseIntegerParam(String value) {
+        return parseIntegerParam(value, null);
+    }
+
+    private Integer parseIntegerParam(String value, Integer defaultValue) {
+        if (!hasText(value)) {
+            return defaultValue;
+        }
+        try {
+            return Integer.valueOf(value.trim());
+        } catch (NumberFormatException exception) {
+            return defaultValue;
+        }
     }
 
 }

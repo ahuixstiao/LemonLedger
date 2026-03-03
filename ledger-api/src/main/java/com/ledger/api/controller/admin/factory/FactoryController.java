@@ -1,5 +1,6 @@
 package com.ledger.api.controller.admin.factory;
 
+import com.ledger.common.dto.admin.FactoryQueryDTO;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Factory;
 import com.ledger.db.service.factory.IFactoryService;
@@ -28,14 +29,14 @@ public class FactoryController {
      * @param flag        状态 0-启用 1-禁用
      * @return result
      */
-    @GetMapping("/list")
-    public Result<Object> queryFactoryList(
-            @RequestParam(required = false) String factoryName,
-            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
-            @RequestParam(required = false, defaultValue = "0") Integer flag) {
-
-        return factoryService.queryFactoryList(factoryName, currentPage, pageSize, flag);
+    @GetMapping
+    public Result<Object> queryFactoryList(FactoryQueryDTO queryDTO) {
+        return factoryService.queryFactoryList(
+                queryDTO.getFactoryName(),
+                queryDTO.getCurrentPage(),
+                queryDTO.getPageSize(),
+                queryDTO.getFlag()
+        );
     }
 
     /**
@@ -43,9 +44,8 @@ public class FactoryController {
      * @param factory 工厂实体
      * @return result
      */
-    @PostMapping("/save")
-    public Result<Object> saveFactory(Factory factory) {
-
+    @PostMapping
+    public Result<Object> saveFactory(@RequestBody Factory factory) {
         return factoryService.saveFactoryInfo(factory);
     }
 

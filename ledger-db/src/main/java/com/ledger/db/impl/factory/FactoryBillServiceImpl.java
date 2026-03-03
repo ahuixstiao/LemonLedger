@@ -109,12 +109,11 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> saveFactoryBillInfo(FactoryBill bill) {
 
-        // 检查是否存在相同的账单信息
+        // 检查是否存在相同的账单信息（按工厂 + 床号 + 报价 + 日期判重）
         boolean billExists = lambdaQuery()
                 .eq(FactoryBill::getFactoryId, bill.getFactoryId())
                 .eq(FactoryBill::getNumber, bill.getNumber())
-                .eq(FactoryBill::getStyleNumber, bill.getStyleNumber())
-                .eq(FactoryBill::getCategoryId, bill.getCategoryId())
+                .eq(FactoryBill::getQuotationId, bill.getQuotationId())
                 .eq(FactoryBill::getCreatedDate, bill.getCreatedDate())
                 .eq(FactoryBill::getFlag, 0)
                 .exists();
@@ -123,27 +122,27 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
             return Result.fail("账单已存在");
         }
 
-        // 计算账单价格
-        // 计算方式 1、先获取成衣厂报价表对应成衣厂的款式编号和工作类型的报价再乘以数量
+        // 计算账单价格（仅通过 quotationId + factoryId 关联报价）
         try {
-            BigDecimal factoryQuotation = factoryQuotationService.lambdaQuery()
+            if (ObjectUtil.isNull(bill.getQuotationId())) {
+                return Result.fail("报价ID不能为空");
+            }
+            FactoryQuotation matchedQuotation = factoryQuotationService.lambdaQuery()
+                    .eq(FactoryQuotation::getId, bill.getQuotationId())
                     .eq(FactoryQuotation::getFactoryId, bill.getFactoryId())
-                    .eq(FactoryQuotation::getStyleNumber, bill.getStyleNumber())
-                    .eq(FactoryQuotation::getCategoryId, bill.getCategoryId())
                     .oneOpt()
-                    .orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息"))
-                    .getQuotation();
+                    .orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息"));
 
             // 计算并保存账单价格
             bill.setBill(
                     BigDecimal
                             .valueOf(bill.getQuantity())
-                            .multiply(factoryQuotation)
+                            .multiply(matchedQuotation.getQuotation())
                             .setScale(2, RoundingMode.HALF_UP)
             );
 
         } catch (RuntimeException runtimeException) {
-            return Result.fail("找不到对应的成衣厂报价信息, 请检查款式编号与工作类型是否正确");
+            return Result.fail("找不到对应的成衣厂报价信息, 请检查报价ID与工厂ID是否正确");
         }
 
         // 保存账单信息
@@ -169,26 +168,38 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
             return Result.fail("参数为空");
         }
 
-        try {
-            // 判断是否修改了款式编号或工作类型
-            if (StrUtil.isNotBlank(bill.getStyleNumber()) | ObjectUtil.isNotNull(bill.getCategoryId())) {
-                // 查询成衣厂报价表 获取成衣厂报价
-                BigDecimal quotation = factoryQuotationService.lambdaQuery()
-                        // 成衣厂ID
-                        .eq(FactoryQuotation::getFactoryId, bill.getFactoryId())
-                        // 判断是否传递了款式编号或工作类型其中一个否则条件构成失败
-                        .eq(StrUtil.isNotBlank(bill.getStyleNumber()), FactoryQuotation::getStyleNumber, bill.getStyleNumber())
-                        .eq(ObjectUtil.isNotEmpty(bill.getCategoryId()), FactoryQuotation::getCategoryId, bill.getCategoryId())
-                        .oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息")).getQuotation();
+        // 查询原账单，避免更新时未传 factoryId/quantity 导致计算失败
+        FactoryBill originalBill = getById(bill.getId());
+        if (ObjectUtil.isEmpty(originalBill)) {
+            return Result.fail("账单不存在");
+        }
 
-                //数量乘以报价得出总账单
-                bill.setBill(
-                        BigDecimal.valueOf(bill.getQuantity()).multiply(quotation).setScale(2, RoundingMode.HALF_UP)
-                );
+        Integer factoryId = ObjectUtil.defaultIfNull(bill.getFactoryId(), originalBill.getFactoryId());
+        Integer quantity = ObjectUtil.defaultIfNull(bill.getQuantity(), originalBill.getQuantity());
+
+        try {
+            // 仅按 quotationId 重新计算，禁止按款式编号/工作类型回退匹配
+            Integer quotationId = ObjectUtil.defaultIfNull(bill.getQuotationId(), originalBill.getQuotationId());
+            if (ObjectUtil.isNull(quotationId)) {
+                return Result.fail("报价ID不能为空");
             }
+
+            FactoryQuotation matchedQuotation = factoryQuotationService.lambdaQuery()
+                    .eq(FactoryQuotation::getId, quotationId)
+                    .eq(FactoryQuotation::getFactoryId, factoryId)
+                    .oneOpt()
+                    .orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息"));
+
+            // 回填 quotationId，保证账单与报价绑定一致
+            bill.setQuotationId(quotationId);
+
+            // 数量乘以报价得出总账单
+            bill.setBill(
+                    BigDecimal.valueOf(quantity).multiply(matchedQuotation.getQuotation()).setScale(2, RoundingMode.HALF_UP)
+            );
         } catch (RuntimeException runtimeException) {
             log.error("找不到对应的成衣厂报价信息");
-            return Result.fail("找不到对应的成衣厂报价信息, 请检查款式编号与工作类型是否正确");
+            return Result.fail("找不到对应的成衣厂报价信息, 请检查报价ID与工厂ID是否正确");
         }
 
         // 修改
