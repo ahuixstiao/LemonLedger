@@ -41,6 +41,13 @@ public class FactoryBillDto implements Serializable {
      */
     @ExcelIgnore
     private Integer factoryId;
+
+    /**
+     * 报价ID
+     */
+    @ExcelIgnore
+    private Integer quotationId;
+
     /**
      * 成衣厂名称
      */

@@ -12,6 +12,7 @@ import com.ledger.db.mapper.FactoryBillMapper;
 import com.ledger.db.service.factory.IFactoryBillService;
 import com.ledger.db.service.factory.IFactoryQuotationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import java.util.List;
  * @since 2025-10-15
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, FactoryBill> implements IFactoryBillService {
 
@@ -39,12 +41,11 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
     private final IFactoryQuotationService factoryQuotationService;
 
     /**
-     * 按条件查询成衣厂账单列表  如果不传递参数则默认查询全部成衣厂账单列表
+     * 按条件查询成衣厂账单列表（款式来源于报价表）
      *
      * @param factoryId   工厂ID
      * @param number      床号
-     * @param styleNumber 款式编号
-     * @param categoryId  工作类型
+     * @param styleNumber 款式编号（报价表）
      * @param flag        删除状态 0否 1是
      * @param startDate   开始日期
      * @param endDate     结束日期
@@ -54,21 +55,18 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
      */
     @Override
     @Transactional(readOnly = true)
-    public Result<Object> queryFactoryBillListByCondition(Integer factoryId, String number, String styleNumber, Integer categoryId, Integer flag, String startDate, String endDate, Integer currentPage, Integer pageSize) {
+    public Result<Object> queryFactoryBillListByCondition(Integer factoryId, String number, String styleNumber, Integer flag, String startDate, String endDate, Integer currentPage, Integer pageSize) {
 
-        // 如果指定时间范围则按范围查询
-        if (StrUtil.isNotBlank(startDate) & StrUtil.isNotBlank(endDate)) {
-            // 格式化前端传入的时间 YYYY-MM-DD
-            startDate = LocalDate.parse(startDate).format(DateTimeFormatter.ISO_DATE);
-            endDate = LocalDate.parse(endDate).format(DateTimeFormatter.ISO_DATE);
-        }
+        // 规整日期参数：过滤空串/"0"/非法日期，避免传入 SQL 导致 Incorrect DATE value
+        startDate = normalizeDateParam(startDate);
+        endDate = normalizeDateParam(endDate);
 
         // 配置分页参数
         Page<FactoryBillDto> page = new Page<>(currentPage, pageSize);
 
         page = factoryBillMapper.selectFactoryBillList(
                 page,
-                factoryId, number, styleNumber, categoryId, flag,
+                factoryId, number, styleNumber, flag,
                 startDate, endDate);
 
         if (page.getRecords().isEmpty()) {
@@ -89,6 +87,9 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
      */
     @Override
     public Result<Object> statisticalBill(Integer factoryId, String startDate, String endDate, Integer flag) {
+        startDate = normalizeDateParam(startDate);
+        endDate = normalizeDateParam(endDate);
+
         // 统计成衣厂账单
         FactoryBillDto factoryBillDto = factoryBillMapper.calculateBillByFactoryIdAndDate(factoryId, startDate, endDate, flag);
 
@@ -109,12 +110,11 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> saveFactoryBillInfo(FactoryBill bill) {
 
-        // 检查是否存在相同的账单信息
+        // 检查是否存在相同的账单信息（按工厂 + 床号 + 报价 + 日期判重）
         boolean billExists = lambdaQuery()
                 .eq(FactoryBill::getFactoryId, bill.getFactoryId())
                 .eq(FactoryBill::getNumber, bill.getNumber())
-                .eq(FactoryBill::getStyleNumber, bill.getStyleNumber())
-                .eq(FactoryBill::getCategoryId, bill.getCategoryId())
+                .eq(FactoryBill::getQuotationId, bill.getQuotationId())
                 .eq(FactoryBill::getCreatedDate, bill.getCreatedDate())
                 .eq(FactoryBill::getFlag, 0)
                 .exists();
@@ -123,27 +123,27 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
             return Result.fail("账单已存在");
         }
 
-        // 计算账单价格
-        // 计算方式 1、先获取成衣厂报价表对应成衣厂的款式编号和工作类型的报价再乘以数量
+        // 计算账单价格（仅通过 quotationId + factoryId 关联报价）
         try {
-            BigDecimal factoryQuotation = factoryQuotationService.lambdaQuery()
+            if (ObjectUtil.isNull(bill.getQuotationId())) {
+                return Result.fail("报价ID不能为空");
+            }
+            FactoryQuotation matchedQuotation = factoryQuotationService.lambdaQuery()
+                    .eq(FactoryQuotation::getId, bill.getQuotationId())
                     .eq(FactoryQuotation::getFactoryId, bill.getFactoryId())
-                    .eq(FactoryQuotation::getStyleNumber, bill.getStyleNumber())
-                    .eq(FactoryQuotation::getCategoryId, bill.getCategoryId())
                     .oneOpt()
-                    .orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息"))
-                    .getQuotation();
+                    .orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息"));
 
             // 计算并保存账单价格
             bill.setBill(
                     BigDecimal
                             .valueOf(bill.getQuantity())
-                            .multiply(factoryQuotation)
+                            .multiply(matchedQuotation.getQuotation())
                             .setScale(2, RoundingMode.HALF_UP)
             );
 
         } catch (RuntimeException runtimeException) {
-            return Result.fail("找不到对应的成衣厂报价信息, 请检查款式编号与工作类型是否正确");
+            return Result.fail("找不到对应的成衣厂报价信息, 请检查报价ID与工厂ID是否正确");
         }
 
         // 保存账单信息
@@ -169,26 +169,38 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
             return Result.fail("参数为空");
         }
 
-        try {
-            // 判断是否修改了款式编号或工作类型
-            if (StrUtil.isNotBlank(bill.getStyleNumber()) | ObjectUtil.isNotNull(bill.getCategoryId())) {
-                // 查询成衣厂报价表 获取成衣厂报价
-                BigDecimal quotation = factoryQuotationService.lambdaQuery()
-                        // 成衣厂ID
-                        .eq(FactoryQuotation::getFactoryId, bill.getFactoryId())
-                        // 判断是否传递了款式编号或工作类型其中一个否则条件构成失败
-                        .eq(StrUtil.isNotBlank(bill.getStyleNumber()), FactoryQuotation::getStyleNumber, bill.getStyleNumber())
-                        .eq(ObjectUtil.isNotEmpty(bill.getCategoryId()), FactoryQuotation::getCategoryId, bill.getCategoryId())
-                        .oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息")).getQuotation();
+        // 查询原账单，避免更新时未传 factoryId/quantity 导致计算失败
+        FactoryBill originalBill = getById(bill.getId());
+        if (ObjectUtil.isEmpty(originalBill)) {
+            return Result.fail("账单不存在");
+        }
 
-                //数量乘以报价得出总账单
-                bill.setBill(
-                        BigDecimal.valueOf(bill.getQuantity()).multiply(quotation).setScale(2, RoundingMode.HALF_UP)
-                );
+        Integer factoryId = ObjectUtil.defaultIfNull(bill.getFactoryId(), originalBill.getFactoryId());
+        Integer quantity = ObjectUtil.defaultIfNull(bill.getQuantity(), originalBill.getQuantity());
+
+        try {
+            // 仅按 quotationId 重新计算，禁止按款式编号/工作类型回退匹配
+            Integer quotationId = ObjectUtil.defaultIfNull(bill.getQuotationId(), originalBill.getQuotationId());
+            if (ObjectUtil.isNull(quotationId)) {
+                return Result.fail("报价ID不能为空");
             }
+
+            FactoryQuotation matchedQuotation = factoryQuotationService.lambdaQuery()
+                    .eq(FactoryQuotation::getId, quotationId)
+                    .eq(FactoryQuotation::getFactoryId, factoryId)
+                    .oneOpt()
+                    .orElseThrow(() -> new RuntimeException("找不到对应的成衣厂报价信息"));
+
+            // 回填 quotationId，保证账单与报价绑定一致
+            bill.setQuotationId(quotationId);
+
+            // 数量乘以报价得出总账单
+            bill.setBill(
+                    BigDecimal.valueOf(quantity).multiply(matchedQuotation.getQuotation()).setScale(2, RoundingMode.HALF_UP)
+            );
         } catch (RuntimeException runtimeException) {
             log.error("找不到对应的成衣厂报价信息");
-            return Result.fail("找不到对应的成衣厂报价信息, 请检查款式编号与工作类型是否正确");
+            return Result.fail("找不到对应的成衣厂报价信息, 请检查报价ID与工厂ID是否正确");
         }
 
         // 修改
@@ -225,7 +237,30 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
      */
     @Override
     public List<FactoryBillDto> exportFactoryBillExcelByCondition(Integer factoryId, String startDate, String endDate) {
+        startDate = normalizeDateParam(startDate);
+        endDate = normalizeDateParam(endDate);
 
         return factoryBillMapper.selectExportFactoryBillExcelByCondition(factoryId, startDate, endDate);
+    }
+
+    /**
+     * 规整日期参数：
+     * 1) 空值/空串/"0" 视为未传；
+     * 2) 合法日期统一为 ISO yyyy-MM-dd；
+     * 3) 非法日期视为未传，避免拼接到 SQL 中。
+     */
+    private String normalizeDateParam(String dateParam) {
+        if (StrUtil.isBlank(dateParam)) {
+            return null;
+        }
+        String value = dateParam.trim();
+        if ("0".equals(value)) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value).format(DateTimeFormatter.ISO_DATE);
+        } catch (Exception exception) {
+            return null;
+        }
     }
 }

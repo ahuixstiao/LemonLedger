@@ -3,7 +3,7 @@
 <mapper namespace="com.ledger.db.mapper.FactoryQuotationMapper">
 
 
-    <!-- 根据条件查询成衣厂报价单表 -->
+    <!-- 根据条件查询成衣厂报价单表 分页 -->
     <select id="selectFactoryQuotationListByCondition" resultType="factoryQuotationDto">
         select
         fq.id,
@@ -28,6 +28,25 @@
             and fq.category_id = #{categoryId}
         </if>
         order by factory.factory_name desc
+    </select>
+
+    <!-- 根据条件查询成衣厂报价单表 -->
+    <select id="selectStyleNumberListByFactoryId" resultType="factoryQuotationDto">
+        select
+        fq.id,
+        fq.factory_id,
+        fq.style_number,
+        fq.category_id,
+        fjc.category
+        from factory_quotation fq
+        left join factory on fq.factory_id = factory.id and factory.flag = 0
+        left join factory_job_category fjc on fq.category_id = fjc.id and fjc.flag = 0
+        where
+        fq.flag = #{flag}
+        <if test="factoryId != null and factoryId != '' ">
+            and fq.factory_id = #{factoryId}
+        </if>
+        order by fq.created_date desc
     </select>
 
 </mapper>

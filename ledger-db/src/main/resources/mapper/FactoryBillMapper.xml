@@ -7,18 +7,20 @@
         select
         fb.id,
         fb.factory_id,      <!-- 成衣厂ID -->
+        fb.quotation_id,    <!-- 报价ID -->
         factory.factory_name,    <!-- 成衣厂名称 -->
         fb.number,          <!-- 床号 -->
-        fb.style_number,    <!-- 款式编号 -->
-        fb.category_id,     <!-- 工作类型ID -->
-        fjc.category,        <!-- 工作类型名称 -->
+        fq.style_number,    <!-- 款式编号（来自报价表） -->
+        fq.category_id,     <!-- 工作类型ID（来自报价表） -->
+        fjc.category,       <!-- 工作类型名称 -->
         fb.quantity,        <!-- 数量 -->
-        fb.bill,             <!-- 账单 -->
+        fb.bill,            <!-- 账单 -->
         fb.created_date,
         fb.flag
         from factory_bill fb
         left join factory on fb.factory_id = factory.id and factory.flag = 0
-        left join factory_job_category fjc on fb.category_id = fjc.id and fjc.flag = 0
+        left join factory_quotation fq on fb.quotation_id = fq.id and fq.factory_id = fb.factory_id and fq.flag = 0
+        left join factory_job_category fjc on fq.category_id = fjc.id and fjc.flag = 0
         <where>
             fb.flag = #{flag}
             <!-- 如果传入工厂ID则按工厂ID查询 -->
@@ -29,13 +31,9 @@
             <if test="number != null and number != '' ">
                 and fb.number like CONCAT('%', #{number}, '%')
             </if>
-            <!-- 如果传入款式编号则按款式编号查询 -->
+            <!-- 如果传入款式编号则按报价表款式编号查询 -->
             <if test="styleNumber != null and styleNumber != '' ">
-                and fb.style_number like CONCAT('%', #{styleNumber}, '%')
-            </if>
-            <!-- 如果传入工作类型ID则按工作类型ID查询 -->
-            <if test="categoryId != null and categoryId != '' ">
-                and fb.category_id = #{categoryId}
+                and fq.style_number like CONCAT('%', #{styleNumber}, '%')
             </if>
             <choose>
                 <!-- 如果指定了起止日期 则按起止日期查找-->
@@ -77,15 +75,15 @@
 
             <choose>
                 <!-- 判断员工是否指定了时间范围 -->
-                <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+                <when test="startDate != null and startDate != '' and startDate != '0' and endDate != null and endDate != '' and endDate != '0'">
                     and fb.created_date between #{startDate} and #{endDate}
                 </when>
                 <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
-                <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
+                <when test="startDate != null and startDate != '' and startDate != '0' and (endDate == null or endDate == '' or endDate == '0')">
                     and fb.created_date between #{startDate} and CURDATE()
                 </when>
                 <!-- 判断员工是否指定了结束日期 -->
-                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
+                <when test="endDate != null and endDate != '' and endDate != '0' and (startDate == null or startDate == '' or startDate == '0')">
                     and fb.created_date &lt;= #{endDate}
                 </when>
                 <!-- 默认查询当月1号至当天的薪资 -->
@@ -106,8 +104,8 @@
         fb.factory_id,
         factory.factory_name as factoryName,
         fb.number,
-        fb.style_number,
-        fjc.id as categoryId,
+        fq.style_number,
+        fq.category_id as categoryId,
         fjc.category,
         fb.quantity,
         fq.quotation,
@@ -116,27 +114,26 @@
 
         from factory_bill fb
         left join factory on fb.factory_id = factory.id and factory.flag = 0
-        left join factory_job_category fjc on fb.category_id = fjc.id and fjc.flag = 0
         left join factory_quotation fq
-        on fb.factory_id = fq.factory_id
-        and fb.style_number = fq.style_number
-        and fb.category_id = fq.category_id
+        on fb.quotation_id = fq.id
+        and fq.factory_id = fb.factory_id
         and fq.flag = 0
+        left join factory_job_category fjc on fq.category_id = fjc.id and fjc.flag = 0
 
         <where>
             fb.factory_id = #{factoryId}
             and fb.flag = 0
             <choose>
                 <!-- 判断员工是否指定了时间范围 -->
-                <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+                <when test="startDate != null and startDate != '' and startDate != '0' and endDate != null and endDate != '' and endDate != '0'">
                     and fb.created_date between #{startDate} and #{endDate}
                 </when>
                 <!-- 判断员工是否指定了从之前的某天开始统计至当天的 -->
-                <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
+                <when test="startDate != null and startDate != '' and startDate != '0' and (endDate == null or endDate == '' or endDate == '0')">
                     and fb.created_date between #{startDate} and CURDATE()
                 </when>
                 <!-- 判断员工是否指定了结束日期 -->
-                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
+                <when test="endDate != null and endDate != '' and endDate != '0' and (startDate == null or startDate == '' or startDate == '0')">
                     and fb.created_date &lt;= #{endDate}
                 </when>
                 <!-- 默认查询当月1号至当天的账单 -->

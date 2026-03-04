@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import static org.springframework.util.StringUtils.hasText;
+
 /**
  * @Author: ahui
  * @Description: TODO 成衣厂报价控制器
@@ -31,17 +33,29 @@ public class FactoryQuotationController {
      * @param flag        状态
      * @return result
      */
-    @GetMapping("/list")
+    @GetMapping
     public Result<Object> queryFactoryQuotationListByCondition(
-            @RequestParam(required = false) Integer factoryId,
+            @RequestParam(required = false) String factoryId,
             @RequestParam(required = false) String styleNumber,
-            @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false, defaultValue = "0") Integer flag) {
+            @RequestParam(required = false) String categoryId,
+            @RequestParam(required = false, defaultValue = "1") String currentPage,
+            @RequestParam(required = false, defaultValue = "10") String pageSize,
+            @RequestParam(required = false, defaultValue = "0") String flag) {
 
+        Integer parsedFactoryId = parseIntegerParam(factoryId);
+        Integer parsedCategoryId = parseIntegerParam(categoryId);
+        Integer parsedCurrentPage = parseIntegerParam(currentPage, 1);
+        Integer parsedPageSize = parseIntegerParam(pageSize, 10);
+        Integer parsedFlag = parseIntegerParam(flag, 0);
 
-        return factoryQuotationService.queryFactoryQuotationListByCondition(factoryId, styleNumber, categoryId, currentPage, pageSize, flag);
+        return factoryQuotationService.queryFactoryQuotationListByCondition(
+                parsedFactoryId,
+                styleNumber,
+                parsedCategoryId,
+                parsedCurrentPage,
+                parsedPageSize,
+                parsedFlag
+        );
     }
 
     /**
@@ -53,11 +67,12 @@ public class FactoryQuotationController {
      */
     @GetMapping("/styleNumberList")
     public Result<Object> queryFactoryQuotationStyleNumberListByFactoryId(
-            @RequestParam(required = false) Integer factoryId,
-            @RequestParam(required = false, defaultValue = "0") Integer flag) {
+            @RequestParam(required = false) String factoryId,
+            @RequestParam(required = false, defaultValue = "0") String flag) {
 
-
-        return factoryQuotationService.queryStyleNumberListByFactoryId(factoryId, flag);
+        Integer parsedFactoryId = parseIntegerParam(factoryId);
+        Integer parsedFlag = parseIntegerParam(flag, 0);
+        return factoryQuotationService.queryStyleNumberListByFactoryId(parsedFactoryId, parsedFlag);
     }
 
 
@@ -67,9 +82,8 @@ public class FactoryQuotationController {
      * @param factoryQuotation 报价表实体
      * @return result
      */
-    @PostMapping("/save")
+    @PostMapping
     public Result<Object> saveFactoryQuotationInfo(@RequestBody FactoryQuotation factoryQuotation) {
-
         return factoryQuotationService.saveFactoryQuotationInfo(factoryQuotation);
     }
 
@@ -80,9 +94,9 @@ public class FactoryQuotationController {
      * @param factoryQuotation 报价表实体
      * @return result
      */
-    @PutMapping("/update")
-    public Result<Object> updateFactoryQuotationInfo(@RequestBody FactoryQuotation factoryQuotation) {
-
+    @PutMapping("/{id}")
+    public Result<Object> updateFactoryQuotationInfo(@PathVariable Integer id, @RequestBody FactoryQuotation factoryQuotation) {
+        factoryQuotation.setId(id);
         return factoryQuotationService.updateFactoryQuotationInfo(factoryQuotation);
     }
 
@@ -93,10 +107,24 @@ public class FactoryQuotationController {
      * @param id 成衣厂报价ID
      * @return result
      */
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     public Result<Object> deleteFactoryQuotationInfo(@PathVariable Integer id) {
-
         return factoryQuotationService.deleteFactoryQuotationById(id);
+    }
+
+    private Integer parseIntegerParam(String value) {
+        return parseIntegerParam(value, null);
+    }
+
+    private Integer parseIntegerParam(String value, Integer defaultValue) {
+        if (!hasText(value)) {
+            return defaultValue;
+        }
+        try {
+            return Integer.valueOf(value.trim());
+        } catch (NumberFormatException exception) {
+            return defaultValue;
+        }
     }
 
 }

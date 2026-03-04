@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ledger.db.mapper.JobWorkOrderMapper">
+
+    <select id="selectWorkOrderListByCondition" resultType="com.ledger.db.entity.dto.JobWorkOrderDTO">
+        select
+        jwo.id,
+        jwo.factory_id,
+        f.factory_name,
+        jwo.number,
+        jwo.style_number,
+        jwo.category_id,
+        fjc.category,
+        jwo.quantity,
+        jwo.created_date,
+        jwo.flag
+        from job_work_order jwo
+        left join factory f on jwo.factory_id = f.id and f.flag = 0
+        left join factory_job_category fjc on jwo.category_id = fjc.id and fjc.flag = 0
+        <where>
+            jwo.flag = #{flag}
+            <if test="factoryId != null">
+                and jwo.factory_id = #{factoryId}
+            </if>
+            <if test="number != null and number != ''">
+                and jwo.number like concat('%', #{number}, '%')
+            </if>
+            <if test="styleNumber != null and styleNumber != ''">
+                and jwo.style_number like concat('%', #{styleNumber}, '%')
+            </if>
+            <if test="categoryId != null">
+                and jwo.category_id = #{categoryId}
+            </if>
+            <choose>
+                <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+                    and jwo.created_date between #{startDate} and #{endDate}
+                </when>
+                <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
+                    and jwo.created_date = #{startDate}
+                </when>
+                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
+                    and jwo.created_date &lt;= #{endDate}
+                </when>
+                <otherwise>
+                    and jwo.created_date = curdate()
+                </otherwise>
+            </choose>
+        </where>
+        order by jwo.created_date desc, f.factory_name collate utf8mb4_zh_0900_as_cs asc, jwo.number asc
+    </select>
+
+</mapper>

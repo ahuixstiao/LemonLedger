@@ -27,31 +27,10 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
         </dependency>
-        <!-- mybatis-plus 注解支持 -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-annotation</artifactId>
-        </dependency>
         <!-- mybatis-plus 分页依赖 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-jsqlparser</artifactId>
-        </dependency>
-        <!-- mbp 代码生成器 根据SQL表逆向生成entity、mapper、service等-->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-generator</artifactId>
-        </dependency>
-        <!-- 逆向工程模板引擎 二选一即可-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-freemarker</artifactId>
-        </dependency>
-
-        <!-- jsqlparser -->
-        <dependency>
-            <groupId>com.github.jsqlparser</groupId>
-            <artifactId>jsqlparser</artifactId>
         </dependency>
 
         <!-- lombok -->
@@ -82,11 +61,7 @@
             <artifactId>hutool-all</artifactId>
         </dependency>
 
-        <!-- 启用数据校验 -->
-        <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-        </dependency>
+        <!-- 启用数据校验（由 spring-boot-starter-web 传递引入，保留无需显式声明） -->
 
         <!--
         该依赖会生成配置类的元数据信息

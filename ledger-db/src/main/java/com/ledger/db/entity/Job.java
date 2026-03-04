@@ -57,6 +57,11 @@ public class Job extends ParentEntity {
     private Integer quantity;
 
     /**
+     * 关联工单ID（认领工单后写入）
+     */
+    private Integer workOrderId;
+
+    /**
      * 本床薪资
      */
     private BigDecimal salary;

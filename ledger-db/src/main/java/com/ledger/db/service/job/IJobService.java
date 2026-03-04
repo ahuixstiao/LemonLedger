@@ -1,8 +1,9 @@
 package com.ledger.db.service.job;
 
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.ledger.common.dto.employee.WorkOrderClaimDTO;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Job;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * <p>
@@ -44,6 +45,14 @@ public interface IJobService extends IService<Job> {
 
     // 员工添加工作记录
     Result<Object> saveJobInfo(Job job);
+
+    /**
+     * 员工认领工单并写入工作记录。
+     *
+     * @param claimDTO 认领参数
+     * @return result
+     */
+    Result<Object> claimWorkOrder(WorkOrderClaimDTO claimDTO);
 
     // 员工修改工作记录
     Result<Object> updateJobInfo(Job job);

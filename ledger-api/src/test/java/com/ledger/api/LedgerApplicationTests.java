@@ -1,11 +1,5 @@
 package com.ledger.api;
 
-import com.baomidou.mybatisplus.generator.FastAutoGenerator;
-import com.baomidou.mybatisplus.generator.config.OutputFile;
-import com.baomidou.mybatisplus.generator.config.rules.DateType;
-import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
-import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
-import com.ledger.common.entity.ParentEntity;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 @SpringBootTest
 @Component
@@ -31,43 +22,43 @@ class LedgerApplicationTests {
     @Value("${db.password}")
     private String password;
 
-    @Test
-    void contextLoads() {
+    //@Test
+    /*void contextLoads() {
         // 逆向工程
-        //codeGenerator("factory_job_category");
+        //codeGenerator("job_work_order");
 
         //System.out.println(LocalDateTime.parse("2025-10-05T08:21:26.663105").format(DateTimeFormatter.ISO_DATE));
         //System.out.println(LocalDate.parse("2025-10-01").format(DateTimeFormatter.ISO_DATE));
         //System.out.println(LocalDate.now().toString());
 
         //根据员工ID查询员工工作信息
-        /*Page<JobDTO> jobDTOList = jobMapper.selectJobListByEmployeeId(
+        *//*Page<JobDTO> jobDTOList = jobMapper.selectJobListByEmployeeId(
                 new Page<>(1, 5),0,
                "2025-10-01 T08:21:26",
                 "2025-10-15", 0);
-        jobDTOList.getRecords().forEach(System.out::println);*/
+        jobDTOList.getRecords().forEach(System.out::println);*//*
 
 
         // 查询所有员工当天的工作信息
-        /*Page<JobDTO> page = jobMapper.selectJobListByDefaultCurrentDay(
+        *//*Page<JobDTO> page = jobMapper.selectJobListByDefaultCurrentDay(
                 new Page<>(1, 5),0);
-        page.getRecords().forEach(System.out::println);*/
+        page.getRecords().forEach(System.out::println);*//*
 
 
         // 查询员工工资
-        /*JobDTO jobDTO = jobMapper.calculateSalaryByEmployeeIdAndDate(
+        *//*JobDTO jobDTO = jobMapper.calculateSalaryByEmployeeIdAndDate(
                 1,
                 "", "2025-09-01",
                 0);
-        System.out.println(jobDTO);*/
+        System.out.println(jobDTO);*//*
 
     }
 
-    /**
+    *//**
      * 选择表进行逆向工程
      *
      * @param tableName 表名  如需全表生成则输入all 多表则用逗号分割
-     */
+     *//*
     public void codeGenerator(String tableName) {
         FastAutoGenerator.create(url, username, password)
                 // 全局配置
@@ -133,6 +124,6 @@ class LedgerApplicationTests {
     private static List<String> getTables(String tables) {
         return "all".equals(tables) ? Collections.emptyList() : Arrays.asList(tables.split(","));
     }
-
+*/
 
 }

@@ -35,3 +35,20 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### OS / Runtime ###
+.DS_Store
+**/.DS_Store
+log/
+*.log
+
+### Env files ###
+.env
+.env.local
+.env.*.local
+
+### macOS / logs ###
+.DS_Store
+**/.DS_Store
+log/
+*.log

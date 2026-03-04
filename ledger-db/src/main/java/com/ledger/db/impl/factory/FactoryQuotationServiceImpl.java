@@ -62,11 +62,8 @@ public class FactoryQuotationServiceImpl extends ServiceImpl<FactoryQuotationMap
      */
     @Override
     public Result<Object> queryStyleNumberListByFactoryId(Integer factoryId, Integer flag) {
-
         return Result.ok(
-                lambdaQuery()
-                        .eq(FactoryQuotation::getFactoryId, factoryId)
-                        .eq(FactoryQuotation::getFlag, flag).list()
+               factoryQuotationMapper.selectStyleNumberListByFactoryId(factoryId, flag)
         );
     }
 

@@ -1,8 +1,229 @@
+:root {
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+  --layout-gap-lg: 12px;
+  --layout-gap-sm: 8px;
+  --section-padding-lg: 12px;
+  --section-padding-sm: 8px;
+  --control-height: 40px;
+  --control-font-size: 14px;
+}
+
+.app-theme[data-theme='soft-blue'] {
+  --bg-page: #eef3fb;
+  --bg-surface: #f7f9fe;
+  --card-bg: #ffffff;
+  --text-primary: #1f2a44;
+  --text-regular: #4b5b7a;
+  --border-soft: #dce5f5;
+  --brand-1: #3f7cff;
+  --brand-2: #2f67df;
+  --shadow-soft: 0 10px 30px rgba(39, 76, 150, 0.12);
+  --shadow-press: 0 4px 14px rgba(39, 76, 150, 0.18);
+}
+
+.app-theme[data-theme='pro-slate'] {
+  --bg-page: #edf1f7;
+  --bg-surface: #f7f9fc;
+  --card-bg: #ffffff;
+  --text-primary: #26364d;
+  --text-regular: #55657d;
+  --border-soft: #d7dfec;
+  --brand-1: #3d6ea8;
+  --brand-2: #325d90;
+  --shadow-soft: 0 10px 24px rgba(41, 62, 96, 0.12);
+  --shadow-press: 0 4px 12px rgba(41, 62, 96, 0.2);
+}
+
+.app-theme[data-theme='dark-tech'] {
+  --bg-page: #0f1524;
+  --bg-surface: #131b2d;
+  --card-bg: #1a2438;
+  --text-primary: #e8efff;
+  --text-regular: #aebee0;
+  --border-soft: #26324d;
+  --brand-1: #4f8cff;
+  --brand-2: #3a6fe0;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-press: 0 4px 14px rgba(24, 63, 150, 0.35);
+}
+
 * {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
 li,
 ul {
   list-style: none;
+}
+
+.app-theme {
+  height: 100vh;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 16px;
+  background: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.55) 0%, transparent 40%), var(--bg-page);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.theme-switcher {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 3001;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: var(--shadow-soft);
+}
+
+.theme-switcher span {
+  font-size: 13px;
+  color: var(--text-regular);
+}
+
+.app-theme[data-theme='dark-tech'] .theme-switcher {
+  background: rgba(21, 30, 48, 0.9);
+}
+
+/* 通用容器 */
+.home-container,
+.workOrder-container,
+.employee-container,
+.factoryList-container,
+.factoryBill-container,
+.page-container,
+.layout-container {
+  background: linear-gradient(160deg, var(--bg-surface), #eef4ff 70%);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+/* 顶部工具栏 */
+.nav-container,
+.workOrder-button,
+.employee-toolbar,
+.factoryList-toolbar,
+.factoryBill-button,
+.toolbar {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/* 表格视觉统一 */
+.el-table {
+  --el-table-header-bg-color: #f3f7ff;
+  --el-table-row-hover-bg-color: #ecf3ff;
+  --el-table-border-color: #e3ebfb;
+  border-radius: 12px;
+}
+
+.el-table th {
+  color: #355185;
+  font-weight: 600;
+}
+
+/* 卡片与弹窗 */
+.el-dialog {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 0 16px 40px rgba(34, 63, 120, 0.2) !important;
+}
+
+.el-dialog__header {
+  border-bottom: 1px solid var(--border-soft);
+  margin-right: 0;
+  padding-bottom: 14px;
+}
+
+/* 输入与选择框 */
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 2px 8px rgba(55, 96, 177, 0.08) !important;
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-button,
+.el-date-editor.el-input,
+.el-date-editor.el-input__wrapper {
+  min-height: var(--control-height);
+  font-size: var(--control-font-size);
+}
+
+.el-input__inner,
+.el-select__selected-item,
+.el-button {
+  font-size: var(--control-font-size);
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 2px rgba(63, 124, 255, 0.18) !important;
+}
+
+/* 按钮风格（轻拟物+蓝色） */
+.el-button--primary {
+  background: linear-gradient(135deg, var(--brand-1), var(--brand-2)) !important;
+  border: none !important;
+  box-shadow: var(--shadow-press);
+  border-radius: var(--radius-sm) !important;
+}
+
+.el-button--primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.el-button--danger.is-text,
+.el-button--primary.is-text,
+.el-button--warning.is-text {
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+/* 分页 */
+.el-pagination.is-background .el-pager li {
+  border-radius: 8px;
+}
+
+/* 日期选择器：移动端仅保留按月份切换，避免误触切换年份 */
+@media (max-width: 768px) {
+  /* 隐藏上一年/下一年，保留上一月/下一月 */
+  .month-only-picker .el-picker-panel__icon-btn.d-arrow-left,
+  .month-only-picker .el-picker-panel__icon-btn.d-arrow-right {
+    display: none !important;
+  }
+
+  /* 禁止点年份标题，避免切到年面板 */
+  .month-only-picker .el-date-picker__header-label:nth-child(1) {
+    pointer-events: none;
+    cursor: default;
+  }
 }
