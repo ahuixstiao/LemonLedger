@@ -6,36 +6,37 @@ const routes = [
   {
     path: '/admin',
     component: () => import('../view/Admin/Admin.vue'),
+    redirect: '/admin/factoryBillList',
     children: [
       {
-        path: '/admin/jobList',
+        path: 'jobList',
         component: () => import('../view/Admin/AdminComponent/Employee.vue')
       },
       {
-        path: '/admin/factoryList',
+        path: 'factoryList',
         component: () => import('../view/Admin/AdminComponent/FactoryList.vue')
       },
       {
-        path: '/admin/factoryBillList',
+        path: 'factoryBillList',
         component: () => import('../view/Admin/AdminComponent/FactoryBill.vue')
       },
       {
-        path: '/admin/factoryQuotationList',
+        path: 'factoryQuotationList',
         component: () =>
           import('../view/Admin/AdminComponent/FactoryQuotation.vue')
       },
       {
-        path: '/admin/jobQuotationList',
+        path: 'jobQuotationList',
         component: () =>
           import('../view/Admin/AdminComponent/JobQuotation.vue')
       },
       {
-        path: '/admin/jobCategoryList',
+        path: 'jobCategoryList',
         component: () =>
           import('../view/Admin/AdminComponent/JobCategory.vue')
       },
       {
-        path: '/admin/jobModeList',
+        path: 'jobModeList',
         component: () =>
           import('../view/Admin/AdminComponent/JobMode.vue')
       }

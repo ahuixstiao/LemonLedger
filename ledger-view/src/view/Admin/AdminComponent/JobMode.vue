@@ -3,16 +3,29 @@
     <div class="toolbar">
       <el-button type="primary" @click="openCreate">添加工作方式</el-button>
       <el-input v-model="data.mode" clearable placeholder="工作方式" @input="fetchList" />
+      <el-select v-model="data.flag" @change="fetchList">
+        <el-option label="正常" :value="0" />
+        <el-option label="删除" :value="1" />
+      </el-select>
       <el-button type="warning" plain class="toolbar-reset-btn" @click="resetFilter">重置</el-button>
     </div>
 
     <el-table :data="data.tableData" stripe fit>
-      <el-table-column prop="id" label="ID" width="80" align="center" />
-      <el-table-column prop="mode" label="工作方式" align="center" />
-      <el-table-column prop="createdDate" label="创建日期" align="center" />
+      <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+      <el-table-column prop="mode" label="工作方式" align="center" sortable />
+      <el-table-column prop="createdDate" label="创建日期" align="center" sortable />
+      <el-table-column prop="flag" label="状态" width="100" align="center" sortable>
+        <template #default="scope">
+          <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
+          <el-tag v-else type="danger">删除</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="120" align="center">
         <template #default="scope">
-          <el-button type="danger" text @click="removeItem(scope.row.id)">删除</el-button>
+          <template v-if="isReadOnlyRow(scope.row)">
+            <span class="readonly-text">已删除</span>
+          </template>
+          <el-button v-else type="danger" text @click="removeItem(scope.row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -50,7 +63,7 @@ import { ElMessage } from 'element-plus'
 import { queryJobModeList, saveJobMode, deleteJobMode } from '../../../network/admin/index.js'
 import { openCreateDialog, resetReactiveForm, validateDialogForm } from './factoryCrudShared.js'
 
-const data = reactive({ mode: '', tableData: [], total: 0, currentPage: 1, pageSize: 10, dialogVisible: false })
+const data = reactive({ mode: '', flag: 0, tableData: [], total: 0, currentPage: 1, pageSize: 10, dialogVisible: false })
 const formRef = ref()
 const formInit = { mode: '' }
 const formModel = reactive({ ...formInit })
@@ -59,7 +72,7 @@ const rules = reactive({ mode: [{ required: true, message: '请输入工作方�
 onMounted(fetchList)
 
 async function fetchList() {
-  const { data: res } = await queryJobModeList(data.currentPage, data.pageSize, data.mode)
+  const { data: res } = await queryJobModeList(data.currentPage, data.pageSize, data.mode, data.flag)
   if (res.status === 200) {
     data.tableData = res?.data?.records || []
     data.total = res?.data?.total || 0
@@ -96,8 +109,16 @@ async function removeItem(id) {
 
 function resetFilter() {
   data.mode = ''
+  data.flag = 0
   data.currentPage = 1
   fetchList()
+}
+
+/**
+ * 删除状态的数据仅允许展示，不提供操作入口。
+ */
+function isReadOnlyRow(row) {
+  return Number(row?.flag) === 1 || Number(data.flag) === 1
 }
 </script>
 
@@ -106,9 +127,11 @@ function resetFilter() {
 .toolbar { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--el-border-color); overflow-x: auto; overflow-y: hidden; }
 .toolbar > *:nth-child(1) { width: 120px; }
 .toolbar > *:nth-child(2) { width: 200px; }
-.toolbar > *:nth-child(3) { width: 96px; }
+.toolbar > *:nth-child(3) { width: 130px; }
+.toolbar > *:nth-child(4) { width: 96px; }
 .toolbar > * { flex-shrink: 0; }
-.toolbar :deep(.el-input__wrapper) { min-height: 32px; }
+.toolbar :deep(.el-input__wrapper), .toolbar :deep(.el-select__wrapper) { min-height: 32px; }
 .page { display: flex; justify-content: center; padding: 25px 0; }
 :deep(.el-table--fit) { flex: auto; }
+.readonly-text { color: var(--el-text-color-placeholder); }
 </style>

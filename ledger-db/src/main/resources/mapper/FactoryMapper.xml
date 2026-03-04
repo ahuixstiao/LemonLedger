@@ -2,4 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.db.mapper.FactoryMapper">
 
+    <select id="queryFactoryList" resultType="com.ledger.db.entity.Factory">
+        select id, factory_name, version, created_date, flag, remark
+        from factory
+        where flag = #{flag}
+          and (#{factoryName} is null or #{factoryName} = '' or factory_name = #{factoryName})
+        order by id desc
+    </select>
+
 </mapper>

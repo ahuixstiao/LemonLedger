@@ -2,11 +2,11 @@ package com.ledger.db.impl.job;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.JobMode;
 import com.ledger.db.mapper.JobModeMapper;
 import com.ledger.db.service.job.IJobModeService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,13 +32,14 @@ public class JobModeServiceImpl extends ServiceImpl<JobModeMapper, JobMode> impl
      * @return result
      */
     @Override
-    public Result<Object> queryJobModeList(Integer currentPage, Integer pageSize, String mode) {
+    public Result<Object> queryJobModeList(Integer currentPage, Integer pageSize, String mode, Integer flag) {
 
         Page<JobMode> page = new Page<>(currentPage, pageSize);
+        String queryMode = StrUtil.trim(mode);
+        Integer queryFlag = flag == null ? 0 : flag;
 
-        page = lambdaQuery().eq(StrUtil.isNotBlank(mode), JobMode::getMode, mode).page(page);
-
-        return Result.ok(page);
+        Page<JobMode> result = baseMapper.queryJobModeList(page, queryMode, queryFlag);
+        return Result.ok(result);
     }
 
     /**

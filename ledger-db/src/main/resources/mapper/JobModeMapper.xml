@@ -2,4 +2,16 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.db.mapper.JobModeMapper">
 
+    <select id="queryJobModeList" resultType="com.ledger.db.entity.JobMode">
+        select 
+        id, 
+        mode, 
+        created_date, 
+        flag
+        from job_mode
+        where flag = #{flag}
+          and (#{mode} is null or #{mode} = '' or mode = #{mode})
+        order by id desc
+    </select>
+
 </mapper>

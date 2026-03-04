@@ -81,6 +81,8 @@ public interface IFactoryBillService extends IService<FactoryBill> {
     List<FactoryBillDto> exportFactoryBillExcelByCondition(
             Integer factoryId,
             String startDate,
-            String endDate
+            String endDate,
+            java.util.List<String> sortFields,
+            java.util.List<String> sortOrders
     );
 }

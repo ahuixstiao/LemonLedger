@@ -16,10 +16,10 @@
     </div>
 
     <el-table :data="data.tableData" stripe fit highlight-current-row empty-text="暂无数据">
-      <el-table-column prop="id" label="ID" align="center" width="80" />
-      <el-table-column prop="factoryName" label="工厂名称" align="center" />
-      <el-table-column prop="createdDate" label="创建日期" align="center" />
-      <el-table-column prop="flag" label="状态" align="center" width="100">
+      <el-table-column prop="id" label="ID" align="center" width="80" sortable />
+      <el-table-column prop="factoryName" label="工厂名称" align="center" sortable />
+      <el-table-column prop="createdDate" label="创建日期" align="center" sortable />
+      <el-table-column prop="flag" label="状态" align="center" width="100" sortable>
         <template #default="scope">
           <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
           <el-tag v-else type="danger">删除</el-tag>
@@ -27,8 +27,13 @@
       </el-table-column>
       <el-table-column label="操作" align="center" width="160">
         <template #default="scope">
-          <el-button text @click="openEditFactoryDialog(scope.row)">编辑</el-button>
-          <el-button type="danger" text @click="removeFactory(scope.row.id)">删除</el-button>
+          <template v-if="isReadOnlyRow(scope.row)">
+            <span class="readonly-text">已删除</span>
+          </template>
+          <template v-else>
+            <el-button text @click="openEditFactoryDialog(scope.row)">编辑</el-button>
+            <el-button type="danger" text @click="removeFactory(scope.row.id)">删除</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -61,6 +66,15 @@
       >
         <el-form-item label="工厂名称" prop="factoryName">
           <el-input v-model="factoryFormRefModel.factoryName" placeholder="请输入工厂名称" />
+        </el-form-item>
+        <el-form-item label="创建日期" prop="createdDate">
+          <el-date-picker
+            v-model="factoryFormRefModel.createdDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            placeholder="请选择创建日期"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -106,20 +120,29 @@ const data = reactive({
 
 const fetchFactoryList = async () => {
   const { data: res } = await queryAdminFactoryList(
-    data.factoryName,
+    (data.factoryName || '').trim(),
     data.currentPage,
     data.pageSize,
     data.flag
   )
 
-  if (res.status === 200) {
-    data.tableData = res?.data?.records || []
-    data.total = res?.data?.total || 0
-  } else {
+  if (res.status !== 200) {
     data.tableData = []
     data.total = 0
     ElMessage.error(res.message)
+    return
   }
+
+  const records = res?.data?.records
+  if (Array.isArray(records)) {
+    data.tableData = records
+    data.total = res?.data?.total || 0
+    return
+  }
+
+  const list = Array.isArray(res?.data) ? res.data : []
+  data.tableData = list
+  data.total = list.length
 }
 
 const createFactory = async () => {
@@ -155,7 +178,7 @@ const removeFactory = async id => {
 }
 
 const factoryFormRef = ref()
-const factoryFormInit = { id: '', factoryName: '' }
+const factoryFormInit = { id: '', factoryName: '', createdDate: '' }
 const factoryFormRefModel = reactive({ ...factoryFormInit })
 
 const openCreateFactoryDialog = () => {
@@ -194,8 +217,16 @@ const resetFactoryFilter = () => {
   fetchFactoryList()
 }
 
+/**
+ * 删除状态的数据仅允许展示，不提供编辑/删除入口。
+ */
+const isReadOnlyRow = row => {
+  return Number(row?.flag) === 1 || Number(data.flag) === 1
+}
+
 const factoryFormRules = reactive({
-  factoryName: [{ required: true, message: '请输入工厂名称', trigger: 'blur' }]
+  factoryName: [{ required: true, message: '请输入工厂名称', trigger: 'blur' }],
+  createdDate: [{ required: true, message: '请选择创建日期', trigger: 'change' }]
 })
 </script>
 
@@ -253,5 +284,9 @@ const factoryFormRules = reactive({
 
 :deep(.el-table--fit) {
   flex: auto;
+}
+
+.readonly-text {
+  color: var(--el-text-color-placeholder);
 }
 </style>

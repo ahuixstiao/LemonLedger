@@ -16,15 +16,26 @@
     </div>
 
     <el-table :data="data.tableData" stripe fit>
-      <el-table-column prop="id" label="ID" width="80" align="center" />
-      <el-table-column prop="mode" label="工作方式" align="center" />
-      <el-table-column prop="category" label="工作类型" align="center" />
-      <el-table-column prop="quotation" label="报价" align="center" />
-      <el-table-column prop="createdDate" label="创建日期" align="center" />
+      <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+      <el-table-column prop="mode" label="工作方式" align="center" sortable />
+      <el-table-column prop="category" label="工作类型" align="center" sortable />
+      <el-table-column prop="quotation" label="报价" align="center" sortable />
+      <el-table-column prop="createdDate" label="创建日期" align="center" sortable />
+      <el-table-column prop="flag" label="状态" align="center" width="100" sortable>
+        <template #default="scope">
+          <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
+          <el-tag v-else type="danger">删除</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="160" align="center">
         <template #default="scope">
-          <el-button text @click="openEdit(scope.row)">编辑</el-button>
-          <el-button type="danger" text @click="removeItem(scope.row.id)">删除</el-button>
+          <template v-if="isReadOnlyRow(scope.row)">
+            <span class="readonly-text">已删除</span>
+          </template>
+          <template v-else>
+            <el-button text @click="openEdit(scope.row)">编辑</el-button>
+            <el-button type="danger" text @click="removeItem(scope.row.id)">删除</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -189,6 +200,13 @@ function resetFilter() {
   data.currentPage = 1
   fetchList()
 }
+
+/**
+ * 删除状态的数据仅允许展示，不提供编辑/删除入口。
+ */
+function isReadOnlyRow(row) {
+  return Number(row?.flag) === 1 || Number(data.flag) === 1
+}
 </script>
 
 <style scoped>
@@ -202,4 +220,5 @@ function resetFilter() {
 .toolbar :deep(.el-select__wrapper) { min-height: 32px; }
 .page { display: flex; justify-content: center; padding: 25px 0; }
 :deep(.el-table--fit) { flex: auto; }
+.readonly-text { color: var(--el-text-color-placeholder); }
 </style>

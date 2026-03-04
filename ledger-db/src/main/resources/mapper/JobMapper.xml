@@ -18,8 +18,8 @@
         job.mode_id,
         jm.mode,            <!-- 工作方式 1压花、2刮胶 -->
         job.salary,         <!-- 工资 -->
-        job.created_date
-
+        job.created_date,
+        job.flag
         from job
         left join employee emp on job.employee_id = emp.id and emp.flag = 0
         left join factory fac on job.factory_id = fac.id and fac.flag = 0

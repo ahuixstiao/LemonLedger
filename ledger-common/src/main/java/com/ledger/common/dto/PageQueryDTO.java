@@ -19,6 +19,11 @@ public class PageQueryDTO {
     private Integer pageSize = 10;
 
     /**
+     * 创建日期 格式：yyyy-MM-dd
+     */
+    private String createdDate;
+
+    /**
      * 逻辑删除标识，0-正常，1-删除。
      */
     private Integer flag = 0;

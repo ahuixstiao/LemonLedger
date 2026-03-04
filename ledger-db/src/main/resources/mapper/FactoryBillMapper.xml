@@ -142,7 +142,22 @@
                 </otherwise>
             </choose>
         </where>
-        order by fb.created_date asc
+
+        <choose>
+            <when test="sortColumns != null and sortColumns.size() > 0">
+                order by
+                <foreach collection="sortColumns" item="col" index="idx" separator=",">
+                    ${col}
+                    <choose>
+                        <when test="sortDirections != null and sortDirections.size() > idx and sortDirections[idx] == 'desc'">desc</when>
+                        <otherwise>asc</otherwise>
+                    </choose>
+                </foreach>
+            </when>
+            <otherwise>
+                order by fb.created_date asc
+            </otherwise>
+        </choose>
     </select>
 
 </mapper>

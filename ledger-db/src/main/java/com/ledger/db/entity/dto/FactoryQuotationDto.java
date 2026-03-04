@@ -49,4 +49,14 @@ public class FactoryQuotationDto implements Serializable {
      */
     private BigDecimal quotation;
 
+    /**
+     * 创建时间
+     */
+    private String createdDate;
+
+    /**
+     * 删除状态 0否 1是
+     */
+    private Integer flag;
+
 }

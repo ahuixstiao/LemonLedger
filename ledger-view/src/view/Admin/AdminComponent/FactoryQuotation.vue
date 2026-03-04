@@ -13,7 +13,7 @@
           @change="fetchFactoryQuotationList"
       >
         <el-option
-            v-for="(item, index) in data.factoryList"
+            v-for="item in data.factoryList"
             :label="item.factoryName"
             :value="item.id"
         />
@@ -42,6 +42,16 @@
         />
       </el-select>
 
+      <!-- 状态筛选条件 -->
+      <el-select
+          v-model="data.flag"
+          placeholder="状态"
+          @change="fetchFactoryQuotationList"
+      >
+        <el-option label="正常" :value="0" />
+        <el-option label="删除" :value="1" />
+      </el-select>
+
       <el-button type="warning" plain class="toolbar-reset-btn" @click="resetQuotationFilter">重置</el-button>
     </div>
 
@@ -58,10 +68,22 @@
       <el-table-column prop="styleNumber" sortable label="款式编号" align="center"/>
       <el-table-column prop="category" sortable label="工作类型" align="center"/>
       <el-table-column prop="quotation" sortable label="报价 (元)" align="center"/>
+      <el-table-column prop="createdDate" sortable label="创建日期" align="center"/>
+      <el-table-column prop="flag" sortable label="状态" align="center" width="100">
+        <template #default="scope">
+          <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
+          <el-tag v-else type="danger">删除</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" width="160px">
         <template #default="scope">
-          <el-button text @click="openEditQuotationDialog(scope.row)">编辑</el-button>
-          <el-button type="danger" text @click="removeFactoryQuotation(scope.row.id)">删除</el-button>
+          <template v-if="isReadOnlyRow(scope.row)">
+            <span class="readonly-text">已删除</span>
+          </template>
+          <template v-else>
+            <el-button text @click="openEditQuotationDialog(scope.row)">编辑</el-button>
+            <el-button type="danger" text @click="removeFactoryQuotation(scope.row.id)">删除</el-button>
+          </template>
         </template>
       </el-table-column>
 
@@ -239,8 +261,16 @@ const resetQuotationFilter = () => {
   data.factoryId = ''
   data.styleNumber = ''
   data.categoryId = ''
+  data.flag = 0
   data.currentPage = 1
   fetchFactoryQuotationList()
+}
+
+/**
+ * 删除状态的数据仅允许展示，不提供编辑/删除入口。
+ */
+const isReadOnlyRow = row => {
+  return Number(row?.flag) === 1 || Number(data.flag) === 1
 }
 
 const createFactoryQuotation = async () => {
@@ -374,6 +404,10 @@ const addQuotationInfoRules = reactive({
 }
 
 .factoryQuotation-button > *:nth-child(5) {
+  width: 110px;
+}
+
+.factoryQuotation-button > *:nth-child(6) {
   width: 96px;
 }
 
@@ -401,6 +435,10 @@ const addQuotationInfoRules = reactive({
 
 :deep(.el-table--fit) {
   flex: auto;
+}
+
+.readonly-text {
+  color: var(--el-text-color-placeholder);
 }
 
 </style>

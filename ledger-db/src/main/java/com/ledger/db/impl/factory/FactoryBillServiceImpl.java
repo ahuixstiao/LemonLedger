@@ -21,7 +21,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * <p>
@@ -236,11 +239,63 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
      * @param endDate   截止日期
      */
     @Override
-    public List<FactoryBillDto> exportFactoryBillExcelByCondition(Integer factoryId, String startDate, String endDate) {
+    public List<FactoryBillDto> exportFactoryBillExcelByCondition(
+            Integer factoryId,
+            String startDate,
+            String endDate,
+            List<String> sortFields,
+            List<String> sortOrders
+    ) {
         startDate = normalizeDateParam(startDate);
         endDate = normalizeDateParam(endDate);
 
-        return factoryBillMapper.selectExportFactoryBillExcelByCondition(factoryId, startDate, endDate);
+        List<String> safeSortColumns = new ArrayList<>();
+        List<String> safeSortDirections = new ArrayList<>();
+
+        Map<String, String> allowedSortColumns = Map.of(
+                "factoryName", "factory.factory_name",
+                "number", "fb.number",
+                "styleNumber", "fq.style_number",
+                "category", "fjc.category",
+                "quantity", "fb.quantity",
+                "quotation", "fq.quotation",
+                "bill", "fb.bill",
+                "createdDate", "fb.created_date"
+        );
+
+        if (sortFields != null && !sortFields.isEmpty()) {
+            for (int i = 0; i < sortFields.size(); i++) {
+                String field = sortFields.get(i);
+                String mappedColumn = allowedSortColumns.get(field);
+                if (mappedColumn == null) {
+                    continue;
+                }
+
+                String direction = "asc";
+                if (sortOrders != null && i < sortOrders.size() && StrUtil.isNotBlank(sortOrders.get(i))) {
+                    String normalizedDirection = sortOrders.get(i).trim().toLowerCase(Locale.ROOT);
+                    if ("desc".equals(normalizedDirection)) {
+                        direction = "desc";
+                    }
+                }
+
+                safeSortColumns.add(mappedColumn);
+                safeSortDirections.add(direction);
+            }
+        }
+
+        if (safeSortColumns.isEmpty()) {
+            safeSortColumns.add("fb.created_date");
+            safeSortDirections.add("asc");
+        }
+
+        return factoryBillMapper.selectExportFactoryBillExcelByCondition(
+                factoryId,
+                startDate,
+                endDate,
+                safeSortColumns,
+                safeSortDirections
+        );
     }
 
     /**

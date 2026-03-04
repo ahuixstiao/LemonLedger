@@ -12,7 +12,9 @@
         fq.style_number,
         fq.category_id,
         fjc.category,
-        fq.quotation
+        fq.quotation,
+        fq.created_date,
+        fq.flag
         from factory_quotation fq
         left join factory on fq.factory_id = factory.id and factory.flag = 0
         left join factory_job_category fjc on fq.category_id = fjc.id and fjc.flag = 0

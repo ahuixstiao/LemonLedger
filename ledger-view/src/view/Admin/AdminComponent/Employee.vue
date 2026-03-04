@@ -16,17 +16,17 @@
     </div>
 
     <el-table :data="data.tableData" stripe fit highlight-current-row empty-text="暂无数据">
-      <el-table-column prop="id" label="ID" align="center" width="80" />
-      <el-table-column prop="name" label="员工姓名" align="center" />
-      <el-table-column prop="modeId" label="工作方式" align="center">
+      <el-table-column prop="id" label="ID" align="center" width="80" sortable />
+      <el-table-column prop="name" label="员工姓名" align="center" sortable />
+      <el-table-column prop="modeId" label="工作方式" align="center" sortable>
         <template #default="scope">
           <el-tag v-if="scope.row.modeId === 1" type="primary">压花</el-tag>
           <el-tag v-else-if="scope.row.modeId === 2" type="warning">刮胶</el-tag>
           <el-tag v-else type="info">未知</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdDate" label="创建日期" align="center" />
-      <el-table-column prop="flag" label="状态" align="center" width="100">
+      <el-table-column prop="createdDate" label="创建日期" align="center" sortable />
+      <el-table-column prop="flag" label="状态" align="center" width="100" sortable>
         <template #default="scope">
           <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
           <el-tag v-else type="danger">删除</el-tag>

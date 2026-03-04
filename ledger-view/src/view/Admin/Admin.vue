@@ -2,9 +2,7 @@
   <div class="admin-container">
     <div class="right-container">
       <el-menu
-        default-active="/admin/factoryBillList"
-        @open="handleOpen"
-        @close="handleClose"
+        :default-active="activeMenu"
         router
       >
         <el-menu-item index="/admin/jobList">
@@ -65,15 +63,22 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
-import {Setting} from "@element-plus/icons-vue";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { Setting } from '@element-plus/icons-vue'
 
-const data = reactive({})
+const route = useRoute()
 
-const handleOpen = (key, keyPath) => {
-}
-const handleClose = (key, keyPath) => {
-}
+/**
+ * 根据当前路由动态高亮后台菜单，避免默认高亮与实际页面不一致。
+ */
+const activeMenu = computed(() => {
+  if (route.path === '/admin') {
+    return '/admin/factoryBillList'
+  }
+  return route.path
+})
+
 </script>
 
 <style scoped>

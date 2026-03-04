@@ -47,12 +47,20 @@ export function statisticalFactoryBill(factoryId, startDate, endDate) {
 }
 
 // 导出成衣厂账单
-export function exportFactoryBillExcel(factoryId, startDate, endDate) {
+export function exportFactoryBillExcel(factoryId, startDate, endDate, sortConfigList = []) {
+  const dateParams = normalizeDateRangeParams(startDate, endDate)
+  const sortFields = sortConfigList.map(item => item.field).join(',')
+  const sortOrders = sortConfigList.map(item => item.order).join(',')
+
   return request({
     url: '/admin/factoryBill/excel/' + factoryId,
     method: 'get',
     responseType: 'blob',
-    params: normalizeDateRangeParams(startDate, endDate)
+    params: {
+      ...dateParams,
+      sortFields,
+      sortOrders
+    }
   })
 }
 

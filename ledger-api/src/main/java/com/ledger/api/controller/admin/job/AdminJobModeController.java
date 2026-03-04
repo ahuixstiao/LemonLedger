@@ -26,7 +26,8 @@ public class AdminJobModeController {
         return jobModeService.queryJobModeList(
                 queryDTO.getCurrentPage(),
                 queryDTO.getPageSize(),
-                queryDTO.getMode()
+                queryDTO.getMode(),
+                queryDTO.getFlag()
         );
     }
 

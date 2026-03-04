@@ -20,10 +20,10 @@ public interface IJobModeService extends IService<JobMode> {
      * @param currentPage 当前页
      * @param pageSize    页面条数
      * @param mode        工作方式
+     * @param flag        删除状态
      * @return result
      */
-    Result<Object> queryJobModeList(Integer currentPage, Integer pageSize, String mode);
-
+    Result<Object> queryJobModeList(Integer currentPage, Integer pageSize, String mode, Integer flag);
     /**
      * 保存工作方式信息
      *

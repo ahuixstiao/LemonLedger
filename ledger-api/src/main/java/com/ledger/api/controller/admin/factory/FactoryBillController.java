@@ -22,9 +22,12 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.springframework.util.StringUtils.hasText;
 
@@ -106,7 +109,9 @@ public class FactoryBillController {
             HttpServletResponse response,
             @PathVariable @NotNull String factoryId,
             @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String sortFields,
+            @RequestParam(required = false) String sortOrders
     ) {
         Integer parsedFactoryId = parseIntegerParam(factoryId);
         if (parsedFactoryId == null) {
@@ -114,8 +119,17 @@ public class FactoryBillController {
             return;
         }
 
+        List<String> parsedSortFields = splitCsv(sortFields);
+        List<String> parsedSortOrders = splitCsv(sortOrders);
+
         // 查询数据
-        List<FactoryBillDto> list = factoryBillService.exportFactoryBillExcelByCondition(parsedFactoryId, startDate, endDate);
+        List<FactoryBillDto> list = factoryBillService.exportFactoryBillExcelByCondition(
+                parsedFactoryId,
+                startDate,
+                endDate,
+                parsedSortFields,
+                parsedSortOrders
+        );
 
         // 获取总计
         double totalAmount = list.stream()
@@ -224,6 +238,16 @@ public class FactoryBillController {
         } catch (NumberFormatException exception) {
             return defaultValue;
         }
+    }
+
+    private List<String> splitCsv(String csv) {
+        if (!hasText(csv)) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .collect(Collectors.toList());
     }
 
 }

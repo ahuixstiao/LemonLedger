@@ -66,7 +66,9 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
     List<FactoryBillDto> selectExportFactoryBillExcelByCondition(
             @Param("factoryId") Integer factoryId,
             @Param("startDate") String startDate,
-            @Param("endDate") String endDate
+            @Param("endDate") String endDate,
+            @Param("sortColumns") List<String> sortColumns,
+            @Param("sortDirections") List<String> sortDirections
     );
 
 }

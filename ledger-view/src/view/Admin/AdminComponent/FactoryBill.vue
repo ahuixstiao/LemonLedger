@@ -83,10 +83,10 @@
       <el-table-column prop="number" sortable label="床号" align="center"/>
       <el-table-column prop="styleNumber" sortable label="款式编号" align="center"/>
       <el-table-column prop="category" sortable label="工作类型" align="center"/>
-      <el-table-column prop="quantity" label="数量" align="center"/>
-      <el-table-column prop="bill" label="账单" align="center"/>
+      <el-table-column prop="quantity" sortable label="数量" align="center"/>
+      <el-table-column prop="bill" sortable label="账单" align="center"/>
       <el-table-column prop="createdDate" sortable label="日期" align="center"/>
-      <el-table-column prop="flag" label="状态" align="center">
+      <el-table-column prop="flag" sortable label="状态" align="center">
         <template #default="scope">
           <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
           <el-tag v-if="scope.row.flag === 1" type="danger">删除</el-tag>
@@ -94,10 +94,13 @@
       </el-table-column>
       <el-table-column label="操作" align="center" width="160px">
         <template #default="scope">
-          <el-button text @click="openEditBillDialog(scope.row)">编辑</el-button>
-          <el-button v-if="scope.row.flag === 0" type="danger" text @click="removeFactoryBill(scope.row.id)">
-            删除
-          </el-button>
+          <template v-if="isReadOnlyRow(scope.row)">
+            <span class="readonly-text">已删除</span>
+          </template>
+          <template v-else>
+            <el-button text @click="openEditBillDialog(scope.row)">编辑</el-button>
+            <el-button type="danger" text @click="removeFactoryBill(scope.row.id)">删除</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -229,6 +232,44 @@
               value-format="YYYY-MM-DD"
               placeholder="结束日期"
           />
+        </el-form-item>
+
+        <el-form-item label="排序依据（可多选）:" size="large" prop="sortFields">
+          <el-select
+              v-model="statisticalBillRef.sortFields"
+              multiple
+              clearable
+              collapse-tags
+              collapse-tags-tooltip
+              placeholder="请选择一个或多个排序字段"
+              @change="handleSortFieldsChange"
+          >
+            <el-option
+                v-for="item in sortFieldOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item v-if="statisticalBillRef.sortFields.length" label="字段排序方向:" size="large">
+          <div class="sort-direction-list">
+            <div
+                v-for="field in statisticalBillRef.sortFields"
+                :key="field"
+                class="sort-direction-item"
+            >
+              <span class="sort-direction-label">{{ getSortFieldLabel(field) }}</span>
+              <el-select
+                  v-model="statisticalBillRef.sortOrderMap[field]"
+                  placeholder="选择排序方向"
+              >
+                <el-option label="升序" value="asc" />
+                <el-option label="降序" value="desc" />
+              </el-select>
+            </div>
+          </div>
         </el-form-item>
         <!-- 计算账单 -->
         <el-form-item size="large">
@@ -378,10 +419,16 @@ const statisticalAndExportFactoryBillHandle = async () => {
 // TODO 导出账单Excel
 const exportFactoryBillExcelHandle = async () => {
   // 计算成功后导出账单
+  const sortConfigList = (statisticalBillRef.sortFields || []).map(field => ({
+    field,
+    order: statisticalBillRef.sortOrderMap?.[field] || 'asc'
+  }))
+
   const res = await exportFactoryBillExcel(
       statisticalBillRef.factoryId,
       statisticalBillRef.startDate,
-      statisticalBillRef.endDate
+      statisticalBillRef.endDate,
+      sortConfigList
   )
 
   // 获取响应头中的文件名
@@ -507,7 +554,9 @@ const billInfoFormRef = ref()
 const statisticalBillRef = reactive({
   factoryId: '',
   startDate: '',
-  endDate: ''
+  endDate: '',
+  sortFields: [],
+  sortOrderMap: {}
 })
 
 // 成衣厂账单表单初始化数据
@@ -552,6 +601,13 @@ const validateBillForm = async formEl => {
   )
 }
 
+/**
+ * 删除状态的数据仅允许展示，不提供编辑/删除入口。
+ */
+const isReadOnlyRow = row => {
+  return Number(row?.flag) === 1 || Number(data.flag) === 1
+}
+
 const onlyNumberRule = {
   pattern: /^[0-9]+$/,
   message: '只能输入数字',
@@ -574,6 +630,36 @@ const addBillInfoRules = reactive({
 const statisticalBillRules = reactive({
   factoryId: [{required: true, message: '请选择成衣厂', trigger: 'blur'}]
 })
+
+const sortFieldOptions = [
+  { label: '床号', value: 'number' },
+  { label: '创建日期', value: 'createdDate' },
+  { label: '款式编号', value: 'styleNumber' },
+  { label: '工作类型', value: 'category' },
+  { label: '数量', value: 'quantity' },
+  { label: '报价', value: 'quotation' },
+  { label: '账单金额', value: 'bill' }
+]
+
+const getSortFieldLabel = field => {
+  return sortFieldOptions.find(item => item.value === field)?.label || field
+}
+
+const handleSortFieldsChange = selectedFields => {
+  const selectedSet = new Set(selectedFields || [])
+
+  Object.keys(statisticalBillRef.sortOrderMap).forEach(field => {
+    if (!selectedSet.has(field)) {
+      delete statisticalBillRef.sortOrderMap[field]
+    }
+  })
+
+  ;(selectedFields || []).forEach(field => {
+    if (!statisticalBillRef.sortOrderMap[field]) {
+      statisticalBillRef.sortOrderMap[field] = 'asc'
+    }
+  })
+}
 
 </script>
 
@@ -652,5 +738,31 @@ const statisticalBillRules = reactive({
 
 :deep(.el-statistic__number::after) {
   content: '元';
+}
+
+.readonly-text {
+  color: var(--el-text-color-placeholder);
+}
+
+.sort-direction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.sort-direction-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sort-direction-label {
+  min-width: 88px;
+  color: var(--el-text-color-regular);
+}
+
+.sort-direction-item :deep(.el-select) {
+  width: 140px;
 }
 </style>

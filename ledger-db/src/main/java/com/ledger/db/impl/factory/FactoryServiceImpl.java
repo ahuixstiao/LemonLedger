@@ -2,11 +2,11 @@ package com.ledger.db.impl.factory;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Factory;
 import com.ledger.db.mapper.FactoryMapper;
 import com.ledger.db.service.factory.IFactoryService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,12 +36,10 @@ public class FactoryServiceImpl extends ServiceImpl<FactoryMapper, Factory> impl
         // 构建分页对象
         Page<Factory> page = new Page<>(currentPage, pageSize);
 
-        return Result.ok(
-                lambdaQuery()
-                        .eq(StrUtil.isNotBlank(factoryName), Factory::getFactoryName, factoryName)
-                        .eq(Factory::getFlag, flag)
-                        .page(page)
-        );
+        String keyword = StrUtil.trim(factoryName);
+        Integer queryFlag = flag == null ? 0 : flag;
+
+        return Result.ok(baseMapper.queryFactoryList(page, keyword, queryFlag));
     }
 
     /**

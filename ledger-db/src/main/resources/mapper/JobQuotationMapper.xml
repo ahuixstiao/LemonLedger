@@ -11,7 +11,8 @@
         jq.category_id,
         jc.category,
         jq.quotation,
-        jq.created_date
+        jq.created_date,
+        jq.flag
         from job_quotation jq
         left join job_mode jm on jq.mode_id = jm.id
         left join job_category jc on jq.category_id = jc.id
