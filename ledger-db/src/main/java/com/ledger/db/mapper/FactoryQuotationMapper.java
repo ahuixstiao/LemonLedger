@@ -7,6 +7,8 @@ import com.ledger.db.entity.dto.FactoryQuotationDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * <p>
  * 成衣厂报价表 Mapper 接口
@@ -33,5 +35,19 @@ public interface FactoryQuotationMapper extends BaseMapper<FactoryQuotation> {
             @Param("styleNumber")String styleNumber,
             @Param("categoryId") Integer categoryId,
             @Param("flag") Integer flag);
+
+
+    /**
+     * 按工厂ID查询对应工厂的报价单款式编号列表
+     *
+     * @param factoryId 工厂ID
+     * @param flag      删除状态 0否 1是
+     * @return list
+     */
+    List<FactoryQuotationDto> selectStyleNumberListByFactoryId(
+            @Param("factoryId") Integer factoryId,
+            @Param("flag") Integer flag);
+
+
 
 }

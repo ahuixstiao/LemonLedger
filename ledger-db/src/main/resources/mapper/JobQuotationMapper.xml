@@ -2,4 +2,28 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.db.mapper.JobQuotationMapper">
 
+    <!-- 根据条件查询工作报价表 分页 -->
+    <select id="selectJobQuotationListByCondition" resultType="com.ledger.db.entity.dto.JobQuotationDTO">
+        select
+        jq.id,
+        jq.mode_id,
+        jm.mode,
+        jq.category_id,
+        jc.category,
+        jq.quotation,
+        jq.created_date
+        from job_quotation jq
+        left join job_mode jm on jq.mode_id = jm.id
+        left join job_category jc on jq.category_id = jc.id
+        where
+        jq.flag = #{flag}
+        <if test="modeId != null">
+            and jq.mode_id = #{modeId}
+        </if>
+        <if test="categoryId != null">
+            and jq.category_id = #{categoryId}
+        </if>
+        order by jq.created_date desc, jq.id desc
+    </select>
+
 </mapper>

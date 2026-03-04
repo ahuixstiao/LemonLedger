@@ -1,6 +1,5 @@
 package com.ledger.db.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.result.Result;
@@ -26,16 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor(onConstructor_ =  @Autowired)
 public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> implements IEmployeeService {
 
-    /**
-     * 查询员工列表
-     *
-     * @param flag 删除状态 0否 1是
-     * @return result
-     */
-    @Override
-    public Result<Object> queryEmployeeList(Integer flag) {
-        return Result.ok(lambdaQuery().eq(Employee::getFlag, flag).list());
-    }
+
+    private final EmployeeMapper employeeMapper;
 
     /**
      * 按条件查询员工列表 默认查全部员工
@@ -47,15 +38,12 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
      * @return result
      */
     @Override
-    public Result<Object> queryEmployeeListByCondition(String name, Integer currentPage, Integer pageSize, Integer flag){
+    public Result<Object> queryEmployeeList(String name, Integer currentPage, Integer pageSize, Integer flag) {
         // 构建分页对象
         Page<Employee> page = new Page<>(currentPage, pageSize);
 
-        lambdaQuery()
-                .eq(Employee::getFlag, flag)
-                // 如果传入名字就按名字搜索
-                .eq(StrUtil.isNotBlank(name), Employee::getName, name)
-                .page(page);
+        // 使用自定义 SQL，绕过 MyBatis-Plus 逻辑删除自动过滤
+        page = employeeMapper.queryEmployeeList(page, name, flag);
 
         return Result.ok(page);
     }
@@ -82,5 +70,42 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
         return Result.fail();
     }
 
+    /**
+     * 更新员工信息
+     *
+     * @param employee 员工实体
+     * @return result
+     */
+    @Override
+    @Transactional(rollbackFor = RuntimeException.class)
+    public Result<Object> updateEmployee(Employee employee) {
+        try {
+            if (updateById(employee)) {
+                return Result.ok();
+            }
+        } catch (RuntimeException runtimeException) {
+            log.error(runtimeException.getMessage());
+        }
+        return Result.fail();
+    }
+
+    /**
+     * 删除员工信息（逻辑删除）
+     *
+     * @param id 员工ID
+     * @return result
+     */
+    @Override
+    @Transactional(rollbackFor = RuntimeException.class)
+    public Result<Object> deleteEmployee(Integer id) {
+        try {
+            if (removeById(id)) {
+                return Result.ok();
+            }
+        } catch (RuntimeException runtimeException) {
+            log.error(runtimeException.getMessage());
+        }
+        return Result.fail();
+    }
 
 }

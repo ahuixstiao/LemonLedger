@@ -68,6 +68,33 @@ public class FactoryServiceImpl extends ServiceImpl<FactoryMapper, Factory> impl
      */
     @Override
     public Result<Object> updateFactory(Factory factory) {
-        return null;
+        if (factory.getId() == null) {
+            return Result.fail("工厂ID不能为空");
+        }
+
+        if (updateById(factory)) {
+            return Result.ok();
+        }
+
+        return Result.fail();
+    }
+
+    /**
+     * 删除成衣厂信息（逻辑删除）
+     *
+     * @param id 成衣厂ID
+     * @return result
+     */
+    @Override
+    public Result<Object> deleteFactory(Integer id) {
+        if (id == null) {
+            return Result.fail("工厂ID不能为空");
+        }
+
+        if (removeById(id)) {
+            return Result.ok();
+        }
+
+        return Result.fail();
     }
 }

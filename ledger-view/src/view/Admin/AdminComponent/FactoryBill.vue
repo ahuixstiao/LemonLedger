@@ -2,7 +2,7 @@
   <div class="factoryBill-container">
     <!-- 筛选条件 -->
     <div class="factoryBill-button">
-      <el-button type="primary" @click="clickAddButton">添加</el-button>
+      <el-button type="primary" @click="openCreateBillDialog">添加</el-button>
       <el-button type="primary" @click="data.billVisible = true">账单</el-button>
       <!-- 成衣厂筛选条件 -->
       <el-select
@@ -10,7 +10,7 @@
           filterable
           clearable
           placeholder="选择工厂名称"
-          @change="queryFactoryBillListHandle"
+          @change="fetchFactoryBillList"
       >
         <el-option
             v-for="(item, index) in data.factoryList"
@@ -24,7 +24,7 @@
           clearable
           v-model="data.number"
           placeholder="床号"
-          @input="queryFactoryBillListHandle"
+          @input="fetchFactoryBillList"
       >
       </el-input>
       <!-- 款式编号筛选条件 -->
@@ -32,29 +32,16 @@
           clearable
           v-model="data.styleNumber"
           placeholder="款式编号"
-          @input="queryFactoryBillListHandle"
+          @input="fetchFactoryBillList"
       >
       </el-input>
 
-      <!-- 工作类型筛选条件 -->
-      <el-select
-          v-model="data.categoryId"
-          clearable
-          placeholder="选择工作类型"
-          @change="queryFactoryBillListHandle"
-      >
-        <el-option
-            v-for="item in data.categoryList"
-            :label="item.category"
-            :value="item.id"
-        />
-      </el-select>
 
       <!-- 数据记录状态筛选条件 -->
       <el-select
           v-model="data.flag"
           placeholder="状态"
-          @change="queryFactoryBillListHandle"
+          @change="fetchFactoryBillList"
       >
         <el-option label="正常" :value="0"/>
         <el-option label="删除" :value="1"/>
@@ -67,7 +54,7 @@
           format="YYYY/MM/DD"
           value-format="YYYY-MM-DD"
           placeholder="开始日期"
-          @change="queryFactoryBillListHandle"
+          @change="fetchFactoryBillList"
       />
       <el-date-picker
           v-model="data.endDate"
@@ -75,10 +62,10 @@
           format="YYYY/MM/DD"
           value-format="YYYY-MM-DD"
           placeholder="结束日期"
-          @change="queryFactoryBillListHandle"
+          @change="fetchFactoryBillList"
       />
       <!-- 重置按钮 -->
-      <el-button type="primary" @click="resetQueryCondition">重置</el-button>
+      <el-button type="warning" plain class="toolbar-reset-btn" @click="resetQueryCondition">重置</el-button>
     </div>
 
     <!-- 成衣厂账单表格 -->
@@ -94,40 +81,8 @@
     >
       <el-table-column prop="factoryName" sortable label="厂名" align="center"/>
       <el-table-column prop="number" sortable label="床号" align="center"/>
-      <el-table-column prop="styleNumber" sortable label="款式编号" align="center">
-        <template #default="scope">
-          <el-select
-              filterable
-              v-model="scope.row.styleNumber"
-              placeholder="选择款式编号"
-              @click="queryFactoryStyleNumberListHandle(scope.row.factoryId)"
-              @change="updateBillStyleOrCategoryHandle(scope.row.id, scope.row.factoryId, scope.row.styleNumber, scope.row.categoryId, scope.row.quantity)"
-          >
-            <el-option
-                v-for="item in data.styleNumberList"
-                :key="item.id"
-                :label="item.styleNumber"
-                :value="item.styleNumber"
-            />
-          </el-select>
-        </template>
-      </el-table-column>
-      <el-table-column prop="category" sortable label="工作类型" align="center">
-        <template #default="scope">
-          <el-select
-              v-model="scope.row.categoryId"
-              placeholder="选择工作类型"
-              @change="updateBillStyleOrCategoryHandle(scope.row.id, scope.row.factoryId, scope.row.styleNumber, scope.row.categoryId, scope.row.quantity)"
-          >
-            <el-option
-                v-for="item in data.categoryList"
-                :key="item.id"
-                :label="item.category"
-                :value="item.id"
-            />
-          </el-select>
-        </template>
-      </el-table-column>
+      <el-table-column prop="styleNumber" sortable label="款式编号" align="center"/>
+      <el-table-column prop="category" sortable label="工作类型" align="center"/>
       <el-table-column prop="quantity" label="数量" align="center"/>
       <el-table-column prop="bill" label="账单" align="center"/>
       <el-table-column prop="createdDate" sortable label="日期" align="center"/>
@@ -139,12 +94,10 @@
       </el-table-column>
       <el-table-column label="操作" align="center" width="160px">
         <template #default="scope">
-          <el-button type="primary" text @click="showUpdateBillInfoDialog(scope.row)">编辑</el-button>
-          <el-popconfirm title="确认删除?" @confirm="billDeleteHandle(scope.row.id)">
-            <template #reference>
-              <el-button v-if="scope.row.flag === 0" type="danger" text>删除</el-button>
-            </template>
-          </el-popconfirm>
+          <el-button text @click="openEditBillDialog(scope.row)">编辑</el-button>
+          <el-button v-if="scope.row.flag === 0" type="danger" text @click="removeFactoryBill(scope.row.id)">
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -157,8 +110,8 @@
           v-model:page-size="data.pageSize"
           :page-sizes="[5, 10, 20, 50, 100]"
           layout="sizes, prev, pager, next, jumper, ->"
-          @current-change="queryFactoryBillListHandle()"
-          @size-change="queryFactoryBillListHandle()"
+          @current-change="fetchFactoryBillList"
+          @size-change="fetchFactoryBillList"
       />
     </div>
 
@@ -178,6 +131,7 @@
               filterable
               v-model="factoryBillInfoRef.factoryId"
               placeholder="选择工厂名称"
+              @change="onBillFactoryChange"
           >
             <el-option
                 v-for="item in data.factoryList"
@@ -194,29 +148,17 @@
           />
         </el-form-item>
 
-        <el-form-item size="large" label="款式编号:" prop="styleNumber">
+        <el-form-item size="large" label="报价编号:" prop="quotationId">
           <el-select
               filterable
-              v-model="factoryBillInfoRef.styleNumber"
-              placeholder="输入款式编号"
+              v-model="factoryBillInfoRef.quotationId"
+              placeholder="选择报价"
               @focus="queryFactoryStyleNumberListHandle(factoryBillInfoRef.factoryId)"
           >
             <el-option
                 v-for="item in data.styleNumberList"
-                :label="item.styleNumber"
-                :value="item.styleNumber"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item size="large" label="工作类型:" prop="categoryId">
-          <el-select
-              v-model="factoryBillInfoRef.categoryId"
-              placeholder="选择工作类型"
-          >
-            <el-option
-                v-for="item in data.categoryList"
-                :label="item.category"
+                :key="item.id"
+                :label="`${item.styleNumber} / ${item.category}`"
                 :value="item.id"
             />
           </el-select>
@@ -241,13 +183,13 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleCancelJobDialog">取消</el-button>
+          <el-button @click="closeBillDialog">取消</el-button>
           <el-button type="primary" v-if="data.editBillDialogMode === 0"
-                     @click="billValidation(billInfoFormRef)">
+                     @click="validateBillForm(billInfoFormRef)">
             添加
           </el-button>
           <el-button type="primary"
-                     v-if="data.editBillDialogMode === 1" @click="billValidation(billInfoFormRef)">
+                     v-if="data.editBillDialogMode === 1" @click="validateBillForm(billInfoFormRef)">
             编辑
           </el-button>
         </div>
@@ -314,25 +256,30 @@
 </template>
 
 <script setup>
-import {reactive, onMounted, ref} from 'vue'
-import {queryCategoryList, queryFactoryList} from '../../../nwtwork/index.js'
+import { reactive, onMounted, ref } from 'vue'
+import { queryFactoryList } from '../../../network/index.js'
 import {
   deleteFactoryBillInfo,
-  editFactoryBillInfo, exportFactoryBillExcel, queryFactoryJobCategoryList,
-  queryFactoryQuotationStyleNumberList
-} from '../../../nwtwork/admin.js'
-import {
+  editFactoryBillInfo,
+  exportFactoryBillExcel,
   queryFactoryBillList,
+  queryFactoryQuotationStyleNumberList,
   saveFactoryBillInfo,
   statisticalFactoryBill
-} from '../../../nwtwork/admin.js'
-import {ElMessage} from 'element-plus'
-import {useTransition} from '@vueuse/core'
+} from '../../../network/admin/index.js'
+import { ElMessage } from 'element-plus'
+import { useTransition } from '@vueuse/core'
+import {
+  loadFactoryOptions,
+  openCreateDialog,
+  openEditDialog,
+  resetReactiveForm,
+  validateDialogForm
+} from './factoryCrudShared.js'
 
 onMounted(() => {
-  queryFactoryListHandle()
-  queryFactoryBillListHandle()
-  queryCategoryListHandle()
+  loadFactoryList()
+  fetchFactoryBillList()
 })
 
 const data = reactive({
@@ -340,13 +287,11 @@ const data = reactive({
   tableData: [],
   factoryList: [],
   styleNumberList: [],
-  categoryList: [],
   factoryId: '',
   number: '',
   startDate: '',
   endDate: '',
   styleNumber: '',
-  categoryId: '',
   flag: 0,
   currentPage: 1,
   pageSize: 10,
@@ -363,35 +308,37 @@ const outputValue = useTransition(billTotal, {
   duration: 1000
 })
 
-// TODO 查询成衣厂列表
-const queryFactoryListHandle = async () => {
-  const {data: res} = await queryFactoryList()
-  data.factoryList = res.data
+const loadFactoryList = async () => {
+  await loadFactoryOptions(data, queryFactoryList)
 }
 
-// TODO 查询工作类型列表
-const queryCategoryListHandle = async () => {
-  const {data: res} = await queryFactoryJobCategoryList()
-  data.categoryList = res.data
-}
 
 // TODO 查询成衣厂报价单的款式编号列表
 const queryFactoryStyleNumberListHandle = async (factoryId) => {
+  if (!factoryId) {
+    data.styleNumberList = []
+    return
+  }
   const {data: res} = await queryFactoryQuotationStyleNumberList(factoryId)
   if (res.status === 200) {
     data.styleNumberList = res.data
   } else {
+    data.styleNumberList = []
     ElMessage.error(res.message)
   }
 }
 
+const onBillFactoryChange = async (factoryId) => {
+  factoryBillInfoRef.quotationId = ''
+  await queryFactoryStyleNumberListHandle(factoryId)
+}
+
 // TODO 查询成衣厂账单列表
-const queryFactoryBillListHandle = async () => {
+const fetchFactoryBillList = async () => {
   const {data: res} = await queryFactoryBillList(
       data.factoryId,
       data.number,
       data.styleNumber,
-      data.categoryId,
       data.flag,
       data.startDate,
       data.endDate,
@@ -473,50 +420,32 @@ const exportFactoryBillExcelHandle = async () => {
 
 }
 
-// TODO 新增账单请求
-const addFactoryBillInfoHandle = async () => {
-  //resetForm(billFormRef)
-  const {data: res} = await saveFactoryBillInfo(factoryBillInfoRef)
+const createFactoryBill = async () => {
+  const { data: res } = await saveFactoryBillInfo(factoryBillInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    await queryFactoryBillListHandle()
+    await fetchFactoryBillList()
   } else {
     ElMessage.error(res.message)
   }
 }
 
-// TODO 修改账单请求
-const updateBillInfoHandle = async () => {
-  const {data: res} = await editFactoryBillInfo(factoryBillInfoRef)
+const updateFactoryBill = async () => {
+  const { data: res } = await editFactoryBillInfo(factoryBillInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    await queryFactoryBillListHandle()
-  } else {
-    ElMessage.error(res.message)
-  }
-  data.editBillDialogVisible = false
-}
-
-// TODO 修改账单款式编号或工作类型请求
-const updateBillStyleOrCategoryHandle = async (id, factoryId, styleNumber, categoryId, quantity) => {
-  // 构建对象
-  const billInfo = {id, factoryId, styleNumber, categoryId, quantity}
-  const {data: res} = await editFactoryBillInfo(billInfo)
-  if (res.status === 200) {
-    ElMessage.success(res.message)
-    await queryFactoryBillListHandle()
+    await fetchFactoryBillList()
   } else {
     ElMessage.error(res.message)
   }
   data.editBillDialogVisible = false
 }
 
-// TODO 删除账单数据请求
-const billDeleteHandle = async (id) => {
-  const {data: res} = await deleteFactoryBillInfo(id)
+const removeFactoryBill = async id => {
+  const { data: res } = await deleteFactoryBillInfo(id)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    await queryFactoryBillListHandle()
+    await fetchFactoryBillList()
   } else {
     ElMessage.error(res.message)
   }
@@ -564,11 +493,10 @@ const summaryQuantityAndBill = ({columns, data}) => {
 const resetQueryCondition = () => {
   data.factoryId = ''
   data.styleNumber = ''
-  data.categoryId = ''
   data.flag = 0
   data.startDate = ''
   data.endDate = ''
-  queryFactoryBillListHandle()
+  fetchFactoryBillList()
 }
 
 
@@ -586,9 +514,8 @@ const statisticalBillRef = reactive({
 const factoryBillInfoInit = {
   id: '',
   factoryId: '',
+  quotationId: '',
   number: '',
-  styleNumber: '',
-  categoryId: '',
   quantity: '',
   createdDate: ''
 }
@@ -596,57 +523,33 @@ const factoryBillInfoInit = {
 // 构建账单实体
 const factoryBillInfoRef = reactive({...factoryBillInfoInit})
 
-// 点击编辑按钮事件
-const showUpdateBillInfoDialog = (bill) => {
-  // 填充表单数据
-  Object.assign(factoryBillInfoRef, bill)
-  // 1 为编辑模式
-  data.editBillDialogMode = 1
-  // 显示弹窗
-  data.editBillDialogVisible = true
+const openEditBillDialog = async bill => {
+  await queryFactoryStyleNumberListHandle(bill.factoryId)
+  openEditDialog(factoryBillInfoRef, bill, data, 'editBillDialogMode', 'editBillDialogVisible')
 }
 
-// 点击新增按钮事件
-const clickAddButton = () => {
-  // 重置表单信息
-  Object.assign(factoryBillInfoRef, factoryBillInfoInit)
-  // 0 为新增模式
-  data.editBillDialogMode = 0
-  // 显示弹窗
-  data.editBillDialogVisible = true
-
+const openCreateBillDialog = () => {
+  openCreateDialog(factoryBillInfoRef, factoryBillInfoInit, data, 'editBillDialogMode', 'editBillDialogVisible')
+  data.styleNumberList = []
 }
 
-// 清除表单参数
-const restBillInfoFormData = () => {
-  // 清除信息
-  Object.assign(factoryBillInfoRef, factoryBillInfoInit)
-  billInfoFormRef.value?.clearValidate()
+const resetBillForm = () => {
+  resetReactiveForm(factoryBillInfoRef, factoryBillInfoInit, billInfoFormRef)
 }
 
-// 取消按钮
-const handleCancelJobDialog = () => {
-  restBillInfoFormData()
+const closeBillDialog = () => {
+  resetBillForm()
   data.editBillDialogVisible = false
 }
 
-// 判断账单表单处于新增或是编辑状态
-const billValidation = async formEl => {
-  if (!formEl) return
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      // 判断是新增还是修改  0 新增 1 编辑
-      if (data.editBillDialogMode === 0) {
-        // 添加
-        addFactoryBillInfoHandle()
-      } else if (data.editBillDialogMode === 1) {
-        // 编辑
-        updateBillInfoHandle()
-      }
-    } else {
-      ElMessage.error('请检查是否填写正确')
-    }
-  })
+const validateBillForm = async formEl => {
+  await validateDialogForm(
+    formEl,
+    data.editBillDialogMode,
+    createFactoryBill,
+    updateFactoryBill,
+    () => ElMessage.error('请检查是否填写正确')
+  )
 }
 
 const onlyNumberRule = {
@@ -658,9 +561,8 @@ const onlyNumberRule = {
 // 添加账单记录校验规则
 const addBillInfoRules = reactive({
   factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
-  categoryId: [{required: true, message: '请选择工作类型', trigger: 'blur'}],
+  quotationId: [{required: true, message: '请选择报价', trigger: 'blur'}],
   number: [{required: true, message: '请输入床号', trigger: 'blur'}],
-  styleNumber: [{required: true, message: '请输入款式编号', trigger: 'blur'}],
   quantity: [
     {required: true, message: '请输入数量', trigger: 'blur'},
     onlyNumberRule
@@ -685,47 +587,50 @@ const statisticalBillRules = reactive({
 
 .factoryBill-button {
   display: flex;
-  flex-wrap: wrap;
-  padding: 10px;
-  gap: 10px;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 8px;
   border-bottom: 1px solid var(--el-border-color);
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
-.factoryBill-button > *:nth-child(1) {
-  width: 70px;
-  margin-right: -11px;
-}
-
+.factoryBill-button > *:nth-child(1),
 .factoryBill-button > *:nth-child(2) {
-  width: 70px;
+  width: 96px;
 }
 
 .factoryBill-button > *:nth-child(3) {
-  width: 140px;
+  width: 135px;
 }
 
-.factoryBill-button > *:nth-child(4) {
-  width: 120px;
-}
-
+.factoryBill-button > *:nth-child(4),
 .factoryBill-button > *:nth-child(5) {
-  width: 120px;
+  width: 110px;
 }
 
 .factoryBill-button > *:nth-child(6) {
-  width: 100px;
+  width: 90px;
 }
 
-.factoryBill-button > *:nth-child(7) {
-  width: 100px;
-}
-
+.factoryBill-button > *:nth-child(7),
 .factoryBill-button > *:nth-child(8) {
   width: 150px;
 }
 
 .factoryBill-button > *:nth-child(9) {
-  width: 150px;
+  width: 88px;
+}
+
+.factoryBill-button > * {
+  flex-shrink: 0;
+}
+
+.factoryBill-button :deep(.el-input__wrapper),
+.factoryBill-button :deep(.el-select__wrapper),
+.factoryBill-button :deep(.el-date-editor.el-input__wrapper) {
+  min-height: 32px;
 }
 
 .factoryBill-page {

@@ -1,15 +1,15 @@
 package com.ledger.db.impl.job;
 
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.JobCategory;
 import com.ledger.db.mapper.JobCategoryMapper;
 import com.ledger.db.service.job.IJobCategoryService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <p>
@@ -23,25 +23,23 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobCategoryServiceImpl extends ServiceImpl<JobCategoryMapper, JobCategory> implements IJobCategoryService {
 
+    private final JobCategoryMapper jobCategoryMapper;
+
     /**
      * 查询工作类型列表
      *
-     * @param category 工作类型
+     * @param category    工作类型
      * @param currentPage 当前页
      * @param pageSize    每页条数
-     * @param flag 删除状态 0否 1是
+     * @param flag        删除状态 0否 1是
      * @return result
      */
     @Override
+    @Transactional(readOnly = true)
     public Result<Object> queryCategoryList(String category, Integer currentPage, Integer pageSize, Integer flag) {
 
         Page<JobCategory> page = new Page<>(currentPage, pageSize);
-
-        page = lambdaQuery()
-                .eq(StrUtil.isNotBlank(category), JobCategory::getCategory, category)
-                .eq(JobCategory::getFlag, flag)
-                .page(page);
-
+        page = jobCategoryMapper.selectJobCategoryListByCondition(page, category, flag);
         return Result.ok(page);
     }
 

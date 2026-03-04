@@ -2,7 +2,7 @@
   <div class="factoryQuotation-container">
     <!-- 筛选条件 -->
     <div class="factoryQuotation-button">
-      <el-button type="primary" @click="clickAddButton">添加</el-button>
+      <el-button type="primary" @click="openCreateQuotationDialog">添加</el-button>
 
       <!-- 成衣厂筛选条件 -->
       <el-select
@@ -10,7 +10,7 @@
           filterable
           clearable
           placeholder="选择工厂名称"
-          @change="queryFactoryQuotationListHandle"
+          @change="fetchFactoryQuotationList"
       >
         <el-option
             v-for="(item, index) in data.factoryList"
@@ -24,7 +24,7 @@
           clearable
           v-model="data.styleNumber"
           placeholder="款式编号"
-          @input="queryFactoryQuotationListHandle"
+          @input="fetchFactoryQuotationList"
       >
       </el-input>
 
@@ -33,7 +33,7 @@
           v-model="data.categoryId"
           clearable
           placeholder="选择工作类型"
-          @change="queryFactoryQuotationListHandle"
+          @change="fetchFactoryQuotationList"
       >
         <el-option
             v-for="item in data.categoryList"
@@ -42,6 +42,7 @@
         />
       </el-select>
 
+      <el-button type="warning" plain class="toolbar-reset-btn" @click="resetQuotationFilter">重置</el-button>
     </div>
 
     <!-- 成衣厂报价表格 -->
@@ -59,12 +60,8 @@
       <el-table-column prop="quotation" sortable label="报价 (元)" align="center"/>
       <el-table-column label="操作" align="center" width="160px">
         <template #default="scope">
-          <el-button type="primary" text @click="showUpdateDialog(scope.row)">编辑</el-button>
-          <el-popconfirm title="确认删除?" @confirm="deleteQuotationInfoHandle(scope.row.id)">
-            <template #reference>
-              <el-button type="danger" text>删除</el-button>
-            </template>
-          </el-popconfirm>
+          <el-button text @click="openEditQuotationDialog(scope.row)">编辑</el-button>
+          <el-button type="danger" text @click="removeFactoryQuotation(scope.row.id)">删除</el-button>
         </template>
       </el-table-column>
 
@@ -79,8 +76,8 @@
           v-model:page-size="data.pageSize"
           :page-sizes="[5, 10, 20, 50, 100]"
           layout="sizes, prev, pager, next, jumper, ->"
-          @current-change="queryFactoryQuotationListHandle"
-          @size-change="queryFactoryQuotationListHandle"
+          @current-change="fetchFactoryQuotationList"
+          @size-change="fetchFactoryQuotationList"
       />
     </div>
 
@@ -142,13 +139,13 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="cancelQuotationInfoClickEvent(quotationInfoFormRef)">取消</el-button>
+          <el-button @click="closeQuotationDialog">取消</el-button>
           <el-button type="primary" v-if="data.editQuotationDialogMode === 0"
-                     @click="quotationValidation(quotationInfoFormRef)">
+                     @click="validateQuotationForm(quotationInfoFormRef)">
             新增
           </el-button>
           <el-button type="primary"
-                     v-if="data.editQuotationDialogMode === 1" @click="quotationValidation(quotationInfoFormRef)">
+                     v-if="data.editQuotationDialogMode === 1" @click="validateQuotationForm(quotationInfoFormRef)">
             修改
           </el-button>
         </div>
@@ -161,21 +158,30 @@
 
 <script setup>
 
-import {onMounted, reactive, ref} from "vue";
-import {queryCategoryList, queryFactoryList} from "../../../nwtwork/index.js";
+import { onMounted, reactive, ref } from 'vue'
+import { queryFactoryList } from '../../../network/index.js'
 import {
-  deleteFactoryQuotationInfo, queryFactoryJobCategoryList,
+  deleteFactoryQuotationInfo,
+  queryFactoryJobCategoryList,
   queryFactoryQuotationList,
   saveFactoryQuotationInfo,
   updateFactoryQuotationInfo
-} from "../../../nwtwork/admin.js";
-import {ElMessage} from "element-plus";
+} from '../../../network/admin/index.js'
+import { ElMessage } from 'element-plus'
+import {
+  loadFactoryOptions,
+  loadFactoryCategoryOptions,
+  openCreateDialog,
+  openEditDialog,
+  resetReactiveForm,
+  validateDialogForm
+} from './factoryCrudShared.js'
 
 
 onMounted(() => {
-  queryFactoryListHandle()
-  queryCategoryListHandle()
-  queryFactoryQuotationListHandle()
+  loadFactoryList()
+  loadCategoryList()
+  fetchFactoryQuotationList()
 })
 
 const data = reactive({
@@ -198,20 +204,18 @@ const data = reactive({
   editQuotationDialogMode: 0,
 })
 
-// TODO 查询成衣厂列表
-const queryFactoryListHandle = async () => {
-  const {data: res} = await queryFactoryList()
-  data.factoryList = res.data
+// 加载成衣厂选项
+const loadFactoryList = async () => {
+  await loadFactoryOptions(data, queryFactoryList)
 }
 
-// TODO 查询工作类型列表
-const queryCategoryListHandle = async () => {
-  const {data: res} = await queryFactoryJobCategoryList()
-  data.categoryList = res.data
+// 加载工作类型选项
+const loadCategoryList = async () => {
+  await loadFactoryCategoryOptions(data, queryFactoryJobCategoryList)
 }
 
 // TODO 查询成衣厂报价单列表
-const queryFactoryQuotationListHandle = async () => {
+const fetchFactoryQuotationList = async () => {
 
   const {data: res} = await queryFactoryQuotationList(
       data.factoryId,
@@ -231,61 +235,53 @@ const queryFactoryQuotationListHandle = async () => {
 
 }
 
-// TODO 添加成衣厂报价单信息
-const addFactoryQuotationInfoHandle = async () => {
-  const {data: res} = await saveFactoryQuotationInfo(factoryQuotationInfoRef)
+const resetQuotationFilter = () => {
+  data.factoryId = ''
+  data.styleNumber = ''
+  data.categoryId = ''
+  data.currentPage = 1
+  fetchFactoryQuotationList()
+}
+
+const createFactoryQuotation = async () => {
+  const { data: res } = await saveFactoryQuotationInfo(factoryQuotationInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    await queryFactoryQuotationListHandle()
+    await fetchFactoryQuotationList()
   } else {
     ElMessage.error(res.message)
   }
-
 }
 
-// TODO 修改成衣厂报价单信息
-const updateQuotationInfoHandle = async () => {
-  const {data: res} = await updateFactoryQuotationInfo(factoryQuotationInfoRef)
+const updateFactoryQuotation = async () => {
+  const { data: res } = await updateFactoryQuotationInfo(factoryQuotationInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    await queryFactoryQuotationListHandle()
-
+    await fetchFactoryQuotationList()
   } else {
-    ElMessage.success(res.message)
+    ElMessage.error(res.message)
   }
   data.editQuotationDialogVisible = false
 }
 
-// TODO 删除成衣厂报价单信息
-const deleteQuotationInfoHandle = async (id) => {
-
-  const {data: res} = await deleteFactoryQuotationInfo(id)
+const removeFactoryQuotation = async id => {
+  const { data: res } = await deleteFactoryQuotationInfo(id)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    await queryFactoryQuotationListHandle()
+    await fetchFactoryQuotationList()
   } else {
-    ElMessage.success(res.message)
+    ElMessage.error(res.message)
   }
-
 }
 
-// 判断账单表单处于新增或是编辑状态
-const quotationValidation = async formEl => {
-  if (!formEl) return
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      // 判断是新增还是修改  0 新增 1 编辑
-      if (data.editQuotationDialogMode === 0) {
-        // 添加
-        addFactoryQuotationInfoHandle()
-      } else if (data.editQuotationDialogMode === 1) {
-        // 编辑
-        updateQuotationInfoHandle()
-      }
-    } else {
-      ElMessage.error('请检查是否填写正确')
-    }
-  })
+const validateQuotationForm = async formEl => {
+  await validateDialogForm(
+    formEl,
+    data.editQuotationDialogMode,
+    createFactoryQuotation,
+    updateFactoryQuotation,
+    () => ElMessage.error('请检查是否填写正确')
+  )
 }
 
 const quotationInfoFormRef = ref()
@@ -303,38 +299,32 @@ const factoryQuotationInfoInit = {
 const factoryQuotationInfoRef = reactive({...factoryQuotationInfoInit})
 
 
-// 点击新增按钮事件
-const clickAddButton = () => {
-  // 重置表单信息
-  Object.assign(factoryQuotationInfoRef, factoryQuotationInfoInit)
-  // 新增模式
-  data.editQuotationDialogMode = 0
-  // 显示弹窗
-  data.editQuotationDialogVisible = true
+const openCreateQuotationDialog = () => {
+  openCreateDialog(
+    factoryQuotationInfoRef,
+    factoryQuotationInfoInit,
+    data,
+    'editQuotationDialogMode',
+    'editQuotationDialogVisible'
+  )
 }
 
-// 点击编辑按钮事件
-const showUpdateDialog = (quotationInfo) => {
-  // 填充表单数据
-  Object.assign(factoryQuotationInfoRef, quotationInfo)
-  // 编辑模式
-  data.editQuotationDialogMode = 1
-  // 显示弹窗
-  data.editQuotationDialogVisible = true
+const openEditQuotationDialog = quotationInfo => {
+  openEditDialog(
+    factoryQuotationInfoRef,
+    quotationInfo,
+    data,
+    'editQuotationDialogMode',
+    'editQuotationDialogVisible'
+  )
 }
 
-// 清除表单参数
-const restQuotationInfoFormData = () => {
-  // 清除信息
-  Object.assign(factoryQuotationInfoRef, factoryQuotationInfoInit)
-  quotationInfoFormRef.value?.clearValidate()
+const resetQuotationForm = () => {
+  resetReactiveForm(factoryQuotationInfoRef, factoryQuotationInfoInit, quotationInfoFormRef)
 }
 
-// 取消按钮点击事件
-const cancelQuotationInfoClickEvent = () => {
-  // 清除表单参数
-  restQuotationInfoFormData()
-  // 关闭窗口
+const closeQuotationDialog = () => {
+  resetQuotationForm()
   data.editQuotationDialogVisible = false
 }
 
@@ -358,26 +348,42 @@ const addQuotationInfoRules = reactive({
 
 .factoryQuotation-button {
   display: flex;
-  flex-wrap: wrap;
-  padding: 10px;
-  gap: 10px;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 12px;
+  gap: 12px;
   border-bottom: 1px solid var(--el-border-color);
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .factoryQuotation-button > *:nth-child(1) {
-  width: 70px;
+  width: 96px;
 }
 
 .factoryQuotation-button > *:nth-child(2) {
-  width: 150px;
+  width: 200px;
 }
 
 .factoryQuotation-button > *:nth-child(3) {
-  width: 150px;
+  width: 180px;
 }
 
 .factoryQuotation-button > *:nth-child(4) {
-  width: 150px;
+  width: 160px;
+}
+
+.factoryQuotation-button > *:nth-child(5) {
+  width: 96px;
+}
+
+.factoryQuotation-button > * {
+  flex-shrink: 0;
+}
+
+.factoryQuotation-button :deep(.el-input__wrapper),
+.factoryQuotation-button :deep(.el-select__wrapper) {
+  min-height: 32px;
 }
 
 .factoryQuotation-page {

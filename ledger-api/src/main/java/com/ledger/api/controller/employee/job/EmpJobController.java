@@ -1,13 +1,18 @@
 package com.ledger.api.controller.employee.job;
 
+import com.ledger.common.dto.employee.WorkOrderClaimDTO;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Job;
 import com.ledger.db.service.job.IJobService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.constraints.NotNull;
+import static org.springframework.util.StringUtils.hasText;
+
+import com.sun.istack.NotNull;
 
 /**
  * @Author: ahui
@@ -41,17 +46,23 @@ public class EmpJobController {
             @PathVariable @NotNull Integer employeeId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) Integer factoryId,
+            @RequestParam(required = false) String factoryId,
             @RequestParam(required = false) String number,
-            @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
-            @RequestParam(required = false, defaultValue = "0") Integer flag
+            @RequestParam(required = false) String categoryId,
+            @RequestParam(required = false, defaultValue = "1") String currentPage,
+            @RequestParam(required = false, defaultValue = "5") String pageSize,
+            @RequestParam(required = false, defaultValue = "0") String flag
     ) {
+        Integer parsedFactoryId = parseIntegerParam(factoryId);
+        Integer parsedCategoryId = parseIntegerParam(categoryId);
+        Integer parsedCurrentPage = parseIntegerParam(currentPage, 1);
+        Integer parsedPageSize = parseIntegerParam(pageSize, 5);
+        Integer parsedFlag = parseIntegerParam(flag, 0);
+
         return jobService.queryJobListByEmployeeIDAndDate(
                 employeeId, startDate, endDate,
-                factoryId, number, categoryId,
-                currentPage, pageSize, flag);
+                parsedFactoryId, number, parsedCategoryId,
+                parsedCurrentPage, parsedPageSize, parsedFlag);
     }
 
     /**
@@ -68,9 +79,10 @@ public class EmpJobController {
             @PathVariable @NotNull Integer employeeId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
-            @RequestParam(required = false, defaultValue = "0") Integer flag) {
+            @RequestParam(required = false, defaultValue = "0") String flag) {
 
-        return jobService.statisticalSalary(employeeId, startDate, endDate, flag);
+        Integer parsedFlag = parseIntegerParam(flag, 0);
+        return jobService.statisticalSalary(employeeId, startDate, endDate, parsedFlag);
     }
 
     /**
@@ -81,9 +93,18 @@ public class EmpJobController {
      */
     @PostMapping("/save")
     public Result<Object> saveJobInfo(@RequestBody Job job) {
-
         return jobService.saveJobInfo(job);
+    }
 
+    /**
+     * 员工认领工单并写入工作信息。
+     *
+     * @param claimDTO 认领参数
+     * @return result
+     */
+    @PostMapping("/claim")
+    public Result<Object> claimWorkOrder(@RequestBody WorkOrderClaimDTO claimDTO) {
+        return jobService.claimWorkOrder(claimDTO);
     }
 
     /**
@@ -107,6 +128,21 @@ public class EmpJobController {
     public Result<Object> deleteJobInfo(@PathVariable @NotNull Integer jobId) {
 
         return jobService.deleteJobInfo(jobId);
+    }
+
+    private Integer parseIntegerParam(String value) {
+        return parseIntegerParam(value, null);
+    }
+
+    private Integer parseIntegerParam(String value, Integer defaultValue) {
+        if (!hasText(value)) {
+            return defaultValue;
+        }
+        try {
+            return Integer.valueOf(value.trim());
+        } catch (NumberFormatException exception) {
+            return defaultValue;
+        }
     }
 
 }

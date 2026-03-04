@@ -41,5 +41,12 @@ public interface IFactoryService extends IService<Factory> {
      */
     Result<Object> updateFactory(Factory factory);
 
+    /**
+     * 删除成衣厂信息（逻辑删除）
+     *
+     * @param id 成衣厂ID
+     * @return result
+     */
+    Result<Object> deleteFactory(Integer id);
 
 }

@@ -2,4 +2,22 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.db.mapper.JobCategoryMapper">
 
+    <!-- 按条件查询工作类型表 分页 -->
+    <select id="selectJobCategoryListByCondition" resultType="com.ledger.db.entity.JobCategory">
+        select
+        jc.id,
+        jc.category,
+        jc.version,
+        jc.created_date,
+        jc.flag,
+        jc.remark
+        from job_category jc
+        where
+        jc.flag = #{flag}
+        <if test="category != null and category != '' ">
+            and jc.category = #{category}
+        </if>
+        order by jc.created_date desc, jc.id desc
+    </select>
+
 </mapper>

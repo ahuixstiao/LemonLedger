@@ -1,5 +1,6 @@
 package com.ledger.api.controller.admin;
 
+import com.ledger.common.dto.admin.EmployeeQueryDTO;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Employee;
 import com.ledger.db.service.IEmployeeService;
@@ -22,32 +23,17 @@ public class AdminEmployeeController {
     /**
      * 查询员工列表
      *
-     * @param flag 删除状态 0否 1是
+     * @param queryDTO 查询条件
      * @return result
      */
-    @GetMapping("/list")
-    public Result<Object> queryEmployees(@RequestParam(required = false, defaultValue = "0") Integer flag) {
-
-        return employeeService.queryEmployeeList(flag);
-    }
-
-    /**
-     * 按条件查询员工列表
-     *
-     * @param name 员工名称
-     * @param currentPage 当前页
-     * @param pageSize 页面条数
-     * @param flag 删除状态 0否 1是
-     * @return result
-     */
-    @GetMapping("/list/{name}")
-    public Result<Object> queryEmployeeListByCondition(
-            @PathVariable(required = false) String name,
-            @RequestParam(required = false, defaultValue = "1") Integer currentPage,
-            @RequestParam(required = false, defaultValue = "5") Integer pageSize,
-            @RequestParam(required = false, defaultValue = "0") Integer flag) {
-
-        return employeeService.queryEmployeeListByCondition(name, currentPage, pageSize, flag);
+    @GetMapping
+    public Result<Object> queryEmployees(EmployeeQueryDTO queryDTO) {
+        return employeeService.queryEmployeeList(
+                queryDTO.getName() == null ? null : queryDTO.getName().trim(),
+                queryDTO.getCurrentPage(),
+                queryDTO.getPageSize(),
+                queryDTO.getFlag()
+        );
     }
 
     /**
@@ -56,11 +42,33 @@ public class AdminEmployeeController {
      * @param employee 员工实体
      * @return result
      */
-    @PostMapping("/save")
+    @PostMapping
     public Result<Object> saveEmployee(@RequestBody Employee employee) {
-
         return employeeService.saveEmployee(employee);
     }
 
+    /**
+     * 更新员工信息
+     *
+     * @param id 员工ID
+     * @param employee 员工实体
+     * @return result
+     */
+    @PutMapping("/{id}")
+    public Result<Object> updateEmployee(@PathVariable Integer id, @RequestBody Employee employee) {
+        employee.setId(id);
+        return employeeService.updateEmployee(employee);
+    }
+
+    /**
+     * 删除员工信息（逻辑删除）
+     *
+     * @param id 员工ID
+     * @return result
+     */
+    @DeleteMapping("/{id}")
+    public Result<Object> deleteEmployee(@PathVariable Integer id) {
+        return employeeService.deleteEmployee(id);
+    }
 
 }

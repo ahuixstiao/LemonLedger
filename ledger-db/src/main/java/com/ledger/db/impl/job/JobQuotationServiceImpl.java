@@ -1,12 +1,16 @@
 package com.ledger.db.impl.job;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ledger.common.result.Result;
 import com.ledger.db.entity.JobQuotation;
+import com.ledger.db.entity.dto.JobQuotationDTO;
 import com.ledger.db.mapper.JobQuotationMapper;
 import com.ledger.db.service.job.IJobQuotationService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <p>
@@ -20,4 +24,46 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobQuotationServiceImpl extends ServiceImpl<JobQuotationMapper, JobQuotation> implements IJobQuotationService {
 
+    private final JobQuotationMapper jobQuotationMapper;
+
+    /**
+     * 按条件分页查询工作报价列表。
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Result<Object> queryJobQuotationListByCondition(
+            Integer modeId,
+            Integer categoryId,
+            Integer currentPage,
+            Integer pageSize,
+            Integer flag
+    ) {
+        Page<JobQuotationDTO> page = new Page<>(currentPage, pageSize);
+        page = jobQuotationMapper.selectJobQuotationListByCondition(page, modeId, categoryId, flag);
+        return Result.ok(page);
+    }
+
+    /**
+     * 保存工作报价。
+     */
+    @Override
+    public Result<Object> saveJobQuotationInfo(JobQuotation jobQuotation) {
+        return save(jobQuotation) ? Result.ok() : Result.fail();
+    }
+
+    /**
+     * 修改工作报价。
+     */
+    @Override
+    public Result<Object> updateJobQuotationInfo(JobQuotation jobQuotation) {
+        return updateById(jobQuotation) ? Result.ok() : Result.fail();
+    }
+
+    /**
+     * 删除工作报价。
+     */
+    @Override
+    public Result<Object> removeJobQuotationInfo(Integer id) {
+        return removeById(id) ? Result.ok() : Result.fail();
+    }
 }

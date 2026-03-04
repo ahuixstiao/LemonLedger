@@ -2,21 +2,20 @@ package com.ledger.db.impl.job;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ledger.common.dto.employee.WorkOrderClaimDTO;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.Employee;
-import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.Job;
 import com.ledger.db.entity.JobQuotation;
+import com.ledger.db.entity.JobWorkOrder;
 import com.ledger.db.entity.dto.JobDTO;
 import com.ledger.db.mapper.JobMapper;
 import com.ledger.db.service.IEmployeeService;
-import com.ledger.db.service.factory.IFactoryBillService;
 import com.ledger.db.service.job.IJobQuotationService;
 import com.ledger.db.service.job.IJobService;
+import com.ledger.db.service.job.IJobWorkOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +46,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
 
     private final IJobQuotationService jobQuotationService;
 
-    private final IFactoryBillService factoryBillService;
+    private final IJobWorkOrderService jobWorkOrderService;
 
     /**
      * 默认查询当天所有员工的工作信息
@@ -170,10 +169,93 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     }
 
     /**
-     * 更新工作信息
-     * @param job 工作记录
-     * @return result
+     * 员工认领工单并写入工作记录。
+     *
+     * 业务规则：
+     * 1. 认领后将工单ID绑定到 Job 记录；
+     * 2. 同一工单允许被多名员工认领；
+     * 3. 仅在同一 modeId（工作方式）维度做防超领校验：
+     *    同 modeId 下累计认领数量不能超过工单预设数量。
+     *
+     * 并发控制：
+     * - 对工单记录加行级锁（for update），避免并发认领导致同 modeId 超领。
      */
+    @Override
+    @Transactional(rollbackFor = RuntimeException.class)
+    public Result<Object> claimWorkOrder(WorkOrderClaimDTO claimDTO) {
+        if (ObjectUtil.isNull(claimDTO)
+                || ObjectUtil.isNull(claimDTO.getWorkOrderId())
+                || ObjectUtil.isNull(claimDTO.getEmployeeId())
+                || ObjectUtil.isNull(claimDTO.getQuantity())) {
+            return Result.fail("认领参数不完整");
+        }
+
+        if (claimDTO.getQuantity() <= 0) {
+            return Result.fail("认领数量必须大于0");
+        }
+
+        JobWorkOrder workOrder = jobWorkOrderService.lambdaQuery()
+                .eq(JobWorkOrder::getId, claimDTO.getWorkOrderId())
+                .eq(JobWorkOrder::getFlag, 0)
+                .last("for update")
+                .one();
+
+        if (ObjectUtil.isNull(workOrder)) {
+            return Result.fail("工单不存在");
+        }
+
+        Employee employee = employeeService.lambdaQuery()
+                .eq(Employee::getId, claimDTO.getEmployeeId())
+                .eq(Employee::getFlag, 0)
+                .one();
+
+        if (ObjectUtil.isNull(employee)) {
+            return Result.fail("员工不存在");
+        }
+
+        if (ObjectUtil.isNull(employee.getModeId())) {
+            return Result.fail("员工未配置工作方式，无法认领工单");
+        }
+
+        if (ObjectUtil.isNull(workOrder.getQuantity()) || workOrder.getQuantity() <= 0) {
+            return Result.fail("工单预设数量异常，无法认领");
+        }
+
+        int claimedQuantityOfSameMode = lambdaQuery()
+                .eq(Job::getWorkOrderId, claimDTO.getWorkOrderId())
+                .eq(Job::getModeId, employee.getModeId())
+                .eq(Job::getFlag, 0)
+                .list()
+                .stream()
+                .map(Job::getQuantity)
+                .filter(ObjectUtil::isNotNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        int remainQuantity = workOrder.getQuantity() - claimedQuantityOfSameMode;
+        if (claimDTO.getQuantity() > remainQuantity) {
+            return Result.fail("超出可认领数量，当前工作方式剩余可认领数量为: " + Math.max(remainQuantity, 0));
+        }
+
+        Job job = new Job();
+        job.setEmployeeId(employee.getId());
+        job.setFactoryId(workOrder.getFactoryId());
+        job.setNumber(workOrder.getNumber());
+        job.setStyleNumber(workOrder.getStyleNumber());
+        job.setCategoryId(workOrder.getCategoryId());
+        job.setQuantity(claimDTO.getQuantity());
+        job.setCreatedDate(workOrder.getCreatedDate());
+        job.setModeId(employee.getModeId());
+        job.setWorkOrderId(claimDTO.getWorkOrderId());
+
+        Result<Object> saveResult = saveJobInfo(job);
+        if (saveResult.getStatus() != 200) {
+            return saveResult;
+        }
+
+        return Result.ok("认领成功", null);
+    }
+
     @Override
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> updateJobInfo(Job job) {
@@ -204,26 +286,11 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> deleteJobInfo(Integer jobId) {
 
-        Job job = lambdaQuery().eq(Job::getId, jobId).oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作记录"));
+        lambdaQuery().eq(Job::getId, jobId).oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作记录"));
 
-        // 删除工作记录的同时也删除成衣厂账单记录
+        // 删除工作记录
         if (removeById(jobId)) {
             log.info("================= 工作信息删除成功，JobID为: {} =================", jobId);
-
-            // 构建删除条件
-            Wrapper<FactoryBill> wrapper = new QueryWrapper<FactoryBill>()
-                    .eq("factory_id", job.getFactoryId())
-                    .eq("number", job.getNumber())
-                    .eq("style_number", job.getStyleNumber())
-                    .eq("category_id", job.getCategoryId())
-                    .eq("created_date", job.getCreatedDate());
-            log.info("================= 构建删除成衣厂账单条件 {} =================", wrapper.getEntity());
-            boolean exists = factoryBillService.remove(wrapper);
-            if (exists) {
-                log.info("================= 成衣厂账单删除成功 =================");
-            } else {
-                log.info("================= 成衣厂账单删除失败 =================");
-            }
             return Result.ok();
         }
 
