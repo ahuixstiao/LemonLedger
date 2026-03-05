@@ -1,8 +1,8 @@
 import { createWebHistory, createRouter } from 'vue-router'
 
 const routes = [
-  { path: '/', component: () => import('../view/Home.vue') },
-  { path: '/workOrder', component: () => import('../view/JobWorkOrder.vue') },
+  { path: '/', component: () => import('../view/Home/Home.vue') },
+  { path: '/workOrder', component: () => import('../view/Home/JobWorkOrder.vue') },
   {
     path: '/admin',
     component: () => import('../view/Admin/Admin.vue'),

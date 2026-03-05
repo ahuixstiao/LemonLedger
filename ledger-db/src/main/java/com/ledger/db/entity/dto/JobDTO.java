@@ -87,4 +87,9 @@ public class JobDTO implements Serializable {
      */
     private String createdDate;
 
+    /**
+     * 删除状态  0：正常，1：已删除
+     */
+    private Integer flag;
+
 }

@@ -1,6 +1,6 @@
 import { request } from '../../base/request.js'
 
-export function queryJobCategoryList(currentPage, pageSize, category, flag = 0) {
+export function queryJobCategoryListCondition(currentPage, pageSize, category, flag = 0) {
   return request({
     url: '/admin/jobCategory',
     method: 'get',

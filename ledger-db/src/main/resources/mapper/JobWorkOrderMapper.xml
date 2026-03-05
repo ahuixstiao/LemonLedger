@@ -10,13 +10,13 @@
         jwo.number,
         jwo.style_number,
         jwo.category_id,
-        fjc.category,
+        jc.category,
         jwo.quantity,
         jwo.created_date,
         jwo.flag
         from job_work_order jwo
         left join factory f on jwo.factory_id = f.id and f.flag = 0
-        left join factory_job_category fjc on jwo.category_id = fjc.id and fjc.flag = 0
+        left join job_category jc on jwo.category_id = jc.id and jc.flag = 0
         <where>
             jwo.flag = #{flag}
             <if test="factoryId != null">

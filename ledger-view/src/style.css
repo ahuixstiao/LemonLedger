@@ -215,6 +215,22 @@ ul {
 
 /* 日期选择器：移动端仅保留按月份切换，避免误触切换年份 */
 @media (max-width: 768px) {
+  html,
+  body,
+  #app {
+    height: auto;
+    min-height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-theme {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+    padding: 8px;
+  }
+
   /* 隐藏上一年/下一年，保留上一月/下一月 */
   .month-only-picker .el-picker-panel__icon-btn.d-arrow-left,
   .month-only-picker .el-picker-panel__icon-btn.d-arrow-right {

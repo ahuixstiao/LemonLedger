@@ -10,54 +10,20 @@
       @reset="onWorkOrderFilterReset"
     />
 
-    <div ref="tableSectionRef" class="workOrder-table-section">
-      <el-table
-        :data="data.tableData"
-        class="workOrder-table"
-        style="width: 100%"
-        :max-height="tableMaxHeight"
-        table-layout="fixed"
-        stripe
-        fit
-        highlight-current-row
-        empty-text="暂无数据"
-      >
-        <el-table-column label="认领" align="center" width="90">
-          <template #default="scope">
-            <el-button type="warning" @click="openClaimDialog(scope.row)">认领</el-button>
-          </template>
-        </el-table-column>
-        <el-table-column prop="factoryName" sortable label="厂名" align="center" show-overflow-tooltip />
-        <el-table-column prop="number" sortable label="床号" align="center" show-overflow-tooltip />
-        <el-table-column prop="styleNumber" sortable label="款式编号" align="center" show-overflow-tooltip />
-        <el-table-column prop="category" sortable label="工作类型" align="center" show-overflow-tooltip />
-        <el-table-column prop="quantity" label="数量" align="center" />
-        <el-table-column prop="createdDate" sortable label="日期" align="center" show-overflow-tooltip />
-        <el-table-column label="操作" align="center" width="110">
-          <template #default="scope">
-            <el-popconfirm title="确认删除?" @confirm="removeWorkOrder(scope.row.id)">
-              <template #reference>
-                <el-button type="danger" text>删除</el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="workOrder-page">
-        <el-pagination
-          background
-          :total="data.total"
-          v-model:current-page="data.currentPage"
-          v-model:page-size="data.pageSize"
-          :page-sizes="[5, 10, 20, 50, 100]"
-          layout="sizes, prev, pager, next, jumper, ->"
-          @current-change="fetchWorkOrderList"
-          @size-change="fetchWorkOrderList"
-        />
-      </div>
+    <div class="workOrder-table-section">
+      <WorkOrderTable
+        :table-data="data.tableData"
+        :total="data.total"
+        :current-page="data.currentPage"
+        :page-size="data.pageSize"
+        @update:currentPage="val => (data.currentPage = val)"
+        @update:pageSize="val => (data.pageSize = val)"
+        @query="fetchWorkOrderList"
+        @claim="openClaimDialog"
+        @delete="removeWorkOrder"
+      />
     </div>
-
+    <!--  添加工单弹窗  -->
     <el-dialog
       v-model="data.editWorkOrderDialogVisible"
       title="添加工单"
@@ -115,7 +81,7 @@
         </div>
       </template>
     </el-dialog>
-
+    <!--  认领工单弹窗  -->
     <el-dialog
       v-model="data.claimDialogVisible"
       title="认领工单"
@@ -132,7 +98,7 @@
         :label-position="data.isMobile ? 'top' : 'left'"
       >
         <el-form-item size="large" label="员工:" prop="employeeId">
-          <el-select filterable v-model="claimFormModel.employeeId" placeholder="请选择员工姓名">
+          <el-select v-model="claimFormModel.employeeId" placeholder="请选择员工姓名">
             <el-option v-for="item in data.employeeList" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
@@ -173,38 +139,25 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, reactive, ref, computed, onUpdated } from 'vue'
+import { onMounted, onBeforeUnmount, reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import CommonFilterBar from './components/CommonFilterBar.vue'
+import CommonFilterBar from './HomeComponent/CommonFilterBar.vue'
+import WorkOrderTable from './HomeComponent/WorkOrderTable.vue'
 import {
   queryEmployees,
   queryFactoryList,
   claimWorkOrder,
   deleteWorkOrder,
   queryWorkOrderList,
-  saveWorkOrder
-} from '../network/index.js'
-import { queryFactoryJobCategoryList } from '../network/admin/index.js'
+  saveWorkOrder, queryCategoryList
+} from '../../network/index.js'
 import {
   loadFactoryOptions,
-  loadFactoryCategoryOptions,
   openCreateDialog,
   resetReactiveForm,
   validateDialogForm
-} from './Admin/AdminComponent/factoryCrudShared.js'
-
-const tableSectionRef = ref(null)
-const tableMaxHeight = ref(360)
-
-const calcTableMaxHeight = () => {
-  const sectionEl = tableSectionRef.value
-  if (!sectionEl) return
-  const sectionHeight = sectionEl.clientHeight
-  const pagerEl = sectionEl.querySelector('.workOrder-page')
-  const pagerHeight = pagerEl ? pagerEl.offsetHeight : 0
-  tableMaxHeight.value = Math.max(180, Math.floor(sectionHeight - pagerHeight))
-}
+} from '../Admin/AdminComponent/factoryCrudShared.js'
 
 const updateMobileState = () => {
   data.isMobile = window.matchMedia('(max-width: 768px)').matches
@@ -212,22 +165,15 @@ const updateMobileState = () => {
 
 onMounted(() => {
   updateMobileState()
-  calcTableMaxHeight()
   window.addEventListener('resize', updateMobileState)
-  window.addEventListener('resize', calcTableMaxHeight)
   loadFactoryList()
   loadCategoryList()
   loadEmployeeList()
   fetchWorkOrderList()
 })
 
-onUpdated(() => {
-  calcTableMaxHeight()
-})
-
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateMobileState)
-  window.removeEventListener('resize', calcTableMaxHeight)
 })
 
 const router = useRouter()
@@ -311,6 +257,7 @@ const workOrderFilterFields = computed(() => [
     key: 'categoryId',
     type: 'select',
     placeholder: '选择工作类型',
+    filterable: false,
     clearable: true,
     options: data.categoryList,
     optionLabel: 'category',
@@ -319,12 +266,14 @@ const workOrderFilterFields = computed(() => [
   {
     key: 'startDate',
     type: 'date',
+    editable: false,
     placeholder: '开始日期',
     popperClass: 'month-only-picker'
   },
   {
     key: 'endDate',
     type: 'date',
+    editable: false,
     placeholder: '结束日期',
     popperClass: 'month-only-picker'
   }
@@ -349,7 +298,8 @@ const loadFactoryList = async () => {
 }
 
 const loadCategoryList = async () => {
-  await loadFactoryCategoryOptions(data, queryFactoryJobCategoryList)
+  const {data: res} = await queryCategoryList()
+  data.categoryList = res?.data || []
 }
 
 const loadEmployeeList = async () => {
@@ -383,7 +333,7 @@ const createWorkOrder = async () => {
   const { data: res } = await saveWorkOrder(workOrderFormModel)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    closeWorkOrderDialog()
+    //closeWorkOrderDialog()
     await fetchWorkOrderList()
   } else {
     ElMessage.error(res.message)
@@ -553,10 +503,6 @@ const claimFormRules = reactive({
 </script>
 
 <style scoped>
-:deep(.workOrder-table .cell) {
-  white-space: nowrap;
-}
-
 .workOrder-container {
   height: 100vh;
   display: flex;
@@ -571,27 +517,12 @@ const claimFormRules = reactive({
   flex: 1;
   min-height: 0;
   display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
-.workOrder-table {
+.workOrder-table-section > * {
   flex: 1;
   min-height: 0;
-}
-
-.workOrder-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 0 4px;
-  flex-shrink: 0;
-}
-
-:deep(.el-pagination) {
-  flex-wrap: wrap;
-  justify-content: center;
-  row-gap: 8px;
 }
 
 :deep(.el-form-item__content) {
@@ -629,10 +560,6 @@ const claimFormRules = reactive({
 
   .workOrder-table-section {
     overflow: visible;
-  }
-
-  .workOrder-page {
-    justify-content: center;
   }
 
   :deep(.el-button),

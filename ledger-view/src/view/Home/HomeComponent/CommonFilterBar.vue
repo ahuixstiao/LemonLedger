@@ -33,6 +33,7 @@
         :format="field.format || 'YYYY/MM/DD'"
         :value-format="field.valueFormat || 'YYYY-MM-DD'"
         :placeholder="field.placeholder"
+        :editable="field.editable ?? true"
         :clearable="field.clearable ?? false"
         :popper-class="field.popperClass || 'month-only-picker'"
         @update:model-value="val => updateField(field.key, val)"
