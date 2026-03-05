@@ -3,6 +3,7 @@ package com.ledger.db.service.factory;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.FactoryQuotation;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * <p>
@@ -53,6 +54,23 @@ public interface IFactoryQuotationService extends IService<FactoryQuotation> {
      * @return result
      */
     Result<Object> updateFactoryQuotationInfo(FactoryQuotation factoryQuotation);
+
+    /**
+     * 上传成衣厂报价单图片到本地外部目录。
+     *
+     * @param id   成衣厂报价单ID
+     * @param file 图片文件
+     * @return result
+     */
+    Result<Object> uploadFactoryQuotationImage(Integer id, MultipartFile file);
+
+    /**
+     * 删除成衣厂报价单图片（删除磁盘文件并清空图片路径）。
+     *
+     * @param id 成衣厂报价单ID
+     * @return result
+     */
+    Result<Object> deleteFactoryQuotationImage(Integer id);
 
     /**
      * 删除成衣厂报价单信息

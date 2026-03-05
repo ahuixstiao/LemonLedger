@@ -11,7 +11,7 @@
     />
 
     <div class="home-table-section">
-      <WorkRecordTable
+      <HomeTable
         :table-data="data.tableData"
         :total="data.total"
         :current-page="data.currentPage"
@@ -51,8 +51,8 @@
 import { reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import CommonFilterBar from './components/CommonFilterBar.vue'
-import WorkRecordTable from './HomeComponent/WorkRecordTable.vue'
+import CommonFilterBar from './HomeComponent/CommonFilterBar.vue'
+import HomeTable from './HomeComponent/HomeTable.vue'
 import SalaryDialog from './HomeComponent/SalaryDialog.vue'
 import JobEditDialog from './HomeComponent/JobEditDialog.vue'
 import {
@@ -63,7 +63,7 @@ import {
   queryFactoryList,
   queryCategoryList,
   querySalaryByCondition
-} from '../network/index.js'
+} from '../../network/index.js'
 
 onMounted(() => {
   queryEmployeeListHandle()
@@ -148,6 +148,7 @@ const homeFilterFields = computed(() => [
     key: 'categoryId',
     type: 'select',
     placeholder: '选择工作类型',
+    filterable: false,
     options: data.selectCategoryList,
     optionLabel: 'text',
     optionValue: 'value'
@@ -156,7 +157,7 @@ const homeFilterFields = computed(() => [
     key: 'employeeId',
     type: 'select',
     placeholder: '选择员工',
-    filterable: true,
+    filterable: false,
     options: data.selectEmployeeList,
     optionLabel: 'text',
     optionValue: 'value'
@@ -164,12 +165,14 @@ const homeFilterFields = computed(() => [
   {
     key: 'startDate',
     type: 'date',
+    editable: false,
     placeholder: '开始日期',
     popperClass: 'month-only-picker'
   },
   {
     key: 'endDate',
     type: 'date',
+    editable: false,
     placeholder: '结束日期',
     popperClass: 'month-only-picker'
   }
@@ -332,7 +335,7 @@ const submitJobInfo = () => {
 @media (max-width: 768px) {
   .home-container {
     height: auto;
-    min-height: auto;
+    min-height: 100%;
     padding: var(--section-padding-sm);
     gap: var(--layout-gap-sm);
     overflow: visible;
@@ -340,6 +343,7 @@ const submitJobInfo = () => {
 
   .home-table-section {
     overflow: visible;
+    min-height: auto;
   }
 }
 </style>

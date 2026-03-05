@@ -19,3 +19,7 @@ spring:
 server:
   port: 8080
   address: 0.0.0.0
+
+ledger:
+  upload:
+    image-base-dir: ${user.dir}/../lemonLedgerImages

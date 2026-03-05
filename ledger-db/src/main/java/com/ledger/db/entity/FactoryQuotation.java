@@ -43,4 +43,9 @@ public class FactoryQuotation extends ParentEntity {
      * 报价
      */
     private BigDecimal quotation;
+
+    /**
+     * 报价图片访问路径
+     */
+    private String imagePath;
 }

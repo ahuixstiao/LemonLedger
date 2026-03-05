@@ -68,6 +68,19 @@
       <el-table-column prop="styleNumber" sortable label="款式编号" align="center"/>
       <el-table-column prop="category" sortable label="工作类型" align="center"/>
       <el-table-column prop="quotation" sortable label="报价 (元)" align="center"/>
+      <el-table-column label="样板" align="center" width="100">
+        <template #default="scope">
+          <el-image
+            v-if="scope.row.imagePath"
+            :src="resolveImageUrl(scope.row.imagePath)"
+            :preview-src-list="[resolveImageUrl(scope.row.imagePath)]"
+            fit="cover"
+            class="sample-image"
+            preview-teleported
+          />
+          <span v-else class="readonly-text">暂无</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="createdDate" sortable label="创建日期" align="center"/>
       <el-table-column prop="flag" sortable label="状态" align="center" width="100">
         <template #default="scope">
@@ -75,7 +88,7 @@
           <el-tag v-else type="danger">删除</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="160px">
+      <el-table-column label="操作" align="center" width="220px">
         <template #default="scope">
           <template v-if="isReadOnlyRow(scope.row)">
             <span class="readonly-text">已删除</span>
@@ -88,6 +101,14 @@
       </el-table-column>
 
     </el-table>
+
+    <input
+      ref="quotationImageUploadInputRef"
+      type="file"
+      accept="image/*"
+      class="hidden-upload-input"
+      @change="handleQuotationImageUpload"
+    />
 
     <!-- 分页组件 -->
     <div class="factoryQuotation-page">
@@ -158,6 +179,29 @@
               placeholder="输入报价"
           />
         </el-form-item>
+
+        <el-form-item v-if="data.editQuotationDialogMode === 1" size="large" label="样板图片:">
+          <el-button :disabled="!factoryQuotationInfoRef.id" @click="triggerQuotationImageUpload(factoryQuotationInfoRef.id)">
+            上传图片
+          </el-button>
+          <el-button
+            type="danger"
+            plain
+            :disabled="!factoryQuotationInfoRef.id || !factoryQuotationInfoRef.imagePath"
+            @click="removeQuotationImageByDialog"
+          >
+            删除图片
+          </el-button>
+          <el-image
+            v-if="factoryQuotationInfoRef.imagePath"
+            :src="resolveImageUrl(factoryQuotationInfoRef.imagePath)"
+            :preview-src-list="[resolveImageUrl(factoryQuotationInfoRef.imagePath)]"
+            fit="cover"
+            class="sample-image"
+            preview-teleported
+          />
+          <span v-else class="readonly-text">当前报价单暂无图片</span>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -184,10 +228,12 @@ import { onMounted, reactive, ref } from 'vue'
 import { queryFactoryList } from '../../../network/index.js'
 import {
   deleteFactoryQuotationInfo,
+  deleteFactoryQuotationImage,
   queryFactoryJobCategoryList,
   queryFactoryQuotationList,
   saveFactoryQuotationInfo,
-  updateFactoryQuotationInfo
+  updateFactoryQuotationInfo,
+  uploadFactoryQuotationImage
 } from '../../../network/admin/index.js'
 import { ElMessage } from 'element-plus'
 import {
@@ -222,8 +268,12 @@ const data = reactive({
   pageSize: 10,
   total: 0,
 
+  uploadingQuotationId: '',
+
   editQuotationDialogVisible: false,
   editQuotationDialogMode: 0,
+
+  imageVersion: 0
 })
 
 // 加载成衣厂选项
@@ -277,6 +327,7 @@ const createFactoryQuotation = async () => {
   const { data: res } = await saveFactoryQuotationInfo(factoryQuotationInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
+    data.editQuotationDialogVisible = false
     await fetchFactoryQuotationList()
   } else {
     ElMessage.error(res.message)
@@ -287,11 +338,11 @@ const updateFactoryQuotation = async () => {
   const { data: res } = await updateFactoryQuotationInfo(factoryQuotationInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
+    data.editQuotationDialogVisible = false
     await fetchFactoryQuotationList()
   } else {
     ElMessage.error(res.message)
   }
-  data.editQuotationDialogVisible = false
 }
 
 const removeFactoryQuotation = async id => {
@@ -315,6 +366,122 @@ const validateQuotationForm = async formEl => {
 }
 
 const quotationInfoFormRef = ref()
+const quotationImageUploadInputRef = ref(null)
+
+/**
+ * 触发隐藏文件选择框，并记录当前待上传的报价单ID。
+ *
+ * @param {number|string} quotationId 报价单ID
+ */
+const triggerQuotationImageUpload = quotationId => {
+  data.uploadingQuotationId = quotationId
+  if (quotationImageUploadInputRef.value) {
+    quotationImageUploadInputRef.value.value = ''
+    quotationImageUploadInputRef.value.click()
+  }
+}
+
+/**
+ * 校验并上传报价单图片。
+ *
+ * @param {Event} event 文件选择事件
+ */
+const handleQuotationImageUpload = async event => {
+  const target = event?.target
+  const file = target?.files?.[0]
+
+  if (!file) {
+    return
+  }
+
+  if (!data.uploadingQuotationId) {
+    ElMessage.error('未识别到对应报价单，请重试')
+    target.value = ''
+    return
+  }
+
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('仅支持上传图片文件')
+    target.value = ''
+    return
+  }
+
+  const maxFileSize = 100 * 1024 * 1024
+  if (file.size > maxFileSize) {
+    ElMessage.error('图片大小不能超过 100MB')
+    target.value = ''
+    return
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const { data: res } = await uploadFactoryQuotationImage(data.uploadingQuotationId, formData)
+    if (res.status === 200) {
+      ElMessage.success(res.message || '上传成功')
+      if (String(factoryQuotationInfoRef.id) === String(data.uploadingQuotationId)) {
+        factoryQuotationInfoRef.imagePath = res.data || factoryQuotationInfoRef.imagePath
+      }
+      data.imageVersion += 1
+      await fetchFactoryQuotationList()
+    } else {
+      ElMessage.error(res.message || '上传失败')
+    }
+  } catch (error) {
+    ElMessage.error('上传失败，请稍后重试')
+  } finally {
+    data.uploadingQuotationId = ''
+    target.value = ''
+  }
+}
+
+/**
+ * 将相对图片路径转换为可访问的完整URL。
+ *
+ * @param {string} imagePath 图片路径
+ * @return {string} 图片完整地址
+ */
+const resolveImageUrl = imagePath => {
+  if (!imagePath) {
+    return ''
+  }
+
+  const normalizedPath = String(imagePath)
+  if (normalizedPath.startsWith('http')) {
+    return normalizedPath
+  }
+
+  const baseUrl = (import.meta.env.VITE_BASE_URL || '').replace(/\/$/, '')
+  const imagePrefix = '/lemonLedgerImages/'
+
+  if (normalizedPath.startsWith(imagePrefix)) {
+    const relativePath = normalizedPath.slice(imagePrefix.length)
+    return `${baseUrl}/admin/factoryQuotation/imageView/${relativePath}?v=${data.imageVersion}`
+  }
+
+  return `${baseUrl}${normalizedPath}?v=${data.imageVersion}`
+}
+
+/**
+ * 在弹窗中删除当前报价单图片。
+ */
+const removeQuotationImageByDialog = async () => {
+  if (!factoryQuotationInfoRef.id) {
+    ElMessage.error('请先保存报价单，再删除图片')
+    return
+  }
+
+  const { data: res } = await deleteFactoryQuotationImage(factoryQuotationInfoRef.id)
+  if (res.status === 200) {
+    ElMessage.success(res.message || '删除图片成功')
+    factoryQuotationInfoRef.imagePath = res.data
+    data.imageVersion += 1
+    await fetchFactoryQuotationList()
+  } else {
+    ElMessage.error(res.message || '删除图片失败')
+  }
+}
 
 // 成衣厂报价单实体初始化
 const factoryQuotationInfoInit = {
@@ -322,7 +489,8 @@ const factoryQuotationInfoInit = {
   factoryId: '',
   styleNumber: '',
   categoryId: '',
-  quotation: ''
+  quotation: '',
+  imagePath: ''
 }
 
 // 构建报价单实体
@@ -439,6 +607,17 @@ const addQuotationInfoRules = reactive({
 
 .readonly-text {
   color: var(--el-text-color-placeholder);
+}
+
+.hidden-upload-input {
+  display: none;
+}
+
+.sample-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-light);
 }
 
 </style>
