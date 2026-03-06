@@ -59,4 +59,9 @@ public class FactoryQuotationDto implements Serializable {
      */
     private Integer flag;
 
+    /**
+     * 报价图片访问路径
+     */
+    private String imagePath;
+
 }

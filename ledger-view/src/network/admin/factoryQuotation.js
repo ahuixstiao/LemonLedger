@@ -53,3 +53,23 @@ export function deleteFactoryQuotationInfo(id) {
     method: 'delete'
   })
 }
+
+// 上传成衣厂报价单图片
+export function uploadFactoryQuotationImage(id, formData) {
+  return request({
+    url: `/admin/factoryQuotation/${id}/image`,
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+// 删除成衣厂报价单图片
+export function deleteFactoryQuotationImage(id) {
+  return request({
+    url: `/admin/factoryQuotation/${id}/image`,
+    method: 'delete'
+  })
+}

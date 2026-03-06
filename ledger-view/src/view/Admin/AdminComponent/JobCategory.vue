@@ -60,7 +60,11 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { queryJobCategoryList, saveJobCategory, deleteJobCategory } from '../../../network/admin/index.js'
+import {
+  saveJobCategory,
+  deleteJobCategory,
+  queryJobCategoryListCondition
+} from '../../../network/admin/index.js'
 import { openCreateDialog, resetReactiveForm, validateDialogForm } from './factoryCrudShared.js'
 
 const data = reactive({ category: '', flag: 0, tableData: [], total: 0, currentPage: 1, pageSize: 10, dialogVisible: false })
@@ -72,7 +76,7 @@ const rules = reactive({ category: [{ required: true, message: '请输入工作�
 onMounted(fetchList)
 
 async function fetchList() {
-  const { data: res } = await queryJobCategoryList(data.currentPage, data.pageSize, data.category, data.flag)
+  const { data: res } = await queryJobCategoryListCondition(data.currentPage, data.pageSize, data.category, data.flag)
   if (res.status === 200) {
     data.tableData = res?.data?.records || []
     data.total = res?.data?.total || 0

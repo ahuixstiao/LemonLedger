@@ -85,8 +85,7 @@ import {
   saveJobQuotation,
   updateJobQuotation,
   deleteJobQuotation,
-  queryJobModeList,
-  queryJobCategoryList
+  queryJobModeList, queryJobCategoryListCondition,
 } from '../../../network/admin/index.js'
 import { openCreateDialog, openEditDialog, resetReactiveForm, validateDialogForm } from './factoryCrudShared.js'
 
@@ -130,7 +129,7 @@ async function loadModeList() {
 }
 
 async function loadCategoryList() {
-  const { data: res } = await queryJobCategoryList(
+  const { data: res } = await queryJobCategoryListCondition(
     OPTION_QUERY.currentPage,
     OPTION_QUERY.pageSize,
     OPTION_QUERY.keyword,

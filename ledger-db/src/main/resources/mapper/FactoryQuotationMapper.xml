@@ -13,6 +13,7 @@
         fq.category_id,
         fjc.category,
         fq.quotation,
+        fq.image_path,
         fq.created_date,
         fq.flag
         from factory_quotation fq

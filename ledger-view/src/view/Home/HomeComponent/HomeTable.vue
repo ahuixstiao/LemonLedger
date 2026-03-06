@@ -4,7 +4,7 @@
       :data="tableData"
       class="home-work-table"
       style="width: 100%"
-      :max-height="tableMaxHeight"
+      :max-height="isMobile ? null : tableMaxHeight"
       table-layout="fixed"
       stripe
       fit
@@ -60,8 +60,14 @@ defineEmits(['edit', 'delete', 'query', 'update:currentPage', 'update:pageSize']
 
 const tableSectionRef = ref(null)
 const tableMaxHeight = ref(360)
+const isMobile = ref(false)
+
+const updateMobileState = () => {
+  isMobile.value = window.matchMedia('(max-width: 768px)').matches
+}
 
 const calcTableMaxHeight = () => {
+  if (isMobile.value) return
   const sectionEl = tableSectionRef.value
   if (!sectionEl) return
   const sectionHeight = sectionEl.clientHeight
@@ -71,7 +77,9 @@ const calcTableMaxHeight = () => {
 }
 
 onMounted(() => {
+  updateMobileState()
   calcTableMaxHeight()
+  window.addEventListener('resize', updateMobileState)
   window.addEventListener('resize', calcTableMaxHeight)
 })
 
@@ -80,6 +88,7 @@ onUpdated(() => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateMobileState)
   window.removeEventListener('resize', calcTableMaxHeight)
 })
 
@@ -143,12 +152,18 @@ const summaryQuantityAndSalary = ({ columns, data }) => {
 @media (max-width: 768px) {
   .home-work-table-section {
     padding: 8px;
-    overflow: visible;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .home-page {
     justify-content: center;
     padding: 10px 0 4px;
+  }
+
+  :deep(.home-work-table .el-scrollbar__wrap) {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 </style>
