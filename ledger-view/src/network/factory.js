@@ -7,3 +7,15 @@ export function queryFactoryList() {
     method: 'get'
   })
 }
+
+// 员工端按款式编号查询样板列表（仅正常数据）
+export function queryFactoryQuotationSampleList(styleNumber, flag = 0) {
+  return request({
+    url: '/emp/factoryQuotation/sampleList',
+    method: 'get',
+    params: {
+      styleNumber,
+      flag
+    }
+  })
+}

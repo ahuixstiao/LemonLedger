@@ -40,6 +40,15 @@ public interface IFactoryQuotationService extends IService<FactoryQuotation> {
     Result<Object> queryStyleNumberListByFactoryId(Integer factoryId, Integer flag);
 
     /**
+     * 员工端按款式编号查询样板列表（仅包含款式编号和图片路径）。
+     *
+     * @param styleNumber 款式编号（支持模糊匹配）
+     * @param flag        删除状态 0否 1是
+     * @return result
+     */
+    Result<Object> querySampleListByStyleNumber(String styleNumber, Integer flag);
+
+    /**
      * 保存成衣厂报价单信息
      *
      * @param factoryQuotation 成衣厂报价单实体

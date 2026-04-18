@@ -84,6 +84,19 @@ public class FactoryQuotationServiceImpl extends ServiceImpl<FactoryQuotationMap
     }
 
     /**
+     * 员工端按款式编号查询样板列表（仅包含款式编号和图片路径）。
+     *
+     * @param styleNumber 款式编号（支持模糊匹配）
+     * @param flag        删除状态 0否 1是
+     * @return result
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Result<Object> querySampleListByStyleNumber(String styleNumber, Integer flag) {
+        return Result.ok(factoryQuotationMapper.selectSampleListByStyleNumber(styleNumber, flag));
+    }
+
+    /**
      * 保存成衣厂报价单信息
      *
      * @param factoryQuotation 成衣厂报价单实体

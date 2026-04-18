@@ -147,7 +147,38 @@
             <when test="sortColumns != null and sortColumns.size() > 0">
                 order by
                 <foreach collection="sortColumns" item="col" index="idx" separator=",">
-                    ${col}
+                    <choose>
+                        <!-- 床号按数字排序，避免出现 1,10,2 的字典序问题 -->
+                        <when test="col == 'fb.number' or col == 'number'">
+                            cast(fb.number as unsigned)
+                        </when>
+                        <!-- 白名单字段映射，禁止直接拼接列名，避免 SQL 注入 -->
+                        <when test="col == 'fb.created_date' or col == 'created_date'">
+                            fb.created_date
+                        </when>
+                        <when test="col == 'factory.factory_name' or col == 'factoryName' or col == 'factory_name'">
+                            factory.factory_name
+                        </when>
+                        <when test="col == 'fq.style_number' or col == 'styleNumber' or col == 'style_number'">
+                            fq.style_number
+                        </when>
+                        <when test="col == 'fjc.category' or col == 'category'">
+                            fjc.category
+                        </when>
+                        <when test="col == 'fb.quantity' or col == 'quantity'">
+                            fb.quantity
+                        </when>
+                        <when test="col == 'fq.quotation' or col == 'quotation'">
+                            fq.quotation
+                        </when>
+                        <when test="col == 'fb.bill' or col == 'bill'">
+                            fb.bill
+                        </when>
+                        <!-- 非白名单字段兜底为安全列 -->
+                        <otherwise>
+                            fb.created_date
+                        </otherwise>
+                    </choose>
                     <choose>
                         <when test="sortDirections != null and sortDirections.size() > idx and sortDirections[idx] == 'desc'">desc</when>
                         <otherwise>asc</otherwise>

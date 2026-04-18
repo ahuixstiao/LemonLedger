@@ -1,46 +1,45 @@
+version: '3.8'
+
 services:
   lemonledger:
-    image: 794862853/lemonledger:latest
-    #build: ./ledger-api
+    image: 794862853/lemonledger:1.2
     container_name: lemonledger_container
     expose:
-      - "8080"  # 内部网络访问，不暴露给外部
+      - "8080"  # 内部端口
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ledger?useUnicode=true&serverTimezone=GMT%2B8&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-    depends_on:
-      - mysql
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/ledger?useUnicode=true&serverTimezone=GMT%2B8&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: jeesite      # 本地 MySQL 用户
+      SPRING_DATASOURCE_PASSWORD: root  # 本地 MySQL 密码
     networks:
       - my_network
     restart: always
 
-  mysql:
-    image: mysql:8.0
-    container_name: mysql_container
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ledger
-      TZ: Asia/Shanghai
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./mysql-data:/var/lib/mysql
-      - ./mysql/init:/docker-entrypoint-initdb.d
-    networks:
-      - my_network
-    restart: always
+#  mysql:
+#    image: mysql:8.0
+#    container_name: mysql_container
+#    environment:
+#      MYSQL_ROOT_PASSWORD: root
+#      MYSQL_DATABASE: ledger
+#      TZ: Asia/Shanghai
+#    ports:
+#      - "3306:3306"
+#    volumes:
+#      - ./mysql-data:/var/lib/mysql
+#      - ./mysql/init:/docker-entrypoint-initdb.d
+#    networks:
+#      - my_network
+#    restart: always
 
-  adminer:
-    image: adminer
-    container_name: adminer_container
-    ports:
-      - "8081:8080"
-    networks:
-      - my_network
-    depends_on:
-      - mysql
-    restart: always
+#  adminer:
+#    image: adminer
+#    container_name: adminer_container
+#    ports:
+#      - "8081:8080"
+#    networks:
+#      - my_network
+#    depends_on:
+#      - mysql
+#    restart: always
 
   nginx:
     image: nginx:latest
@@ -49,10 +48,9 @@ services:
       - "8080:80"  # 外部访问端口
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ledger-view/dist:/usr/share/nginx/html  # 你的前端打包文件
+      - ./ledger-view/dist:/usr/share/nginx/html  # 前端打包文件
     depends_on:
       - lemonledger
-      - adminer
     networks:
       - my_network
     restart: always

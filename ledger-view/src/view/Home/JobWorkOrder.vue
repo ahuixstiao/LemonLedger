@@ -354,7 +354,7 @@ const createWorkOrder = async () => {
   const { data: res } = await saveWorkOrder(payload)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    closeWorkOrderDialog()
+    //closeWorkOrderDialog()
     await fetchWorkOrderList()
   } else {
     ElMessage.error(res.message)

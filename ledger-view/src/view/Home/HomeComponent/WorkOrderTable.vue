@@ -10,6 +10,8 @@
       fit
       highlight-current-row
       empty-text="暂无数据"
+      show-summary
+      :summary-method="getSummaries"
     >
       <el-table-column label="认领" align="center" width="90">
         <template #default="scope">
@@ -52,7 +54,7 @@
 <script setup>
 import { ref, onMounted, onUpdated, onBeforeUnmount } from 'vue'
 
-defineProps({
+const props = defineProps({
   tableData: { type: Array, default: () => [] },
   total: { type: Number, default: 0 },
   currentPage: { type: Number, default: 1 },
@@ -60,6 +62,20 @@ defineProps({
 })
 
 defineEmits(['claim', 'edit', 'delete', 'query', 'update:currentPage', 'update:pageSize'])
+
+const getSummaries = ({ columns }) => {
+  return columns.map((column, index) => {
+    if (index === 0) return '总计'
+    if (column.property === 'quantity') {
+      const totalQuantity = props.tableData.reduce((sum, row) => {
+        const quantity = Number(row.quantity)
+        return sum + (Number.isNaN(quantity) ? 0 : quantity)
+      }, 0)
+      return totalQuantity
+    }
+    return ''
+  })
+}
 
 const tableSectionRef = ref(null)
 const tableMaxHeight = ref(360)

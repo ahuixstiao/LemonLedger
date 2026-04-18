@@ -48,6 +48,16 @@ public interface FactoryQuotationMapper extends BaseMapper<FactoryQuotation> {
             @Param("factoryId") Integer factoryId,
             @Param("flag") Integer flag);
 
-
+    /**
+     * 按款式编号模糊查询样板图片列表（员工端）。
+     *
+     * @param styleNumber 款式编号（可为空）
+     * @param flag        删除状态 0否 1是
+     * @return list
+     */
+    List<FactoryQuotationDto> selectSampleListByStyleNumber(
+            @Param("styleNumber") String styleNumber,
+            @Param("flag") Integer flag);
 
 }
+

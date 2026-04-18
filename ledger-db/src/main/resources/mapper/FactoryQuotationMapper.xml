@@ -52,4 +52,19 @@
         order by fq.created_date desc
     </select>
 
+    <!-- 员工端：按款式编号查询样板图片（仅返回款式编号和图片路径） -->
+    <select id="selectSampleListByStyleNumber" resultType="factoryQuotationDto">
+        select
+        fq.style_number,
+        fq.image_path
+        from factory_quotation fq
+        where fq.flag = #{flag}
+        and fq.image_path is not null
+        and fq.image_path != ''
+        <if test="styleNumber != null and styleNumber != '' ">
+            and fq.style_number like CONCAT('%', #{styleNumber}, '%')
+        </if>
+        order by fq.created_date desc
+    </select>
+
 </mapper>

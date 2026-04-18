@@ -73,7 +73,7 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
     /**
      * 新增工单。
      *
-     * 新增前会校验提交数据在前后20天内是否存在重复记录，若存在则拒绝保存。
+     * 新增前会校验提交数据在所选日期当天是否存在重复记录，若存在则拒绝保存。
      *
      * @param workOrder 待保存的工单数据
      * @return 保存结果
@@ -81,8 +81,8 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
     @Override
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> saveWorkOrder(JobWorkOrder workOrder) {
-        if (hasDuplicateWorkOrderIn20Days(workOrder, null)) {
-            return Result.fail("前后20天内已存在相同工单数据，不允许重复提交");
+        if (hasDuplicateWorkOrderInSameDay(workOrder, null)) {
+            return Result.fail("所选日期当天已存在相同工单数据，不允许重复提交");
         }
 
         if (save(workOrder)) {
@@ -94,7 +94,7 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
     /**
      * 修改工单。
      *
-     * 修改前会校验提交数据在前后20天内是否存在重复记录，校验时会排除当前编辑记录本身。
+     * 修改前会校验提交数据在所选日期当天是否存在重复记录，校验时会排除当前编辑记录本身。
      *
      * @param workOrder 待更新的工单数据
      * @return 更新结果
@@ -102,8 +102,8 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
     @Override
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> updateWorkOrder(JobWorkOrder workOrder) {
-        if (hasDuplicateWorkOrderIn20Days(workOrder, workOrder.getId())) {
-            return Result.fail("前后20天内已存在相同工单数据，不允许重复提交");
+        if (hasDuplicateWorkOrderInSameDay(workOrder, workOrder.getId())) {
+            return Result.fail("所选日期当天已存在相同工单数据，不允许重复提交");
         }
 
         if (updateById(workOrder)) {
@@ -113,15 +113,13 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
     }
 
     /**
-     * 校验工单是否在目标日期前后20天内存在重复数据。
+     * 校验工单是否在目标日期当天存在重复数据。
      *
      * 判重维度：成衣厂ID、床号、款式编号、工作类型、数量。
      * 编辑场景会排除当前记录本身。
      */
-    private boolean hasDuplicateWorkOrderIn20Days(JobWorkOrder workOrder, Integer excludeId) {
+    private boolean hasDuplicateWorkOrderInSameDay(JobWorkOrder workOrder, Integer excludeId) {
         LocalDate targetDate = ObjectUtil.defaultIfNull(workOrder.getCreatedDate(), LocalDate.now());
-        LocalDate startDate = targetDate.minusDays(20);
-        LocalDate endDate = targetDate.plusDays(20);
 
         Long duplicateCount = lambdaQuery()
                 .eq(JobWorkOrder::getFactoryId, workOrder.getFactoryId())
@@ -131,8 +129,7 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
                 .eq(JobWorkOrder::getQuantity, workOrder.getQuantity())
                 // 仅在正常状态（未逻辑删除）的数据中判重
                 .eq(JobWorkOrder::getFlag, 0)
-                .ge(JobWorkOrder::getCreatedDate, startDate)
-                .le(JobWorkOrder::getCreatedDate, endDate)
+                .eq(JobWorkOrder::getCreatedDate, targetDate)
                 .ne(ObjectUtil.isNotEmpty(excludeId), JobWorkOrder::getId, excludeId)
                 .count();
 
