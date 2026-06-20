@@ -36,6 +36,21 @@
       >
       </el-input>
 
+      <!-- 工作类型筛选条件 -->
+      <el-select
+          v-model="data.category"
+          filterable
+          clearable
+          placeholder="选择工作类型"
+          @change="fetchFactoryBillList"
+      >
+        <el-option
+            v-for="item in data.jobCategoryList"
+            :key="item.id"
+            :label="item.category"
+            :value="item.category"
+        />
+      </el-select>
 
       <!-- 数据记录状态筛选条件 -->
       <el-select
@@ -120,8 +135,8 @@
 
     <!--  添加或编辑成衣厂账单信息弹窗  -->
     <el-dialog v-model="data.editBillDialogVisible"
-        :title="data.editBillDialogMode === 0 ? '添加成衣厂账单' : data.editBillDialogMode === 1 ? '修改成衣厂账单': ''"
-        width="50%" center>
+               :title="data.editBillDialogMode === 0 ? '添加成衣厂账单' : data.editBillDialogMode === 1 ? '修改成衣厂账单': ''"
+               width="50%" center>
       <el-form
           ref="billInfoFormRef"
           :model="factoryBillInfoRef"
@@ -304,6 +319,7 @@ import {
   editFactoryBillInfo,
   exportFactoryBillExcel,
   queryFactoryBillList,
+  queryFactoryJobCategoryList,
   queryFactoryQuotationStyleNumberList,
   saveFactoryBillInfo,
   statisticalFactoryBill
@@ -320,6 +336,7 @@ import {
 
 onMounted(() => {
   loadFactoryList()
+  loadJobCategoryList()
   fetchFactoryBillList()
 })
 
@@ -333,6 +350,8 @@ const data = reactive({
   startDate: '',
   endDate: '',
   styleNumber: '',
+  category: '',
+  jobCategoryList: [],
   flag: 0,
   currentPage: 1,
   pageSize: 10,
@@ -353,6 +372,15 @@ const loadFactoryList = async () => {
   await loadFactoryOptions(data, queryFactoryList)
 }
 
+const loadJobCategoryList = async () => {
+  const { data: res } = await queryFactoryJobCategoryList()
+  if (res.status === 200) {
+    data.jobCategoryList = Array.isArray(res.data) ? res.data : []
+  } else {
+    data.jobCategoryList = []
+    ElMessage.error(res.message)
+  }
+}
 
 // TODO 查询成衣厂报价单的款式编号列表
 const queryFactoryStyleNumberListHandle = async (factoryId) => {
@@ -380,6 +408,7 @@ const fetchFactoryBillList = async () => {
       data.factoryId,
       data.number,
       data.styleNumber,
+      data.category,
       data.flag,
       data.startDate,
       data.endDate,
@@ -545,6 +574,7 @@ const summaryQuantityAndBill = ({columns, data}) => {
 const resetQueryCondition = () => {
   data.factoryId = ''
   data.styleNumber = ''
+  data.category = ''
   data.flag = 0
   data.startDate = ''
   data.endDate = ''
@@ -598,11 +628,11 @@ const closeBillDialog = () => {
 
 const validateBillForm = async formEl => {
   await validateDialogForm(
-    formEl,
-    data.editBillDialogMode,
-    createFactoryBill,
-    updateFactoryBill,
-    () => ElMessage.error('请检查是否填写正确')
+      formEl,
+      data.editBillDialogMode,
+      createFactoryBill,
+      updateFactoryBill,
+      () => ElMessage.error('请检查是否填写正确')
   )
 }
 
@@ -689,29 +719,32 @@ const handleSortFieldsChange = selectedFields => {
 
 .factoryBill-button > *:nth-child(1),
 .factoryBill-button > *:nth-child(2) {
-  width: 96px;
+  width: 80px;
 }
 
 .factoryBill-button > *:nth-child(3) {
   width: 135px;
 }
 
-.factoryBill-button > *:nth-child(4),
-.factoryBill-button > *:nth-child(5) {
-  width: 110px;
-}
-
-.factoryBill-button > *:nth-child(6) {
+.factoryBill-button > *:nth-child(4) {
   width: 90px;
 }
 
-.factoryBill-button > *:nth-child(7),
-.factoryBill-button > *:nth-child(8) {
+.factoryBill-button > *:nth-child(5) {
+  width: 90px;
+}
+
+.factoryBill-button > *:nth-child(6) {
   width: 150px;
 }
 
+.factoryBill-button > *:nth-child(7) {
+  width: 80px;
+}
+
+.factoryBill-button > *:nth-child(8),
 .factoryBill-button > *:nth-child(9) {
-  width: 88px;
+  width: 145px;
 }
 
 .factoryBill-button > * {
