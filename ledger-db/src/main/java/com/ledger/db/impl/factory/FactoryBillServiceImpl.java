@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.result.Result;
 import com.ledger.db.entity.FactoryBill;
+import com.ledger.db.util.BillDuplicateCheckUtil;
 import com.ledger.db.entity.FactoryQuotation;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import com.ledger.db.mapper.FactoryBillMapper;
@@ -113,17 +114,17 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
     @Transactional(rollbackFor = RuntimeException.class)
     public Result<Object> saveFactoryBillInfo(FactoryBill bill) {
 
-        // 检查是否存在相同的账单信息（按工厂 + 床号 + 报价 + 日期判重）
-        boolean billExists = lambdaQuery()
-                .eq(FactoryBill::getFactoryId, bill.getFactoryId())
-                .eq(FactoryBill::getNumber, bill.getNumber())
-                .eq(FactoryBill::getQuotationId, bill.getQuotationId())
-                .eq(FactoryBill::getCreatedDate, bill.getCreatedDate())
-                .eq(FactoryBill::getFlag, 0)
-                .exists();
-
-        if (billExists) {
-            return Result.fail("账单已存在");
+        // 检查是否存在相同的账单信息（按工厂 + 床号 + 报价，在所选日期前后20天内判重）
+        String duplicateDateTips = BillDuplicateCheckUtil.findDuplicateBillDatesWithinTwentyDays(
+                this,
+                bill.getFactoryId(),
+                bill.getNumber(),
+                bill.getQuotationId(),
+                bill.getCreatedDate(),
+                null
+        );
+        if (StrUtil.isNotBlank(duplicateDateTips)) {
+            return Result.fail("保存失败：在所选日期（" + bill.getCreatedDate() + "）前后20天内，已存在相同账单。重复日期：" + duplicateDateTips + "。请确认后再提交。");
         }
 
         // 计算账单价格（仅通过 quotationId + factoryId 关联报价）
@@ -180,14 +181,29 @@ public class FactoryBillServiceImpl extends ServiceImpl<FactoryBillMapper, Facto
 
         Integer factoryId = ObjectUtil.defaultIfNull(bill.getFactoryId(), originalBill.getFactoryId());
         Integer quantity = ObjectUtil.defaultIfNull(bill.getQuantity(), originalBill.getQuantity());
+        String number = ObjectUtil.defaultIfNull(bill.getNumber(), originalBill.getNumber());
+        Integer quotationId = ObjectUtil.defaultIfNull(bill.getQuotationId(), originalBill.getQuotationId());
+        LocalDate selectedDate = ObjectUtil.defaultIfNull(bill.getCreatedDate(), originalBill.getCreatedDate());
+
+        if (ObjectUtil.isNull(quotationId)) {
+            return Result.fail("报价ID不能为空");
+        }
+
+        // 修改时同样做前后20天重复校验（排除当前账单自身）
+        String duplicateDateTips = BillDuplicateCheckUtil.findDuplicateBillDatesWithinTwentyDays(
+                this,
+                factoryId,
+                number,
+                quotationId,
+                selectedDate,
+                originalBill.getId()
+        );
+        if (StrUtil.isNotBlank(duplicateDateTips)) {
+            return Result.fail("修改失败：在所选日期（" + selectedDate + "）前后20天内，已存在相同账单。重复日期：" + duplicateDateTips + "。请确认后再提交。");
+        }
 
         try {
             // 仅按 quotationId 重新计算，禁止按款式编号/工作类型回退匹配
-            Integer quotationId = ObjectUtil.defaultIfNull(bill.getQuotationId(), originalBill.getQuotationId());
-            if (ObjectUtil.isNull(quotationId)) {
-                return Result.fail("报价ID不能为空");
-            }
-
             FactoryQuotation matchedQuotation = factoryQuotationService.lambdaQuery()
                     .eq(FactoryQuotation::getId, quotationId)
                     .eq(FactoryQuotation::getFactoryId, factoryId)

@@ -1,16 +1,29 @@
 <template>
   <div class="workOrder-container">
-    <CommonFilterBar
-      v-model="workOrderFilters"
-      :actions="workOrderFilterActions"
-      :fields="workOrderFilterFields"
-      :initial-value="workOrderFilterInitialValue"
-      @action="onWorkOrderFilterAction"
-      @query="fetchWorkOrderList"
-      @reset="onWorkOrderFilterReset"
-    />
+    <section class="page-header-card">
+      <div>
+        <h2 class="page-title">认领工单中心</h2>
+        <p class="page-subtitle">快速筛选、认领与维护工单，提升分配效率</p>
+      </div>
+      <div class="page-stat">
+        <span class="label">待处理工单</span>
+        <span class="value">{{ data.total }}</span>
+      </div>
+    </section>
 
-    <div class="workOrder-table-section">
+    <section class="panel-card">
+      <CommonFilterBar
+        v-model="workOrderFilters"
+        :actions="workOrderFilterActions"
+        :fields="workOrderFilterFields"
+        :initial-value="workOrderFilterInitialValue"
+        @action="onWorkOrderFilterAction"
+        @query="fetchWorkOrderList"
+        @reset="onWorkOrderFilterReset"
+      />
+    </section>
+
+    <section class="workOrder-table-section panel-card table-card">
       <WorkOrderTable
         :table-data="data.tableData"
         :total="data.total"
@@ -23,7 +36,7 @@
         @edit="openEditWorkOrderDialog"
         @delete="removeWorkOrder"
       />
-    </div>
+    </section>
     <!--  添加/编辑工单弹窗  -->
     <el-dialog
       v-model="data.editWorkOrderDialogVisible"
@@ -31,7 +44,7 @@
       :width="data.isMobile ? '92%' : '50%'"
       :top="data.isMobile ? '4vh' : '12vh'"
       center
-      class="responsive-dialog"
+      class="responsive-dialog work-order-edit-dialog"
     >
       <el-form
         ref="workOrderFormRef"
@@ -91,7 +104,7 @@
       :width="data.isMobile ? '92%' : '50%'"
       :top="data.isMobile ? '4vh' : '12vh'"
       center
-      class="responsive-dialog"
+      class="responsive-dialog claim-dialog"
     >
       <el-form
         ref="claimFormRef"
@@ -627,13 +640,75 @@ onBeforeRouteLeave(() => {
 
 <style scoped>
 .workOrder-container {
-  height: 100vh;
+  --card-bg: #ffffff;
+  --card-border: #e9edf5;
+  --card-shadow: 0 10px 28px rgba(16, 24, 40, 0.06);
+  --text-primary: #1f2937;
+  --text-secondary: #667085;
+
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--section-padding-lg);
-  gap: var(--layout-gap-lg);
+  padding: clamp(12px, 2.2vw, 24px);
+  gap: clamp(10px, 1.6vw, 18px);
   box-sizing: border-box;
   overflow: hidden;
+  background: #f6f8fc;
+}
+
+.page-header-card,
+.panel-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+}
+
+.page-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(14px, 2vw, 20px);
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  margin: 8px 0 0;
+  font-size: clamp(12px, 1.2vw, 14px);
+  color: var(--text-secondary);
+}
+
+.page-stat {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.page-stat .label {
+  font-size: 12px;
+  color: #98a2b3;
+}
+
+.page-stat .value {
+  font-size: clamp(20px, 2.2vw, 28px);
+  line-height: 1;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.panel-card {
+  padding: clamp(12px, 1.8vw, 16px);
 }
 
 .workOrder-table-section {
@@ -643,9 +718,22 @@ onBeforeRouteLeave(() => {
   overflow: hidden;
 }
 
+.table-card {
+  padding: clamp(8px, 1.2vw, 12px);
+}
+
 .workOrder-table-section > * {
   flex: 1;
   min-height: 0;
+}
+
+:deep(.panel-card .filter-bar),
+:deep(.panel-card .common-filter-bar) {
+  margin: 0;
+}
+
+:deep(.table-card .el-table) {
+  border-radius: 10px;
 }
 
 :deep(.el-form-item__content) {
@@ -653,12 +741,35 @@ onBeforeRouteLeave(() => {
   gap: 10px;
 }
 
+:deep(.responsive-dialog .el-dialog) {
+  border-radius: 14px;
+}
+
+:deep(.responsive-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding: 16px 16px 8px;
+}
+
+:deep(.responsive-dialog .el-dialog__title) {
+  font-weight: 700;
+}
+
 :deep(.responsive-dialog .el-dialog__body) {
-  padding: 16px;
+  padding: 12px 16px;
 }
 
 :deep(.responsive-dialog .el-form-item) {
   margin-bottom: 16px;
+}
+
+:deep(.work-order-edit-dialog .el-input__wrapper),
+:deep(.work-order-edit-dialog .el-select__wrapper),
+:deep(.work-order-edit-dialog .el-date-editor.el-input__wrapper),
+:deep(.claim-dialog .el-input__wrapper),
+:deep(.claim-dialog .el-select__wrapper),
+:deep(.claim-dialog .el-date-editor.el-input__wrapper) {
+  min-height: 40px;
+  border-radius: 9px;
 }
 
 .dialog-footer {
@@ -675,10 +786,20 @@ onBeforeRouteLeave(() => {
 @media (max-width: 768px) {
   .workOrder-container {
     height: auto;
-    min-height: auto;
-    padding: var(--section-padding-sm);
-    gap: var(--layout-gap-sm);
+    min-height: 100%;
+    padding: 12px;
+    gap: 10px;
     overflow: visible;
+  }
+
+  .page-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-stat {
+    width: 100%;
+    align-items: flex-start;
   }
 
   .workOrder-table-section {
@@ -692,9 +813,21 @@ onBeforeRouteLeave(() => {
     width: 100%;
   }
 
+  :deep(.panel-card .common-filter-bar),
+  :deep(.panel-card .common-filter-bar .action-group),
+  :deep(.panel-card .common-filter-bar .field-group) {
+    width: 100%;
+  }
+
+  :deep(.panel-card .common-filter-bar .action-btn),
+  :deep(.panel-card .common-filter-bar .reset-btn) {
+    width: 100%;
+    min-width: 0;
+  }
+
   :deep(.responsive-dialog .el-dialog) {
     margin: 0 auto;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
   :deep(.responsive-dialog .el-dialog__header) {
@@ -707,6 +840,7 @@ onBeforeRouteLeave(() => {
     max-height: 72vh;
     overflow-y: auto;
     box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
   }
 
   :deep(.responsive-dialog .el-dialog__footer) {
@@ -719,7 +853,8 @@ onBeforeRouteLeave(() => {
   }
 
   :deep(.responsive-dialog .el-dialog__footer .el-button) {
-    min-width: 88px;
+    min-width: 92px;
+    min-height: 40px;
   }
 }
 </style>

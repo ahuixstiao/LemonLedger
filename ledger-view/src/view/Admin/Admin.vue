@@ -33,6 +33,13 @@
           <span>成衣厂报价列表</span>
         </el-menu-item>
 
+        <el-menu-item index="/admin/factoryJobCategoryList">
+          <el-icon>
+            <setting />
+          </el-icon>
+          <span>成衣厂工作类型列表</span>
+        </el-menu-item>
+
         <el-menu-item index="/admin/jobQuotationList">
           <el-icon>
             <setting />

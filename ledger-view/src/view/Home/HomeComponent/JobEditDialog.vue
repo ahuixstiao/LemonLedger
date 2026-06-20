@@ -4,6 +4,7 @@
     :title="dialogMode === 0 ? '添加工作记录' : dialogMode === 1 ? '修改工作记录' : ''"
     width="90%"
     center
+    class="job-edit-dialog"
     @update:model-value="val => $emit('update:visible', val)"
   >
     <el-form ref="jobInfoFormRef" :model="jobInfo" :rules="jobRules" label-position="top">
@@ -105,3 +106,44 @@ const handleCancel = () => {
   emit('update:visible', false)
 }
 </script>
+
+<style scoped>
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.dialog-footer :deep(.el-button) {
+  min-width: 88px;
+  border-radius: 9px;
+}
+
+:deep(.job-edit-dialog .el-dialog__body) {
+  padding: 14px 16px 8px;
+}
+
+:deep(.job-edit-dialog .el-form-item__label) {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .dialog-footer {
+    gap: 8px;
+  }
+
+  .dialog-footer :deep(.el-button) {
+    min-height: 40px;
+    min-width: 96px;
+  }
+
+  :deep(.job-edit-dialog .el-dialog__body) {
+    padding: 10px 14px 6px;
+    max-height: 72vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+</style>

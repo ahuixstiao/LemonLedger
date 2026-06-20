@@ -20,11 +20,13 @@
       <el-table-column prop="quantity" label="数量" align="center" />
       <el-table-column prop="salary" label="本床工资(单位: 元)" align="center" />
       <el-table-column sortable prop="createdDate" label="日期" align="center" show-overflow-tooltip />
-      <el-table-column label="操作" align="center" width="120">
+      <el-table-column label="操作" align="center" width="140">
         <template #default="scope">
-          <el-button link size="small" @click="$emit('edit', scope.row)">修改</el-button>
-          <span class="op-divider">|</span>
-          <el-button link type="danger" size="small" @click="$emit('delete', scope.row.id)">删除</el-button>
+          <div class="op-actions">
+            <el-button link size="small" @click="$emit('edit', scope.row)">修改</el-button>
+            <span class="op-divider">|</span>
+            <el-button link type="danger" size="small" @click="$emit('delete', scope.row.id)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -120,9 +122,8 @@ const summaryQuantityAndSalary = ({ columns, data }) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 10px;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
+  padding: 8px;
+  border-radius: 10px;
   background: #fff;
 }
 
@@ -135,11 +136,29 @@ const summaryQuantityAndSalary = ({ columns, data }) => {
   white-space: nowrap;
 }
 
+:deep(.home-work-table .el-table__header-wrapper th) {
+  background: #f8fafc;
+}
+
+:deep(.home-work-table .el-table__row td) {
+  transition: background-color 0.2s ease;
+}
+
+.op-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.op-divider {
+  color: #d0d5dd;
+}
+
 .home-page {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 12px 0 4px;
+  padding: 14px 0 2px;
   flex-shrink: 0;
 }
 
@@ -151,14 +170,19 @@ const summaryQuantityAndSalary = ({ columns, data }) => {
 
 @media (max-width: 768px) {
   .home-work-table-section {
-    padding: 8px;
+    padding: 6px;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .home-page {
     justify-content: center;
-    padding: 10px 0 4px;
+    padding: 10px 0 2px;
+  }
+
+  :deep(.home-work-table .el-button) {
+    min-height: 32px;
+    padding: 4px 6px;
   }
 
   :deep(.home-work-table .el-scrollbar__wrap) {

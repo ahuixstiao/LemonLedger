@@ -13,9 +13,9 @@
       show-summary
       :summary-method="getSummaries"
     >
-      <el-table-column label="认领" align="center" width="90">
+      <el-table-column label="认领" align="center" width="100">
         <template #default="scope">
-          <el-button type="warning" @click="$emit('claim', scope.row)">认领</el-button>
+          <el-button type="warning" class="claim-btn" @click="$emit('claim', scope.row)">认领</el-button>
         </template>
       </el-table-column>
       <el-table-column prop="factoryName" sortable label="厂名" align="center" show-overflow-tooltip />
@@ -119,6 +119,9 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding: 8px;
+  border-radius: 10px;
+  background: #fff;
 }
 
 .work-order-table-inner {
@@ -130,11 +133,21 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
+:deep(.work-order-table-inner .el-table__header-wrapper th) {
+  background: #f8fafc;
+}
+
+.claim-btn {
+  min-height: 32px;
+  min-width: 58px;
+  border-radius: 8px;
+}
+
 .work-order-page-inner {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 12px 0 4px;
+  padding: 14px 0 2px;
   flex-shrink: 0;
 }
 
@@ -146,12 +159,24 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .work-order-table-section-inner {
+    padding: 6px;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
 
+  .claim-btn {
+    min-height: 34px;
+    min-width: 62px;
+  }
+
   .work-order-page-inner {
     justify-content: center;
+    padding: 10px 0 2px;
+  }
+
+  :deep(.work-order-table-inner .el-button) {
+    min-height: 32px;
+    padding: 4px 6px;
   }
 
   :deep(.work-order-table-inner .el-scrollbar__wrap) {

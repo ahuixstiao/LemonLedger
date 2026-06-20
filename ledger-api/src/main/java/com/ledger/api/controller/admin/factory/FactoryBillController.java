@@ -152,18 +152,17 @@ public class FactoryBillController {
         // 构建文件名
         String fileName = list.get(0).getFactoryName() + "成衣厂账单.xlsx";
 
-        // 格式化文件名，处理中文乱码问题
-        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");;
-
-        // TODO 构建文件流供浏览器下载
+        // 格式化文件名，兼容 MacOS/Windows 下载行为
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        String contentDisposition = "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName;
 
         // 设置响应内容文件类型
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); // 设为输出 excel文件
         response.setCharacterEncoding("utf-8");
         // 添加响应头信息
-        response.setHeader("Content-disposition", "attachment;filename=" + encodedFileName); // 设置头
-        response.setHeader("Cache-Control", "No-cache"); // 不缓存
-        response.setHeader("Pragma", "No-cache");
+        response.setHeader("Content-Disposition", contentDisposition); // 设置头
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // 不缓存
+        response.setHeader("Pragma", "no-cache");
 
         // 构建Excel字体样式对象
         WriteFont commonFont = new WriteFont();
@@ -185,6 +184,7 @@ public class FactoryBillController {
                     .registerWriteHandler(new HorizontalCellStyleStrategy(commonStyle, commonStyle))
                     .sheet("账单")
                     .doWrite(list);
+            response.flushBuffer();
         } catch (IOException ioException) {
             // 打印异常信息
             log.error(ioException.getMessage());

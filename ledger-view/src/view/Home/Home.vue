@@ -1,16 +1,29 @@
 <template>
   <div class="home-container">
-    <CommonFilterBar
-      v-model="homeFilters"
-      :actions="homeFilterActions"
-      :fields="homeFilterFields"
-      :initial-value="homeFilterInitialValue"
-      @action="onHomeFilterAction"
-      @query="queryJobListByEmployeeIdAndDateHandle"
-      @reset="onHomeFilterReset"
-    />
+    <section class="page-header-card">
+      <div>
+        <h2 class="page-title">生产管理中心</h2>
+        <p class="page-subtitle">集中查看工单、查询样板并进行工资核算</p>
+      </div>
+      <div class="page-stat">
+        <span class="label">当前工单总数</span>
+        <span class="value">{{ data.total }}</span>
+      </div>
+    </section>
 
-    <div class="home-table-section">
+    <section class="panel-card">
+      <CommonFilterBar
+        v-model="homeFilters"
+        :actions="homeFilterActions"
+        :fields="homeFilterFields"
+        :initial-value="homeFilterInitialValue"
+        @action="onHomeFilterAction"
+        @query="queryJobListByEmployeeIdAndDateHandle"
+        @reset="onHomeFilterReset"
+      />
+    </section>
+
+    <section class="home-table-section panel-card table-card">
       <HomeTable
         :table-data="data.tableData"
         :total="data.total"
@@ -22,7 +35,7 @@
         @edit="showUpdateJobInfoDialog"
         @delete="deleteJobInfoByIdHandler"
       />
-    </div>
+    </section>
 
     <SalaryDialog
       :visible="data.SalaryVisible"
@@ -51,7 +64,7 @@
       :width="data.isMobile ? '92%' : '50%'"
       :top="data.isMobile ? '4vh' : '12vh'"
       center
-      class="responsive-dialog"
+      class="responsive-dialog sample-dialog"
     >
       <div class="sample-query-form">
         <el-select
@@ -462,14 +475,75 @@ const submitJobInfo = () => {
 
 <style scoped>
 .home-container {
+  --card-bg: #ffffff;
+  --card-border: #e9edf5;
+  --card-shadow: 0 10px 28px rgba(16, 24, 40, 0.06);
+  --text-primary: #1f2937;
+  --text-secondary: #667085;
+
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--section-padding-lg);
+  padding: clamp(12px, 2.2vw, 24px);
   box-sizing: border-box;
-  gap: var(--layout-gap-lg);
+  gap: clamp(10px, 1.6vw, 18px);
   overflow: hidden;
+  background: #f6f8fc;
+}
+
+.page-header-card,
+.panel-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+}
+
+.page-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(14px, 2vw, 20px);
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  margin: 8px 0 0;
+  font-size: clamp(12px, 1.2vw, 14px);
+  color: var(--text-secondary);
+}
+
+.page-stat {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.page-stat .label {
+  font-size: 12px;
+  color: #98a2b3;
+}
+
+.page-stat .value {
+  font-size: clamp(20px, 2.2vw, 28px);
+  line-height: 1;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.panel-card {
+  padding: clamp(12px, 1.8vw, 16px);
 }
 
 .home-table-section {
@@ -477,6 +551,10 @@ const submitJobInfo = () => {
   min-height: 0;
   display: flex;
   overflow: hidden;
+}
+
+.table-card {
+  padding: clamp(8px, 1.2vw, 12px);
 }
 
 .home-table-section > * {
@@ -507,34 +585,76 @@ const submitJobInfo = () => {
 }
 
 .sample-card {
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
   padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  background: #ffffff;
 }
 
 .sample-style-number {
   font-size: 13px;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
   word-break: break-all;
 }
 
 .sample-image {
   width: 100%;
   height: 140px;
-  border-radius: 6px;
-  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+}
+
+:deep(.panel-card .filter-bar),
+:deep(.panel-card .common-filter-bar) {
+  margin: 0;
+}
+
+:deep(.table-card .el-table) {
+  border-radius: 10px;
+}
+
+:deep(.sample-dialog .el-dialog) {
+  border-radius: 14px;
+}
+
+:deep(.sample-dialog .el-dialog__header) {
+  padding: 16px 16px 6px;
+}
+
+:deep(.sample-dialog .el-dialog__title) {
+  font-weight: 700;
+}
+
+:deep(.sample-dialog .el-dialog__body) {
+  padding: 10px 16px 14px;
+}
+
+:deep(.sample-dialog .el-input__wrapper),
+:deep(.sample-dialog .el-select__wrapper) {
+  min-height: 40px;
+  border-radius: 9px;
 }
 
 @media (max-width: 768px) {
   .home-container {
     height: auto;
     min-height: 100%;
-    padding: var(--section-padding-sm);
-    gap: var(--layout-gap-sm);
+    padding: 12px;
+    gap: 10px;
     overflow: visible;
+  }
+
+  .page-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-stat {
+    width: 100%;
+    align-items: flex-start;
   }
 
   .home-table-section {
@@ -553,7 +673,7 @@ const submitJobInfo = () => {
 
   :deep(.responsive-dialog .el-dialog) {
     margin: 0 auto;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
   :deep(.responsive-dialog .el-dialog__body) {

@@ -433,11 +433,16 @@ const exportFactoryBillExcelHandle = async () => {
 
   // 获取响应头中的文件名
   let fileName = '成衣厂账单.xlsx'
-  const contentDisposition = res.headers['content-disposition']
+  const contentDisposition = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition']
   if (contentDisposition) {
-    const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-    if (match && match[1]) {
-      fileName = decodeURIComponent(match[1].replace(/['"]/g, ''))
+    const fileNameStarMatch = contentDisposition.match(/filename\*=UTF-8''([^;\n]*)/i)
+    if (fileNameStarMatch && fileNameStarMatch[1]) {
+      fileName = decodeURIComponent(fileNameStarMatch[1].replace(/"/g, ''))
+    } else {
+      const fileNameMatch = contentDisposition.match(/filename=([^;\n]*)/i)
+      if (fileNameMatch && fileNameMatch[1]) {
+        fileName = decodeURIComponent(fileNameMatch[1].replace(/['"]/g, ''))
+      }
     }
   }
 

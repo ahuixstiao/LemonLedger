@@ -26,6 +26,11 @@ const routes = [
           import('../view/Admin/AdminComponent/FactoryQuotation.vue')
       },
       {
+        path: 'factoryJobCategoryList',
+        component: () =>
+          import('../view/Admin/AdminComponent/FactoryJobCategory.vue')
+      },
+      {
         path: 'jobQuotationList',
         component: () =>
           import('../view/Admin/AdminComponent/JobQuotation.vue')
