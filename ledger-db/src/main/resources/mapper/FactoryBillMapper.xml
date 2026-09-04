@@ -153,8 +153,9 @@
                             cast(fb.number as unsigned)
                         </when>
                         <!-- 白名单字段映射，禁止直接拼接列名，避免 SQL 注入 -->
-                        <when test="col == 'fb.created_date' or col == 'created_date'">
-                            fb.created_date
+                        <!-- 统计导出时日期按月份排序，不再按具体日期排序 -->
+                        <when test="col == 'fb.created_month' or col == 'created_month' or col == 'fb.created_date' or col == 'created_date'">
+                            DATE_FORMAT(fb.created_date, '%Y-%m')
                         </when>
                         <when test="col == 'factory.factory_name' or col == 'factoryName' or col == 'factory_name'">
                             factory.factory_name
@@ -176,7 +177,7 @@
                         </when>
                         <!-- 非白名单字段兜底为安全列 -->
                         <otherwise>
-                            fb.created_date
+                            DATE_FORMAT(fb.created_date, '%Y-%m')
                         </otherwise>
                     </choose>
                     <choose>
@@ -186,7 +187,7 @@
                 </foreach>
             </when>
             <otherwise>
-                order by fb.created_date asc
+                order by DATE_FORMAT(fb.created_date, '%Y-%m') asc
             </otherwise>
         </choose>
     </select>

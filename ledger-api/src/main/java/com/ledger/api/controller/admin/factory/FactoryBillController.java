@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -73,7 +72,8 @@ public class FactoryBillController {
     }
 
     /**
-     * 统计成衣厂账单
+     * 统计成衣厂账单。
+     * 后续导出明细时，日期排序按月份聚合，不再按具体日期排序。
      *
      * @param factoryId 成衣厂ID
      * @param startDate 起止日期
@@ -98,7 +98,8 @@ public class FactoryBillController {
     }
 
     /**
-     * 按条件导出成衣厂账单 Excel
+     * 按条件导出成衣厂账单 Excel。
+     * 未指定排序字段时默认按账单月份升序；选择创建日期时同样按月份排序。
      *
      * @param factoryId 成衣厂ID
      * @param startDate 起始日期
@@ -225,10 +226,23 @@ public class FactoryBillController {
         return factoryBillService.deleteFactoryBillInfo(id);
     }
 
+    /**
+     * 将请求参数解析为 Integer，解析失败时返回 null。
+     *
+     * @param value 原始参数
+     * @return 解析后的整数
+     */
     private Integer parseIntegerParam(String value) {
         return parseIntegerParam(value, null);
     }
 
+    /**
+     * 将请求参数解析为 Integer，空值或非法值时返回默认值。
+     *
+     * @param value        原始参数
+     * @param defaultValue 默认值
+     * @return 解析后的整数
+     */
     private Integer parseIntegerParam(String value, Integer defaultValue) {
         if (!hasText(value)) {
             return defaultValue;
@@ -240,6 +254,12 @@ public class FactoryBillController {
         }
     }
 
+    /**
+     * 将逗号分隔字符串拆分为去空白后的列表。
+     *
+     * @param csv 逗号分隔字符串
+     * @return 拆分后的列表
+     */
     private List<String> splitCsv(String csv) {
         if (!hasText(csv)) {
             return Collections.emptyList();
