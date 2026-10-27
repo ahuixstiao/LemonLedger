@@ -135,8 +135,8 @@
 
     <!--  添加或编辑成衣厂账单信息弹窗  -->
     <el-dialog v-model="data.editBillDialogVisible"
-        :title="data.editBillDialogMode === 0 ? '添加成衣厂账单' : data.editBillDialogMode === 1 ? '修改成衣厂账单': ''"
-        width="50%" center>
+               :title="data.editBillDialogMode === 0 ? '添加成衣厂账单' : data.editBillDialogMode === 1 ? '修改成衣厂账单': ''"
+               width="50%" center>
       <el-form
           ref="billInfoFormRef"
           :model="factoryBillInfoRef"
@@ -628,11 +628,11 @@ const closeBillDialog = () => {
 
 const validateBillForm = async formEl => {
   await validateDialogForm(
-    formEl,
-    data.editBillDialogMode,
-    createFactoryBill,
-    updateFactoryBill,
-    () => ElMessage.error('请检查是否填写正确')
+      formEl,
+      data.editBillDialogMode,
+      createFactoryBill,
+      updateFactoryBill,
+      () => ElMessage.error('请检查是否填写正确')
   )
 }
 
