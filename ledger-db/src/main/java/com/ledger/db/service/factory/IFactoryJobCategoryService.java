@@ -16,4 +16,10 @@ public interface IFactoryJobCategoryService extends IService<FactoryJobCategory>
 
     Result<Object> queryFactoryJobCategoryList();
 
+    Result<Object> saveFactoryJobCategoryInfo(FactoryJobCategory factoryJobCategory);
+
+    Result<Object> updateFactoryJobCategoryInfo(FactoryJobCategory factoryJobCategory);
+
+    Result<Object> removeFactoryJobCategoryInfo(Integer categoryId);
+
 }

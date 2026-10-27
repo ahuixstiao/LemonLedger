@@ -127,20 +127,8 @@
           <el-input :model-value="claimFormModel.number" disabled />
         </el-form-item>
 
-        <el-form-item size="large" label="款式编号:">
-          <el-input :model-value="claimFormModel.styleNumber" disabled />
-        </el-form-item>
-
-        <el-form-item size="large" label="工作类型:">
-          <el-input :model-value="claimFormModel.category" disabled />
-        </el-form-item>
-
         <el-form-item size="large" label="数量:" prop="quantity">
           <el-input v-model="claimFormModel.quantity" placeholder="请输入数量" />
-        </el-form-item>
-
-        <el-form-item size="large" label="日期:">
-          <el-input :model-value="claimFormModel.createdDate" disabled />
         </el-form-item>
       </el-form>
 
@@ -481,12 +469,7 @@ const claimFormInit = {
   factoryId: '',
   factoryName: '',
   number: '',
-  styleNumber: '',
-  categoryId: '',
-  category: '',
   quantity: '',
-  createdDate: '',
-  modeId: '',
   workOrderId: ''
 }
 const claimFormModel = reactive({ ...claimFormInit })
@@ -495,12 +478,6 @@ const resolveFactoryName = workOrder => {
   if (workOrder.factoryName) return workOrder.factoryName
   const factory = data.factoryList.find(item => item.id === workOrder.factoryId)
   return factory?.factoryName || ''
-}
-
-const resolveCategoryName = workOrder => {
-  if (workOrder.category) return workOrder.category
-  const category = data.categoryList.find(item => item.id === workOrder.categoryId)
-  return category?.category || ''
 }
 
 /**
@@ -543,11 +520,7 @@ const openClaimDialog = workOrder => {
     factoryId: workOrder.factoryId,
     factoryName: resolveFactoryName(workOrder),
     number: workOrder.number,
-    styleNumber: workOrder.styleNumber,
-    categoryId: workOrder.categoryId,
-    category: resolveCategoryName(workOrder),
-    quantity: workOrder.quantity,
-    createdDate: workOrder.createdDate
+    quantity: workOrder.quantity
   })
   data.claimDialogVisible = true
 }
