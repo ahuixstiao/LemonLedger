@@ -566,3 +566,20 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - `ledger-view/src/style.css`：页骨架、`.admin-page` 高度分配、表格卡片 flex、金额/日期/状态等公用样式。
 - `ledger-view/src/view/Admin/AdminPageHeader.vue`、`adminShared.js`：页头组件与 `formatMoney/formatNumber/formatDate/modeTagType/confirmDelete` 等公用函数。
 - 8 个 `ledger-view/src/view/Admin/AdminComponent/*.vue`：接入统一骨架、加 `height="100%"`、账单合计移到页头、标签配色统一。
+---
+
+## 14. 前台按后台语言重做、手机端卡片化、默认 30 天（2026-11-07）
+
+- **视觉**：前台不再用渐变底大容器，改成「品牌顶栏 + 页面标题区 + 筛选卡 + 表格卡」，与后台共用 `.admin-page-head` / `.filter-card` / `.filter-bar` / `.table-card` / `.pager-row` 等类；新增 `FrontShell.vue` 顶栏（工单总览 / 认领工单），前台不提供任何进入后台的入口。断点统一到 960px。
+- **手机端**：≤960px 不再渲染表格，改卡片列表（`HomeTable` / `WorkOrderTable` 的 `mobile` prop）；修复了 `.table-card` 因 `flex:1 1 0` 在自动高度页面被压成 0 高、列表整块消失的问题；页头按钮与筛选按钮在窄屏换行，不再横向溢出。
+- **默认查询窗口**：两个页面默认查最近 30 天（新增 `src/base/dateRange.js` 的 `recentDateRange`），并把筛选「改动即查询」恢复（300ms 防抖）——之前只认「查询」按钮，改完日期不点按钮会一直看到空列表。
+- **表格排版**：表格不再用 `height="100%"` 撑满，按内容撑开；合计行与分页完整露出，不再压住最后一行；行高由 57px 收到 41px。
+- 涉及文件：`ledger-view/src/style.css`、`src/view/Home/Home.vue`、`JobWorkOrder.vue`、`HomeComponent/{FrontShell,CommonFilterBar,HomeTable,WorkOrderTable,SalaryDialog,JobEditDialog}.vue`、`src/base/dateRange.js`。
+- 提交：`13e7bb3`（前台重做）、`98b9793`（手机卡片）、`cb9c2ff`（默认 30 天 + 即时查询）。
+
+## 15. 用 ledger-api/Dockerfile 重新打包并发布 2.2（2026-11-07）
+
+- **构建**：`ledger-view` 下 `npm run build` → 仓库根 `mvn clean package "-Dexec.skip=true"`（跳过 Windows 上跑不起来的 `npm run build` exec 步骤），产物 `ledger-api/target/LemonLedger.jar` 61,262,730 字节，测试全过。
+- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.2 ledger-api`，基础镜像 `eclipse-temurin:17-jre`，体积 544 MB。`:2.2` 与 `:latest` 均已推送，digest 同为 `sha256:88f5726eec9107b20641fd7b7fb35f1b4cd1a362ecdd1f682e256b7f4da82c3f`。
+- **冒烟测试**：以 `SPRING_PROFILES_ACTIVE=db,common` 连接 mysql 容器启动，日志出现 `LemonLedger Application Started`；`GET /emp/list` 返回 200 与真实员工数据；容器内`/` 为 404 属正常（前端由 nginx 单独提供，镜像只做 API）。
+- **`docker-compose.yml`** 的 image 改为 `2.2`；`ledger-api/Dockerfile` 注释里的构建命令同步为 2.2。服务器上 `docker compose pull && docker compose up -d` 即可升级。
