@@ -24,4 +24,10 @@ public class JobWorkOrderDTO implements Serializable {
     private Integer quantity;
     private String createdDate;
     private Integer flag;
+
+    /** 已被认领的数量（所有工作方式合计），由 SQL 子查询算出 */
+    private Integer claimedQuantity;
+
+    /** 剩余可认领数量 = 预设数量 - 已认领数量 */
+    private Integer remainQuantity;
 }

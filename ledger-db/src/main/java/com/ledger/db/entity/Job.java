@@ -62,6 +62,11 @@ public class Job extends ParentEntity {
     private Integer workOrderId;
 
     /**
+     * 床ID，关联 batch.id（床号 / 成衣厂 / 款式的唯一事实来源）
+     */
+    private Integer batchId;
+
+    /**
      * 本床薪资
      */
     private BigDecimal salary;

@@ -45,5 +45,5 @@ mybatis-plus:
     local-cache-scope: session
     # 日志实现
     #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    # 语句超时
-    default-statement-timeout: 2500
+    # 语句超时（毫秒）。原来是 2500，年度统计和导出 Excel 这种全表聚合经常跑不完，会直接抛超时
+    default-statement-timeout: 30000

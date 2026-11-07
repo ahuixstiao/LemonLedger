@@ -5,7 +5,9 @@ import cn.idev.excel.write.metadata.style.WriteCellStyle;
 import cn.idev.excel.write.metadata.style.WriteFont;
 import cn.idev.excel.write.style.HorizontalCellStyleStrategy;
 
+import com.ledger.common.exception.BizException;
 import com.ledger.common.result.Result;
+import com.ledger.common.util.MoneyUtil;
 import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import com.ledger.db.service.factory.IFactoryBillService;
@@ -14,32 +16,33 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.springframework.util.StringUtils.hasText;
 
-import com.sun.istack.NotNull;
-
 /**
  * @Author: ahui
- * @Description: TODO 成衣厂账单控制器
+ * @Description: 成衣厂账单控制器
  * @DateTime: 2025/10/16 - 11:33
  **/
 @RestController
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @RequestMapping("/admin/factoryBill")
+@Validated
 @Slf4j
 public class FactoryBillController {
 
@@ -50,7 +53,7 @@ public class FactoryBillController {
      *
      * @param factoryId   工厂ID
      * @param number      床号
-     * @param styleNumber 款式编号（报价表）
+     * @param styleNumber 款式编号（计件单价表）
      * @param flag        删除状态 0否 1是
      * @return result
      */
@@ -124,7 +127,7 @@ public class FactoryBillController {
         List<String> parsedSortOrders = splitCsv(sortOrders);
 
         // 查询数据
-        List<FactoryBillDto> list = factoryBillService.exportFactoryBillExcelByCondition(
+        List<FactoryBillDto> queryResult = factoryBillService.exportFactoryBillExcelByCondition(
                 parsedFactoryId,
                 startDate,
                 endDate,
@@ -132,26 +135,28 @@ public class FactoryBillController {
                 parsedSortOrders
         );
 
-        // 获取总计
-        double totalAmount = list.stream()
-                .map(FactoryBillDto::getBill)      // 1. 提取金额字段（BigDecimal 类型）
-                .filter(Objects::nonNull)          // 2. 过滤掉可能的 null 值，避免空指针
-                .mapToDouble(BigDecimal::doubleValue) // 3. 转换为 double 流以便求和
-                .sum();
+        // 查询结果可能是只读列表，复制一份再追加"空行 + 总计行"
+        List<FactoryBillDto> list = new ArrayList<>(queryResult);
 
-        // 创建一个特殊的“总计行”对象，其字段根据需要设置
+        // 文件名要在追加统计行之前取，否则第一行会被空行/总计行占掉
+        String factoryName = queryResult.stream()
+                .map(FactoryBillDto::getFactoryName)
+                .filter(name -> hasText(name))
+                .findFirst()
+                .orElse("成衣厂");
+        String fileName = factoryName + "成衣厂账单.xlsx";
+
+        // 获取总计：BigDecimal 相加，不能用 double（二进制浮点会让总计出现 1234.5599999999999 这种尾巴）
+        BigDecimal totalAmount = MoneyUtil.sumBy(list, FactoryBillDto::getBill);
+
+        // 创建一个特殊的"总计行"对象
         FactoryBillDto summaryRow = new FactoryBillDto();
-        // 设置一个特殊行的标识，例如工厂名称为“账单总计”
         summaryRow.setFactoryName("账单总计");
-        // 其他文本列可以留空或设为你需要的提示
-        summaryRow.setBill(BigDecimal.valueOf(totalAmount)); // 在金额列放入总计
+        summaryRow.setBill(totalAmount);
         // 添加一个空行作为间隔
         list.add(new FactoryBillDto());
         // 将总计行添加到列表末尾
         list.add(summaryRow);
-
-        // 构建文件名
-        String fileName = list.get(0).getFactoryName() + "成衣厂账单.xlsx";
 
         // 格式化文件名，兼容 MacOS/Windows 下载行为
         String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
@@ -175,11 +180,7 @@ public class FactoryBillController {
 
 
         try {
-            // TODO 写入本地
-            log.info("即将导出的数据: {}", list);
-            log.info("开始导出成衣厂账单 Excel 数据量: {}", list.size());
-            log.info("文件名: {}", encodedFileName);
-            log.info("响应状态: {}", response.getStatus());
+            log.info("开始导出成衣厂账单 Excel，工厂: {}，数据量: {}", factoryName, list.size());
             FastExcel
                     .write(response.getOutputStream(), FactoryBillDto.class)
                     .registerWriteHandler(new HorizontalCellStyleStrategy(commonStyle, commonStyle))
@@ -187,8 +188,9 @@ public class FactoryBillController {
                     .doWrite(list);
             response.flushBuffer();
         } catch (IOException ioException) {
-            // 打印异常信息
-            log.error(ioException.getMessage());
+            // 带上堆栈再往外抛：原来的 log.error(getMessage()) 只留一行文字，出问题无从查起
+            log.error("导出成衣厂账单 Excel 失败，工厂ID: {}", parsedFactoryId, ioException);
+            throw new BizException("导出 Excel 失败，请稍后重试", ioException);
         }
     }
 
@@ -199,8 +201,10 @@ public class FactoryBillController {
      * @return result
      */
     @PostMapping
-    public Result<Object> saveFactoryBillInfo(@RequestBody FactoryBill bill) {
-        return factoryBillService.saveFactoryBillInfo(bill);
+    public Result<Object> saveFactoryBillInfo(
+            @RequestBody FactoryBill bill,
+            @RequestParam(required = false, defaultValue = "false") boolean confirmDuplicate) {
+        return factoryBillService.saveFactoryBillInfo(bill, confirmDuplicate);
     }
 
     /**
@@ -210,9 +214,12 @@ public class FactoryBillController {
      * @return result
      */
     @PutMapping("/{id}")
-    public Result<Object> updateFactoryBillInfo(@PathVariable Integer id, @RequestBody FactoryBill bill) {
+    public Result<Object> updateFactoryBillInfo(
+            @PathVariable Integer id,
+            @RequestBody FactoryBill bill,
+            @RequestParam(required = false, defaultValue = "false") boolean confirmDuplicate) {
         bill.setId(id);
-        return factoryBillService.updateFactoryBillInfo(bill);
+        return factoryBillService.updateFactoryBillInfo(bill, confirmDuplicate);
     }
 
     /**
@@ -224,6 +231,23 @@ public class FactoryBillController {
     @DeleteMapping("/{id}")
     public Result<Object> deleteFactoryBillInfo(@PathVariable @NotNull Integer id) {
         return factoryBillService.deleteFactoryBillInfo(id);
+    }
+
+    /**
+     * 按成衣厂统计毛利（账单收入 - 工资支出）。
+     *
+     * <p>两个日期都不传时按「本月 1 号到今天」。
+     * 结果按毛利从高到低排，前端直接渲染成一张表。</p>
+     *
+     * @param startDate 起始日期 yyyy-MM-dd，可为空
+     * @param endDate   结束日期 yyyy-MM-dd，可为空
+     * @return result
+     */
+    @GetMapping("/gross")
+    public Result<Object> queryGrossProfit(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return factoryBillService.queryGrossProfit(startDate, endDate);
     }
 
     /**

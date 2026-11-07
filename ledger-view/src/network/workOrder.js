@@ -54,3 +54,13 @@ export function deleteWorkOrder(id) {
     method: 'delete'
   })
 }
+
+// 查询某个工单在某种工作方式下已认领 / 还可认领的数量
+// employeeId 和 modeId 传一个就够：传员工时后端用员工默认的工作方式
+export function queryWorkOrderProgress(workOrderId, employeeId, modeId) {
+  return request({
+    url: `/emp/workOrder/${workOrderId}/progress`,
+    method: 'get',
+    params: { employeeId, modeId }
+  })
+}

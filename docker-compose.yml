@@ -1,44 +1,56 @@
 services:
   lemonledger:
-    image: 794862853/lemonledger:1.5
+    image: 794862853/lemonledger:2.0
     container_name: lemonledger_container
     expose:
       - "8080"  # 内部端口
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/ledger?useUnicode=true&serverTimezone=GMT%2B8&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: jeesite      # 本地 MySQL 用户
-      SPRING_DATASOURCE_PASSWORD: root  # 本地 MySQL 密码
+      SPRING_PROFILES_ACTIVE: db,common
+      # 同一 docker 网络内用服务名 mysql 解析，不再依赖 host.docker.internal
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/ledger?useUnicode=true&serverTimezone=GMT%2B8&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-jeesite}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-root}
+    depends_on:
+      mysql:
+        condition: service_healthy
     networks:
       - my_network
     restart: always
-
-#  mysql:
-#    image: mysql:8.0
-#    container_name: mysql_container
-#    environment:
-#      MYSQL_ROOT_PASSWORD: root
-#      MYSQL_DATABASE: ledger
-#      TZ: Asia/Shanghai
-#    ports:
-#      - "3306:3306"
-#    volumes:
-#      - ./mysql-data:/var/lib/mysql
-#      - ./mysql/init:/docker-entrypoint-initdb.d
-#    networks:
-#      - my_network
-#    restart: always
-
-#  adminer:
-#    image: adminer
-#    container_name: adminer_container
-#    ports:
-#      - "8081:8080"
-#    networks:
-#      - my_network
-#    depends_on:
-#      - mysql
-#    restart: always
-
+    
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    # 仅绑定到宿主机局域网 IP，避免公网暴露；在 .env 中设置 MYSQL_BIND_IP
+    ports:
+      - "${MYSQL_BIND_IP:-127.0.0.1}:3306:3306"
+    expose:
+      - "3306"  # 同一 docker 网络内的服务可通过 mysql:3306 访问
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ledger
+      # 复用 Spring 的数据源用户名/密码，保证 MySQL 侧和 lemonledger 侧一致
+      MYSQL_USER: ${SPRING_DATASOURCE_USERNAME:-jeesite}
+      MYSQL_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-root}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --max_connections=500
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./mysql-conf:/etc/mysql/conf.d
+      - ./mysql-log:/var/log/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'mysqladmin ping -h localhost -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - my_network
+    restart: always
+  
   nginx:
     image: nginx:latest
     container_name: nginx_container

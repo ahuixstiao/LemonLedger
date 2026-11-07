@@ -21,7 +21,9 @@
         job.created_date,
         job.flag
         from job
-        left join employee emp on job.employee_id = emp.id and emp.flag = 0
+        <!-- 员工表不再按 flag 过滤：即使员工被删除，历史工作记录也要能显示姓名，
+             否则已删除员工的记录会变成一行空白，追溯时看不出是谁做的 -->
+        left join employee emp on job.employee_id = emp.id
         left join factory fac on job.factory_id = fac.id and fac.flag = 0
         left join job_category jc on job.category_id = jc.id and jc.flag = 0
         left join job_mode jm on job.mode_id = jm.id and jm.flag = 0
@@ -77,12 +79,13 @@
         sum(job.quantity) as quantity,  <!-- 计算数量 -->
         sum(job.salary) as salary       <!-- 工资总额 -->
         from job
-        left join employee emp on job.employee_id = emp.id and emp.flag = 0
+        <!-- 员工表不再带 flag 条件：原来 join 里写 emp.flag = 0、where 里又写 emp.flag = #{flag}，
+             查 flag=1（已删除记录）时两个条件互相打架，结果永远是空 -->
+        left join employee emp on job.employee_id = emp.id
 
         <where>
-            employee_id = #{employeeId}
+            job.employee_id = #{employeeId}
             and job.flag = #{flag}
-            and emp.flag = #{flag}
 
             <choose>
                 <!-- 判断员工是否指定了时间范围 -->

@@ -43,10 +43,10 @@ public class FactoryBillDto implements Serializable {
     private Integer factoryId;
 
     /**
-     * 报价ID
+     * 计件单价ID
      */
     @ExcelIgnore
-    private Integer quotationId;
+    private Integer pieceRateId;
 
     /**
      * 成衣厂名称
@@ -79,10 +79,10 @@ public class FactoryBillDto implements Serializable {
     private String category;
 
     /**
-     * 单个报价
+     * 单个计件单价
      */
     @ExcelProperty("单价")
-    private BigDecimal quotation;
+    private BigDecimal price;
 
     /**
      * 数量

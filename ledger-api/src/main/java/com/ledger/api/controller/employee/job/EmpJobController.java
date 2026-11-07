@@ -8,20 +8,22 @@ import com.ledger.db.service.job.IJobService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.constraints.NotNull;
 
 import static org.springframework.util.StringUtils.hasText;
 
-import com.sun.istack.NotNull;
-
 /**
  * @Author: ahui
- * @Description: TODO 员工工作内容控制器
+ * @Description: 员工工作内容控制器
  * @DateTime: 2025/10/10 - 14:47
  **/
 @RestController
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @RequestMapping("/emp/job")
+@Validated
 public class EmpJobController {
 
     private final IJobService jobService;

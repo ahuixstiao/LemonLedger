@@ -24,7 +24,7 @@ public final class FactoryBillExportSortUtil {
             "styleNumber", "fq.style_number",
             "category", "fjc.category",
             "quantity", "fb.quantity",
-            "quotation", "fq.quotation",
+            "price", "fq.price",
             "bill", "fb.bill",
             "createdDate", CREATED_MONTH_COLUMN
     );

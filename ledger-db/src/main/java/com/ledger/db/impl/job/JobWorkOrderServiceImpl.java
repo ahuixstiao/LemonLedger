@@ -1,12 +1,21 @@
 package com.ledger.db.impl.job;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ledger.common.exception.BizException;
 import com.ledger.common.result.Result;
+import com.ledger.db.entity.Batch;
+import com.ledger.db.entity.Employee;
+import com.ledger.db.entity.Job;
 import com.ledger.db.entity.JobWorkOrder;
 import com.ledger.db.entity.dto.JobWorkOrderDTO;
+import com.ledger.db.entity.dto.JobWorkOrderProgressDTO;
+import com.ledger.db.impl.LedgerServiceImpl;
+import com.ledger.db.mapper.JobMapper;
 import com.ledger.db.mapper.JobWorkOrderMapper;
+import com.ledger.db.service.IBatchService;
+import com.ledger.db.service.IEmployeeService;
 import com.ledger.db.service.job.IJobWorkOrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +34,15 @@ import java.time.LocalDate;
  */
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, JobWorkOrder> implements IJobWorkOrderService {
+public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMapper, JobWorkOrder> implements IJobWorkOrderService {
 
     private final JobWorkOrderMapper jobWorkOrderMapper;
+
+    private final JobMapper jobMapper;
+
+    private final IEmployeeService employeeService;
+
+    private final IBatchService batchService;
 
     /**
      * 按条件分页查询工单列表。
@@ -79,16 +94,20 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
      * @return 保存结果
      */
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
+    @Transactional(rollbackFor = Exception.class)
     public Result<Object> saveWorkOrder(JobWorkOrder workOrder) {
         if (hasDuplicateWorkOrderInSameDay(workOrder, null)) {
-            return Result.fail("所选日期当天已存在相同工单数据，不允许重复提交");
+            throw new BizException("所选日期当天已存在相同工单数据，不允许重复提交");
         }
 
-        if (save(workOrder)) {
-            return Result.ok();
+        // 床是 (厂, 床号, 款式) 的唯一记录，工单只挂 batchId，不再各自抄一份
+        Batch batch = batchService.findOrCreate(workOrder.getFactoryId(), workOrder.getNumber(), workOrder.getStyleNumber());
+        workOrder.setBatchId(batch.getId());
+
+        if (!save(workOrder)) {
+            throw new BizException("新增工单失败，请重试");
         }
-        return Result.fail();
+        return Result.ok();
     }
 
     /**
@@ -100,16 +119,32 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
      * @return 更新结果
      */
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
+    @Transactional(rollbackFor = Exception.class)
     public Result<Object> updateWorkOrder(JobWorkOrder workOrder) {
         if (hasDuplicateWorkOrderInSameDay(workOrder, workOrder.getId())) {
-            return Result.fail("所选日期当天已存在相同工单数据，不允许重复提交");
+            throw new BizException("所选日期当天已存在相同工单数据，不允许重复提交");
         }
 
-        if (updateById(workOrder)) {
-            return Result.ok();
+        JobWorkOrder original = getById(workOrder.getId());
+        if (original == null) {
+            throw new BizException("修改工单失败：该工单不存在或已被删除");
         }
-        return Result.fail();
+
+        // 床号/款式/厂改了，先改床本身，由它把关联的工单、账单、工作记录一起刷新；
+        // 没挂床的老数据（迁移前的）这里补挂一张
+        Integer batchId = original.getBatchId();
+        if (batchId == null) {
+            Batch batch = batchService.findOrCreate(workOrder.getFactoryId(), workOrder.getNumber(), workOrder.getStyleNumber());
+            batchId = batch.getId();
+        } else {
+            batchService.renameBatch(batchId, workOrder.getFactoryId(), workOrder.getNumber(), workOrder.getStyleNumber());
+        }
+        workOrder.setBatchId(batchId);
+
+        if (!updateById(workOrder)) {
+            throw new BizException("修改工单失败：该工单不存在，或已被其他人修改，请刷新后重试");
+        }
+        return Result.ok();
     }
 
     /**
@@ -142,12 +177,80 @@ public class JobWorkOrderServiceImpl extends ServiceImpl<JobWorkOrderMapper, Job
      * @param id 工单主键ID
      * @return 删除结果
      */
+    /**
+     * 删除工单。
+     *
+     * <p>已经有人认领的工单不允许直接删：认领记录仍然指向它，删掉之后
+     * 「这床活是从哪张工单派下来的」就断了，工资也再核对不了。
+     * 要删就先撤销认领（删掉对应的工作记录）。</p>
+     */
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
+    @Transactional(rollbackFor = Exception.class)
     public Result<Object> deleteWorkOrder(Integer id) {
-        if (removeById(id)) {
-            return Result.ok();
+        if (ObjectUtil.isNull(id)) {
+            throw new BizException("工单ID不能为空");
         }
-        return Result.fail();
+
+        Long claimedCount = jobMapper.selectCount(
+                Wrappers.<Job>lambdaQuery()
+                        .eq(Job::getWorkOrderId, id)
+                        .eq(Job::getFlag, 0));
+        if (claimedCount != null && claimedCount > 0) {
+            throw new BizException("该工单已有 " + claimedCount + " 条认领记录，不能直接删除；请先撤销认领");
+        }
+
+        if (!removeById(id)) {
+            throw new BizException("删除工单失败：该工单不存在或已被删除");
+        }
+        return Result.ok();
+    }
+
+    /**
+     * 查询工单在指定工作方式下的认领进度。
+     *
+     * <p>给认领弹窗用：员工在填数量之前就能看到「还剩多少」，
+     * 不用先提交一个大数字、被系统驳回之后再改小。</p>
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Result<Object> queryWorkOrderProgress(Integer workOrderId, Integer employeeId, Integer modeId) {
+        if (ObjectUtil.isNull(workOrderId)) {
+            throw new BizException("工单ID不能为空");
+        }
+
+        JobWorkOrder workOrder = lambdaQuery()
+                .eq(JobWorkOrder::getId, workOrderId)
+                .eq(JobWorkOrder::getFlag, 0)
+                .one();
+        if (ObjectUtil.isNull(workOrder)) {
+            throw new BizException("工单不存在或已被删除");
+        }
+
+        Integer queryModeId = modeId;
+        if (ObjectUtil.isNull(queryModeId) && ObjectUtil.isNotNull(employeeId)) {
+            Employee employee = employeeService.lambdaQuery()
+                    .eq(Employee::getId, employeeId)
+                    .eq(Employee::getFlag, 0)
+                    .one();
+            if (ObjectUtil.isNull(employee)) {
+                throw new BizException("员工不存在或已被删除");
+            }
+            queryModeId = employee.getModeId();
+        }
+
+        int claimed = 0;
+        if (ObjectUtil.isNotNull(queryModeId)) {
+            Integer sum = jobMapper.sumClaimedQuantityByMode(workOrderId, queryModeId);
+            claimed = sum == null ? 0 : sum;
+        }
+
+        int total = ObjectUtil.defaultIfNull(workOrder.getQuantity(), 0);
+        JobWorkOrderProgressDTO progress = new JobWorkOrderProgressDTO();
+        progress.setWorkOrderId(workOrderId);
+        progress.setQuantity(total);
+        progress.setModeId(queryModeId);
+        progress.setClaimedQuantity(claimed);
+        progress.setRemainQuantity(Math.max(total - claimed, 0));
+        return Result.ok(progress);
     }
 }

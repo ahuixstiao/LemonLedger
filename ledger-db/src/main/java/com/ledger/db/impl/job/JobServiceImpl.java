@@ -3,17 +3,21 @@ package com.ledger.db.impl.job;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ledger.common.dto.employee.WorkOrderClaimDTO;
+import com.ledger.common.exception.BizException;
 import com.ledger.common.result.Result;
+import com.ledger.common.util.MoneyUtil;
+import com.ledger.db.entity.Batch;
 import com.ledger.db.entity.Employee;
 import com.ledger.db.entity.Job;
-import com.ledger.db.entity.JobQuotation;
+import com.ledger.db.entity.JobPieceRate;
 import com.ledger.db.entity.JobWorkOrder;
 import com.ledger.db.entity.dto.JobDTO;
+import com.ledger.db.impl.LedgerServiceImpl;
 import com.ledger.db.mapper.JobMapper;
+import com.ledger.db.service.IBatchService;
 import com.ledger.db.service.IEmployeeService;
-import com.ledger.db.service.job.IJobQuotationService;
+import com.ledger.db.service.job.IJobPieceRateService;
 import com.ledger.db.service.job.IJobService;
 import com.ledger.db.service.job.IJobWorkOrderService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -38,15 +41,17 @@ import java.time.format.DateTimeFormatter;
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobService {
+public class JobServiceImpl extends LedgerServiceImpl<JobMapper, Job> implements IJobService {
 
     private final JobMapper jobMapper;
 
     private final IEmployeeService employeeService;
 
-    private final IJobQuotationService jobQuotationService;
+    private final IJobPieceRateService jobPieceRateService;
 
     private final IJobWorkOrderService jobWorkOrderService;
+
+    private final IBatchService batchService;
 
     /**
      * 默认查询当天所有员工的工作信息
@@ -124,47 +129,50 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
+    @Transactional(rollbackFor = Exception.class)
     public Result<Object> saveJobInfo(Job job) {
 
         // 判断对象是否为空
         if (ObjectUtil.isNull(job)) {
-            return Result.fail("工作信息不能为空");
-        }
-
-        // 判断是否存在相同的工作信息记录, 不存在才进行下一步操作
-        if (isJobDuplicate(job)) {
-            return Result.fail("工作记录重复");
+            throw new BizException("工作信息不能为空");
         }
 
         // 判断前端是否传递了 modeId
-        if(ObjectUtil.isNull(job.getModeId()) || job.getModeId().equals(0)) {
+        if (ObjectUtil.isNull(job.getModeId()) || job.getModeId().equals(0)) {
             // 如果未传递则向数据库查询
-            job.setModeId(
-                    employeeService.lambdaQuery()
-                            .eq(Employee::getId, job.getEmployeeId())
-                            .one()
-                            .getModeId()
-            );
+            Employee employee = employeeService.lambdaQuery()
+                    .eq(Employee::getId, job.getEmployeeId())
+                    .one();
+            if (ObjectUtil.isNull(employee)) {
+                throw new BizException("员工不存在，无法确定工作方式");
+            }
+            job.setModeId(employee.getModeId());
+        }
+
+        // 认领工单这条路不做"完全相同记录"判重：
+        // 剩余量已经由 claimWorkOrder 在行锁里校验过，同一员工同一天分几次认领同一床是正常操作
+        // （上午认 50、下午再认 30）。只有手工补录才有重复提交的风险，才需要挡。
+        if (ObjectUtil.isNull(job.getWorkOrderId()) && isJobDuplicate(job)) {
+            throw new BizException("工作记录重复：同一员工、同一天、同一床号、同一工作方式、同一数量已经记过一条，"
+                    + "如果确实要再记一次（比如分两批做），请把数量拆开分别录入");
+        }
+
+        // 手工补录（没走认领）时没有工单可继承，按 (厂, 床号, 款式) 找到或建一张床
+        if (ObjectUtil.isNull(job.getWorkOrderId()) && ObjectUtil.isNull(job.getBatchId())) {
+            Batch batch = batchService.findOrCreate(job.getFactoryId(), job.getNumber(), job.getStyleNumber());
+            job.setBatchId(batch.getId());
         }
 
         // 计算工作工资
         calculateJobSalary(job);
 
-        //捕获异常
-        try {
-            // 保存 工作记录
-            if (save(job)) {
-                log.info("================= 工作记录保存成功: {} =================", job);
-            }else {
-                log.info("================= 工作记录保存失败: {} =================", job);
-            }
-
-        } catch (RuntimeException runtimeException) {
-            // 打印异常
-            log.error("错误: {}", runtimeException.getMessage());
-            return Result.fail();
+        // 保存工作记录。
+        // 这里不再 try/catch：原来的写法把异常吞成 Result.fail()，外层 @Transactional
+        // 收不到异常，事务照常提交——出错时该回滚的没回滚，日志里也只有一句 message，没有堆栈。
+        if (!save(job)) {
+            throw new BizException("保存工作记录失败，请重试");
         }
+        log.info("================= 工作记录保存成功: {} =================", job);
         return Result.ok();
     }
 
@@ -181,17 +189,17 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * - 对工单记录加行级锁（for update），避免并发认领导致同 modeId 超领。
      */
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
+    @Transactional(rollbackFor = Exception.class)
     public Result<Object> claimWorkOrder(WorkOrderClaimDTO claimDTO) {
         if (ObjectUtil.isNull(claimDTO)
                 || ObjectUtil.isNull(claimDTO.getWorkOrderId())
                 || ObjectUtil.isNull(claimDTO.getEmployeeId())
                 || ObjectUtil.isNull(claimDTO.getQuantity())) {
-            return Result.fail("认领参数不完整");
+            throw new BizException("认领参数不完整");
         }
 
         if (claimDTO.getQuantity() <= 0) {
-            return Result.fail("认领数量必须大于0");
+            throw new BizException("认领数量必须大于0");
         }
 
         JobWorkOrder workOrder = jobWorkOrderService.lambdaQuery()
@@ -201,7 +209,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 .one();
 
         if (ObjectUtil.isNull(workOrder)) {
-            return Result.fail("工单不存在");
+            throw new BizException("工单不存在或已被删除");
         }
 
         Employee employee = employeeService.lambdaQuery()
@@ -210,31 +218,30 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 .one();
 
         if (ObjectUtil.isNull(employee)) {
-            return Result.fail("员工不存在");
+            throw new BizException("员工不存在或已被删除");
         }
 
-        if (ObjectUtil.isNull(employee.getModeId())) {
-            return Result.fail("员工未配置工作方式，无法认领工单");
+        // 工作方式优先用本次认领显式指定的，其次退回员工档案上的默认方式。
+        // 一个人可能压花、刮胶都会做（员工档案不再强制绑定唯一方式），所以认领时允许改。
+        Integer claimModeId = ObjectUtil.defaultIfNull(claimDTO.getModeId(), employee.getModeId());
+        if (ObjectUtil.isNull(claimModeId) || claimModeId <= 0) {
+            throw new BizException("请选择本次认领的工作方式（该员工档案里没有配置默认方式）");
         }
 
         if (ObjectUtil.isNull(workOrder.getQuantity()) || workOrder.getQuantity() <= 0) {
-            return Result.fail("工单预设数量异常，无法认领");
+            throw new BizException("工单预设数量异常，无法认领");
         }
 
-        int claimedQuantityOfSameMode = lambdaQuery()
-                .eq(Job::getWorkOrderId, claimDTO.getWorkOrderId())
-                .eq(Job::getModeId, employee.getModeId())
-                .eq(Job::getFlag, 0)
-                .list()
-                .stream()
-                .map(Job::getQuantity)
-                .filter(ObjectUtil::isNotNull)
-                .mapToInt(Integer::intValue)
-                .sum();
+        // 同 modeId 下的已认领数量交给数据库 SUM() 计算，不再把明细全部查回内存求和。
+        // 原来 list().stream().mapToInt().sum() 的写法：一个工单认领上千次就要拉上千行，
+        // 只是为了加一个数字，数据量越大越慢。
+        Integer claimedQuantityOfSameMode = jobMapper.sumClaimedQuantityByMode(
+                claimDTO.getWorkOrderId(), claimModeId);
+        int claimedQuantity = claimedQuantityOfSameMode == null ? 0 : claimedQuantityOfSameMode;
 
-        int remainQuantity = workOrder.getQuantity() - claimedQuantityOfSameMode;
+        int remainQuantity = workOrder.getQuantity() - claimedQuantity;
         if (claimDTO.getQuantity() > remainQuantity) {
-            return Result.fail("超出可认领数量，当前工作方式剩余可认领数量为: " + Math.max(remainQuantity, 0));
+            throw new BizException("超出可认领数量，当前工作方式剩余可认领数量为: " + Math.max(remainQuantity, 0));
         }
 
         Job job = new Job();
@@ -244,36 +251,55 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         job.setStyleNumber(workOrder.getStyleNumber());
         job.setCategoryId(workOrder.getCategoryId());
         job.setQuantity(claimDTO.getQuantity());
+        // 认领日期沿用工单日期，这是有意的：工资按月结算，
+        // 四月认领三月的工单，这笔钱要算在三月的工资里，所以不能用 LocalDate.now()。
         job.setCreatedDate(workOrder.getCreatedDate());
-        job.setModeId(employee.getModeId());
+        job.setModeId(claimModeId);
         job.setWorkOrderId(claimDTO.getWorkOrderId());
-
-        Result<Object> saveResult = saveJobInfo(job);
-        if (saveResult.getStatus() != 200) {
-            return saveResult;
+        // 认领的工作记录直接继承工单的床；老工单没挂床（迁移前建的）就现场补一张，
+        // 否则进度、毛利这些按床汇总的口径会缺这一笔
+        if (ObjectUtil.isNotNull(workOrder.getBatchId())) {
+            job.setBatchId(workOrder.getBatchId());
+        } else {
+            job.setBatchId(batchService.findOrCreate(
+                    workOrder.getFactoryId(), workOrder.getNumber(), workOrder.getStyleNumber()).getId());
         }
+
+        // 直接调用 saveJobInfo：异常会一路往上抛，整段认领（含行锁）一起回滚。
+        // 不再用「返回 Result 再判断 status」的方式——那样只能拿到失败结果，
+        // 却已经把半截认领留在事务里了。
+        saveJobInfo(job);
 
         return Result.ok("认领成功", null);
     }
 
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
+    @Transactional(rollbackFor = Exception.class)
     public Result<Object> updateJobInfo(Job job) {
 
         // 判断对象是否为空
         if (ObjectUtil.isNull(job)) {
-            return Result.fail("工作信息不能为空");
+            throw new BizException("工作信息不能为空");
         }
+
+        // 前端可能是「只改数量/只改日期」的局部提交，缺字段时先从库里补齐，
+        // 否则 calculateJobSalary 里的 job.getQuantity() 会 NPE。
+        Job original = getById(job.getId());
+        if (ObjectUtil.isNull(original)) {
+            throw new BizException("工作记录不存在");
+        }
+        job.setQuantity(ObjectUtil.defaultIfNull(job.getQuantity(), original.getQuantity()));
+        job.setCategoryId(ObjectUtil.defaultIfNull(job.getCategoryId(), original.getCategoryId()));
+        job.setModeId(ObjectUtil.defaultIfNull(job.getModeId(), original.getModeId()));
 
         // 计算工作工资
         calculateJobSalary(job);
 
         // 更新工作记录
-        if (updateById(job)) {
-            return Result.ok();
+        if (!updateById(job)) {
+            throw new BizException("修改工作记录失败：该记录不存在，或已被其他人修改，请刷新后重试");
         }
-
-        return Result.fail();
+        return Result.ok();
     }
 
     /**
@@ -283,24 +309,25 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
      * @return result
      */
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
+    @Transactional(rollbackFor = Exception.class)
     public Result<Object> deleteJobInfo(Integer jobId) {
 
-        lambdaQuery().eq(Job::getId, jobId).oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作记录"));
+        lambdaQuery().eq(Job::getId, jobId).oneOpt().orElseThrow(() -> new BizException("找不到对应的工作记录"));
 
         // 删除工作记录
-        if (removeById(jobId)) {
-            log.info("================= 工作信息删除成功，JobID为: {} =================", jobId);
-            return Result.ok();
+        if (!removeById(jobId)) {
+            throw new BizException("删除工作记录失败，请重试");
         }
 
-        log.info("================= 工作信息删除失败，JobID: {} =================", jobId);
-
-        return Result.fail();
+        log.info("================= 工作信息删除成功，JobID为: {} =================", jobId);
+        return Result.ok();
     }
 
     /**
-     * 判断该工作记录是否重复存在 以员工ID、工厂ID、工作类别ID、工作方式ID、日期来判断
+     * 判断该工作记录是否重复存在。
+     *
+     * <p>维度里包含"数量"：同一员工同一天在同一床上做两次、数量分别是 50 和 30，是正常操作；
+     * 只有连数量都一模一样（典型的重复点击保存）才拦。原来不带数量，第二次录入必被拦死。</p>
      *
      * @param job 工作信息
      * @return boolean
@@ -314,6 +341,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
                 .eq(Job::getStyleNumber, job.getStyleNumber())
                 .eq(Job::getNumber, job.getNumber())
                 .eq(Job::getModeId, job.getModeId())
+                .eq(Job::getQuantity, job.getQuantity())
                 .eq(Job::getCreatedDate, job.getCreatedDate())
                 .eq(Job::getFlag, 0)
                 .exists();
@@ -322,22 +350,29 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     /**
      * 计算工作工资
      *
-     * @param job
+     * @param job 工作记录
      */
     private void calculateJobSalary(Job job) {
 
-        // 通过工作类型和工作方式查询工作报价表获取报价
-        BigDecimal quotation = jobQuotationService.lambdaQuery()
-                .eq(JobQuotation::getCategoryId, job.getCategoryId())
-                .eq(JobQuotation::getModeId, job.getModeId())
-                .oneOpt().orElseThrow(() -> new RuntimeException("找不到对应的工作报价信息")).getQuotation();
+        if (ObjectUtil.isNull(job.getQuantity())) {
+            throw new BizException("数量不能为空，无法计算工资");
+        }
 
-        // 计算本条工作记录的工资 数量 * 工作报价
-        job.setSalary(BigDecimal
-                .valueOf(job.getQuantity())
-                .multiply(quotation)
-                .setScale(2, RoundingMode.HALF_UP)
-        );
+        // 通过工作类型和工作方式查询员工计件单价表获取计件单价
+        JobPieceRate jobPieceRate = jobPieceRateService.lambdaQuery()
+                .eq(JobPieceRate::getCategoryId, job.getCategoryId())
+                .eq(JobPieceRate::getModeId, job.getModeId())
+                .oneOpt()
+                .orElseThrow(() -> new BizException("找不到对应的员工计件单价信息（工作类型 + 工作方式）"));
+
+        if (jobPieceRate.getPrice() == null) {
+            throw new BizException("该员工计件单价没有填写单价，无法计算工资");
+        }
+
+        // 计算本条工作记录的工资：数量 × 员工计件单价，金额统一保留两位小数（四舍五入）
+        job.setSalary(MoneyUtil.scale(
+                BigDecimal.valueOf(job.getQuantity()).multiply(jobPieceRate.getPrice())
+        ));
 
     }
 }

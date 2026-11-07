@@ -18,7 +18,11 @@ target/
 *.iws
 *.iml
 *.ipr
-*.yml
+# application*.yml 是启动必需的配置，属于项目的一部分，不要再整体忽略 *.yml；
+# 只忽略本机私有的覆盖配置（不要把真实口令写进仓库，用环境变量覆盖）。
+application-local.yml
+application-*-local.yml
+*.patch
 .env.*
 .gitignore
 
@@ -46,6 +50,11 @@ log/
 .env
 .env.local
 .env.*.local
+
+### 本机数据 / 备份（真实账目，别进仓库） ###
+mysql-data/
+deploy/backup/
+*.mysqldump.sql
 
 ### macOS / logs ###
 .DS_Store

@@ -17,3 +17,10 @@ logging:
   level:
     # 打印SQL日志
     com.com.questionnaire.db.mapper: debug
+
+## 业务参数
+ledger:
+  bill:
+    # 账单查重的日期窗口（天）：同一成衣厂 + 同一床号 + 同一报价，在这个天数内出现重复账单就提醒。
+    # 原来的 20 天写死在代码里，返工/补做时无法放行；现在调这个数就行，前端确认后也能强制保存。
+    duplicate-window-days: 20

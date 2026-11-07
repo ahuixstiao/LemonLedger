@@ -21,19 +21,18 @@ const routes = [
         component: () => import('../view/Admin/AdminComponent/FactoryBill.vue')
       },
       {
-        path: 'factoryQuotationList',
-        component: () =>
-          import('../view/Admin/AdminComponent/FactoryQuotation.vue')
+        path: 'grossProfit',
+        component: () => import('../view/Admin/AdminComponent/GrossProfit.vue')
       },
       {
-        path: 'factoryJobCategoryList',
+        path: 'factoryPieceRateList',
         component: () =>
-          import('../view/Admin/AdminComponent/FactoryJobCategory.vue')
+          import('../view/Admin/AdminComponent/FactoryPieceRate.vue')
       },
       {
-        path: 'jobQuotationList',
+        path: 'jobPieceRateList',
         component: () =>
-          import('../view/Admin/AdminComponent/JobQuotation.vue')
+          import('../view/Admin/AdminComponent/JobPieceRate.vue')
       },
       {
         path: 'jobCategoryList',

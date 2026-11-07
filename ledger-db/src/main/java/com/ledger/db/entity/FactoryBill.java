@@ -35,9 +35,9 @@ public class FactoryBill extends ParentEntity {
     private String number;
 
     /**
-     * 报价ID（关联成衣厂报价表主键）
+     * 计件单价ID（关联成衣厂计件单价表主键）
      */
-    private Integer quotationId;
+    private Integer pieceRateId;
 
     /**
      * 数量
@@ -48,4 +48,9 @@ public class FactoryBill extends ParentEntity {
      * 本床账单
      */
     private BigDecimal bill;
+
+    /**
+     * 床ID，关联 batch.id（床号 / 成衣厂 / 款式的唯一事实来源）
+     */
+    private Integer batchId;
 }

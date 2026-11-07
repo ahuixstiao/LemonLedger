@@ -166,11 +166,11 @@
           />
         </el-form-item>
 
-        <el-form-item size="large" label="报价编号:" prop="quotationId">
+        <el-form-item size="large" label="计件单价编号:" prop="pieceRateId">
           <el-select
               filterable
-              v-model="factoryBillInfoRef.quotationId"
-              placeholder="选择报价"
+              v-model="factoryBillInfoRef.pieceRateId"
+              placeholder="选择计件单价"
               @focus="queryFactoryStyleNumberListHandle(factoryBillInfoRef.factoryId)"
           >
             <el-option
@@ -319,12 +319,12 @@ import {
   editFactoryBillInfo,
   exportFactoryBillExcel,
   queryFactoryBillList,
-  queryFactoryJobCategoryList,
-  queryFactoryQuotationStyleNumberList,
+  queryJobCategoryList,
+  queryFactoryPieceRateStyleNumberList,
   saveFactoryBillInfo,
   statisticalFactoryBill
 } from '../../../network/admin/index.js'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTransition } from '@vueuse/core'
 import {
   loadFactoryOptions,
@@ -373,7 +373,7 @@ const loadFactoryList = async () => {
 }
 
 const loadJobCategoryList = async () => {
-  const { data: res } = await queryFactoryJobCategoryList()
+  const { data: res } = await queryJobCategoryList()
   if (res.status === 200) {
     data.jobCategoryList = Array.isArray(res.data) ? res.data : []
   } else {
@@ -382,13 +382,13 @@ const loadJobCategoryList = async () => {
   }
 }
 
-// TODO 查询成衣厂报价单的款式编号列表
+// TODO 查询成衣厂计件单价的款式编号列表
 const queryFactoryStyleNumberListHandle = async (factoryId) => {
   if (!factoryId) {
     data.styleNumberList = []
     return
   }
-  const {data: res} = await queryFactoryQuotationStyleNumberList(factoryId)
+  const {data: res} = await queryFactoryPieceRateStyleNumberList(factoryId)
   if (res.status === 200) {
     data.styleNumberList = res.data
   } else {
@@ -398,7 +398,7 @@ const queryFactoryStyleNumberListHandle = async (factoryId) => {
 }
 
 const onBillFactoryChange = async (factoryId) => {
-  factoryBillInfoRef.quotationId = ''
+  factoryBillInfoRef.pieceRateId = ''
   await queryFactoryStyleNumberListHandle(factoryId)
 }
 
@@ -501,14 +501,45 @@ const exportFactoryBillExcelHandle = async () => {
 
 }
 
+/**
+ * 账单被判重拦下来时，问一句「确实是返工/补做吗」，确认就带 confirmDuplicate 再存一次。
+ * 以前这条规则是写死的 20 天且没有放行口子，返工的单子只能改日期绕过去。
+ *
+ * @param {string} message 后端返回的提示语
+ * @returns {Promise<boolean>} 是否确认强存
+ */
+const confirmDuplicateAndRetry = async message => {
+  if (!message || !message.includes('已存在相同账单')) return false
+  try {
+    await ElMessageBox.confirm(
+      `${message}\n\n确认这一床确实是返工或补做、需要再记一次账吗？`,
+      '可能是重复记账',
+      { confirmButtonText: '确认，仍然保存', cancelButtonText: '取消', type: 'warning' }
+    )
+    return true
+  } catch (cancelOrClose) {
+    return false
+  }
+}
+
 const createFactoryBill = async () => {
   const { data: res } = await saveFactoryBillInfo(factoryBillInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
     await fetchFactoryBillList()
-  } else {
-    ElMessage.error(res.message)
+    return
   }
+  if (await confirmDuplicateAndRetry(res.message)) {
+    const { data: retryRes } = await saveFactoryBillInfo(factoryBillInfoRef, true)
+    if (retryRes.status === 200) {
+      ElMessage.success(retryRes.message)
+      await fetchFactoryBillList()
+    } else {
+      ElMessage.error(retryRes.message)
+    }
+    return
+  }
+  ElMessage.error(res.message)
 }
 
 const updateFactoryBill = async () => {
@@ -516,9 +547,21 @@ const updateFactoryBill = async () => {
   if (res.status === 200) {
     ElMessage.success(res.message)
     await fetchFactoryBillList()
-  } else {
-    ElMessage.error(res.message)
+    data.editBillDialogVisible = false
+    return
   }
+  if (await confirmDuplicateAndRetry(res.message)) {
+    const { data: retryRes } = await editFactoryBillInfo(factoryBillInfoRef, true)
+    if (retryRes.status === 200) {
+      ElMessage.success(retryRes.message)
+      await fetchFactoryBillList()
+      data.editBillDialogVisible = false
+    } else {
+      ElMessage.error(retryRes.message)
+    }
+    return
+  }
+  ElMessage.error(res.message)
   data.editBillDialogVisible = false
 }
 
@@ -598,7 +641,7 @@ const statisticalBillRef = reactive({
 const factoryBillInfoInit = {
   id: '',
   factoryId: '',
-  quotationId: '',
+  pieceRateId: '',
   number: '',
   quantity: '',
   createdDate: ''
@@ -652,7 +695,7 @@ const onlyNumberRule = {
 // 添加账单记录校验规则
 const addBillInfoRules = reactive({
   factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
-  quotationId: [{required: true, message: '请选择报价', trigger: 'blur'}],
+  pieceRateId: [{required: true, message: '请选择计件单价', trigger: 'blur'}],
   number: [{required: true, message: '请输入床号', trigger: 'blur'}],
   quantity: [
     {required: true, message: '请输入数量', trigger: 'blur'},
@@ -672,7 +715,7 @@ const sortFieldOptions = [
   { label: '款式编号', value: 'styleNumber' },
   { label: '工作类型', value: 'category' },
   { label: '数量', value: 'quantity' },
-  { label: '报价', value: 'quotation' },
+  { label: '计件单价', value: 'price' },
   { label: '账单金额', value: 'bill' }
 ]
 

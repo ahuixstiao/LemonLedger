@@ -32,6 +32,18 @@ public class AdminJobCategoryController {
     }
 
     /**
+     * 查询全部未删除的工作类型（下拉框用）。
+     * <p>
+     * 成衣厂计件单价和员工计件单价原来各有一套"工作类型"字典，值集还重叠，
+     * 合并之后都用这一份，新增类型只在这里加。
+     * </p>
+     */
+    @GetMapping("/list")
+    public Result<Object> queryAllJobCategoryList() {
+        return jobCategoryService.queryAllCategoryList();
+    }
+
+    /**
      * 新增工作类型。
      */
     @PostMapping

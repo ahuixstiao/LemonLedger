@@ -26,25 +26,25 @@
           <span>成衣厂账单列表</span>
         </el-menu-item>
 
-        <el-menu-item index="/admin/factoryQuotationList">
+        <el-menu-item index="/admin/grossProfit">
           <el-icon>
             <setting />
           </el-icon>
-          <span>成衣厂报价列表</span>
+          <span>毛利统计</span>
         </el-menu-item>
 
-        <el-menu-item index="/admin/factoryJobCategoryList">
+        <el-menu-item index="/admin/factoryPieceRateList">
           <el-icon>
             <setting />
           </el-icon>
-          <span>成衣厂工作类型列表</span>
+          <span>成衣厂计件单价列表</span>
         </el-menu-item>
 
-        <el-menu-item index="/admin/jobQuotationList">
+        <el-menu-item index="/admin/jobPieceRateList">
           <el-icon>
             <setting />
           </el-icon>
-          <span>工作报价</span>
+          <span>员工计件单价</span>
         </el-menu-item>
 
         <el-menu-item index="/admin/jobCategoryList">

@@ -130,6 +130,21 @@
         <el-form-item size="large" label="数量:" prop="quantity">
           <el-input v-model="claimFormModel.quantity" placeholder="请输入数量" />
         </el-form-item>
+
+        <!-- 员工没有默认工作方式时必须让他选：同一个人压花、刮胶都会做 -->
+        <el-form-item v-if="data.claimModeRequired" size="large" label="工作方式:" prop="modeId">
+          <el-select v-model="claimFormModel.modeId" placeholder="请选择本次按哪种方式算工资">
+            <el-option v-for="item in data.modeList" :key="item.id" :label="item.mode" :value="item.id" />
+          </el-select>
+        </el-form-item>
+
+        <!-- 认领前先看这道工序还剩多少，不然只能提交了才知道超额 -->
+        <el-form-item v-if="data.claimProgress" size="large" label="认领情况:">
+          <span class="claim-progress">
+            工单数量 {{ data.claimProgress.quantity }}，已认领 {{ data.claimProgress.claimedQuantity }}，
+            <strong>还可认领 {{ data.claimProgress.remainQuantity }}</strong>
+          </span>
+        </el-form-item>
       </el-form>
 
       <template #footer>
@@ -150,10 +165,12 @@ import CommonFilterBar from './HomeComponent/CommonFilterBar.vue'
 import WorkOrderTable from './HomeComponent/WorkOrderTable.vue'
 import {
   queryEmployees,
+  queryModeList,
   queryFactoryList,
   claimWorkOrder,
   deleteWorkOrder,
   queryWorkOrderList,
+  queryWorkOrderProgress,
   saveWorkOrder,
   updateWorkOrder,
   queryCategoryList
@@ -175,6 +192,7 @@ onMounted(() => {
   loadFactoryList()
   loadCategoryList()
   loadEmployeeList()
+  loadModeList()
   fetchWorkOrderList()
 })
 
@@ -189,6 +207,9 @@ const data = reactive({
   factoryList: [],
   categoryList: [],
   employeeList: [],
+  modeList: [],
+  claimProgress: null,
+  claimModeRequired: false,
   factoryId: '',
   number: '',
   startDate: '',
@@ -316,6 +337,42 @@ const loadCategoryList = async () => {
 const loadEmployeeList = async () => {
   const { data: res } = await queryEmployees()
   data.employeeList = res?.data || []
+}
+
+const loadModeList = async () => {
+  const { data: res } = await queryModeList()
+  data.modeList = res?.data || []
+}
+
+/**
+ * 认领弹窗里的「还可认领多少」。
+ * 员工有默认工作方式就用员工的，没有就用弹窗里选的那个。
+ */
+const loadClaimProgress = async () => {
+  const { workOrderId, employeeId, modeId } = claimFormModel
+  if (!workOrderId || (!employeeId && !modeId)) {
+    data.claimProgress = null
+    return
+  }
+  try {
+    const { data: res } = await queryWorkOrderProgress(workOrderId, employeeId, modeId || undefined)
+    data.claimProgress = res?.status === 200 ? res.data : null
+  } catch (error) {
+    // 只是提示性信息，拿不到就不显示，不要拦住认领
+    data.claimProgress = null
+  }
+}
+
+/**
+ * 按选中的员工决定要不要让用户选工作方式。
+ */
+const syncClaimModeState = () => {
+  const employee = data.employeeList.find(item => String(item.id) === String(claimFormModel.employeeId))
+  data.claimModeRequired = Boolean(employee) && !employee.modeId
+  if (!data.claimModeRequired) {
+    // 员工有默认方式时，后端会自己用员工的 modeId，这里清掉避免提交多余参数
+    claimFormModel.modeId = ''
+  }
 }
 
 const fetchWorkOrderList = async () => {
@@ -466,6 +523,7 @@ const CLAIM_EMPLOYEE_CACHE_KEY = 'jobWorkOrder_selectedEmployeeId'
 const claimFormRef = ref()
 const claimFormInit = {
   employeeId: '',
+  modeId: '',
   factoryId: '',
   factoryName: '',
   number: '',
@@ -522,7 +580,10 @@ const openClaimDialog = workOrder => {
     number: workOrder.number,
     quantity: workOrder.quantity
   })
+  data.claimProgress = null
+  syncClaimModeState()
   data.claimDialogVisible = true
+  loadClaimProgress()
 }
 
 /**
@@ -532,6 +593,8 @@ const closeClaimDialog = () => {
   const selectedEmployeeId = claimFormModel.employeeId
   resetReactiveForm(claimFormModel, claimFormInit, claimFormRef)
   claimFormModel.employeeId = selectedEmployeeId
+  data.claimProgress = null
+  data.claimModeRequired = false
   data.claimDialogVisible = false
 }
 
@@ -543,7 +606,8 @@ const submitClaimWorkOrder = async formEl => {
       const { data: res } = await claimWorkOrder(
         claimFormModel.workOrderId,
         claimFormModel.employeeId,
-        Number(claimFormModel.quantity)
+        Number(claimFormModel.quantity),
+        claimFormModel.modeId || undefined
       )
 
       if (res.status === 200) {
@@ -589,6 +653,19 @@ const workOrderFormRules = reactive({
 
 const claimFormRules = reactive({
   employeeId: [{ required: true, message: '请选择员工', trigger: 'change' }],
+  modeId: [
+    {
+      validator: (rule, value, callback) => {
+        // 只有员工没填默认工作方式时才必填
+        if (data.claimModeRequired && !value) {
+          callback(new Error('请选择本次的工作方式'))
+          return
+        }
+        callback()
+      },
+      trigger: 'change'
+    }
+  ],
   quantity: [
     { required: true, message: '请输入数量', trigger: 'blur' },
     onlyNumberRule
@@ -596,11 +673,24 @@ const claimFormRules = reactive({
 })
 
 /**
- * 监听员工选择并缓存，用于同页面多次打开弹窗时自动回填。
+ * 监听员工选择并缓存，用于同页面多次打开弹窗时自动回填；
+ * 同时刷新「要不要选工作方式」和「还可认领多少」。
  */
 watch(
   () => claimFormModel.employeeId,
-  value => setCachedClaimEmployeeId(value)
+  value => {
+    setCachedClaimEmployeeId(value)
+    syncClaimModeState()
+    loadClaimProgress()
+  }
+)
+
+/**
+ * 换了工作方式，剩余量也要跟着重算（不同工序分别计）。
+ */
+watch(
+  () => claimFormModel.modeId,
+  () => loadClaimProgress()
 )
 
 /**
@@ -750,6 +840,15 @@ onBeforeRouteLeave(() => {
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
+}
+
+.claim-progress {
+  color: #606266;
+  line-height: 1.6;
+}
+
+.claim-progress strong {
+  color: #e6a23c;
 }
 
 .dialog-footer :deep(.el-button + .el-button) {

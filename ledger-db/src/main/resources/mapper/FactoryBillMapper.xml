@@ -7,7 +7,7 @@
         select
         fb.id,
         fb.factory_id,      <!-- 成衣厂ID -->
-        fb.quotation_id,    <!-- 报价ID -->
+        fb.piece_rate_id,    <!-- 报价ID -->
         factory.factory_name,    <!-- 成衣厂名称 -->
         fb.number,          <!-- 床号 -->
         fq.style_number,    <!-- 款式编号（来自报价表） -->
@@ -19,8 +19,8 @@
         fb.flag
         from factory_bill fb
         left join factory on fb.factory_id = factory.id and factory.flag = 0
-        left join factory_quotation fq on fb.quotation_id = fq.id and fq.factory_id = fb.factory_id and fq.flag = 0
-        left join factory_job_category fjc on fq.category_id = fjc.id and fjc.flag = 0
+        left join factory_piece_rate fq on fb.piece_rate_id = fq.id and fq.factory_id = fb.factory_id and fq.flag = 0
+        left join job_category fjc on fq.category_id = fjc.id and fjc.flag = 0
         <where>
             fb.flag = #{flag}
             <!-- 如果传入工厂ID则按工厂ID查询 -->
@@ -108,17 +108,17 @@
         fq.category_id as categoryId,
         fjc.category,
         fb.quantity,
-        fq.quotation,
+        fq.price,
         fb.bill,
         fb.created_date
 
         from factory_bill fb
         left join factory on fb.factory_id = factory.id and factory.flag = 0
-        left join factory_quotation fq
-        on fb.quotation_id = fq.id
+        left join factory_piece_rate fq
+        on fb.piece_rate_id = fq.id
         and fq.factory_id = fb.factory_id
         and fq.flag = 0
-        left join factory_job_category fjc on fq.category_id = fjc.id and fjc.flag = 0
+        left join job_category fjc on fq.category_id = fjc.id and fjc.flag = 0
 
         <where>
             fb.factory_id = #{factoryId}
@@ -169,8 +169,8 @@
                         <when test="col == 'fb.quantity' or col == 'quantity'">
                             fb.quantity
                         </when>
-                        <when test="col == 'fq.quotation' or col == 'quotation'">
-                            fq.quotation
+                        <when test="col == 'fq.price' or col == 'price'">
+                            fq.price
                         </when>
                         <when test="col == 'fb.bill' or col == 'bill'">
                             fb.bill
@@ -190,6 +190,32 @@
                 order by DATE_FORMAT(fb.created_date, '%Y-%m') asc
             </otherwise>
         </choose>
+    </select>
+
+    <!-- 每家成衣厂在指定日期范围内的毛利：账单收入 - 工资支出 -->
+    <!-- 收入、工资分别按 factory_id 汇总成两张小表再左连到 factory，避免两个明细表直接连导致的乘法膨胀 -->
+    <select id="selectGrossProfitByDate" resultType="factoryGrossProfitDTO">
+        select
+        f.id as factory_id,
+        f.factory_name,
+        coalesce(b.bill_total, 0) as bill_total,
+        coalesce(j.salary_total, 0) as salary_total,
+        coalesce(b.bill_total, 0) - coalesce(j.salary_total, 0) as gross_profit
+        from factory f
+        left join (
+        select factory_id, sum(bill) as bill_total
+        from factory_bill
+        where flag = 0 and created_date between #{startDate} and #{endDate}
+        group by factory_id
+        ) b on b.factory_id = f.id
+        left join (
+        select factory_id, sum(salary) as salary_total
+        from job
+        where flag = 0 and created_date between #{startDate} and #{endDate}
+        group by factory_id
+        ) j on j.factory_id = f.id
+        where f.flag = 0
+        order by gross_profit desc, f.factory_name asc
     </select>
 
 </mapper>

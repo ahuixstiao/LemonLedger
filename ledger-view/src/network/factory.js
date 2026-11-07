@@ -9,9 +9,9 @@ export function queryFactoryList() {
 }
 
 // 员工端按款式编号查询样板列表（仅正常数据）
-export function queryFactoryQuotationSampleList(styleNumber, flag = 0) {
+export function queryFactoryPieceRateSampleList(styleNumber, flag = 0) {
   return request({
-    url: '/emp/factoryQuotation/sampleList',
+    url: '/emp/factoryPieceRate/sampleList',
     method: 'get',
     params: {
       styleNumber,

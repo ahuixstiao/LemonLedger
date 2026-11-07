@@ -26,6 +26,17 @@ public interface IJobCategoryService extends IService<JobCategory> {
     Result<Object> queryCategoryList(String category, Integer currentPage, Integer pageSize, Integer flag);
 
     /**
+     * 查询全部未删除的工作类型，给下拉框用。
+     * <p>
+     * 成衣厂计件单价、员工计件单价、账单录入三处共用这一份字典，
+     * 所以不再单独维护一张"成衣厂工作类型"表。
+     * </p>
+     *
+     * @return result
+     */
+    Result<Object> queryAllCategoryList();
+
+    /**
      * 保存工作类型
      *
      * @param jobCategory 工作类型实体

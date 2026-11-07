@@ -47,4 +47,9 @@ public class JobWorkOrder extends ParentEntity {
      * 数量
      */
     private Integer quantity;
+
+    /**
+     * 床ID，关联 batch.id（床号 / 成衣厂 / 款式的唯一事实来源）
+     */
+    private Integer batchId;
 }

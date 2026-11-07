@@ -31,11 +31,13 @@ export function queryFactoryBillList(
 }
 
 // 保存成衣厂账单
-export function saveFactoryBillInfo(bill) {
+// confirmDuplicate：已经确认「这一床确实是返工/补做，就是要再记一次」时传 true，跳过重复校验
+export function saveFactoryBillInfo(bill, confirmDuplicate = false) {
   return request({
     url: '/admin/factoryBill',
     method: 'post',
-    data: bill
+    data: bill,
+    params: { confirmDuplicate }
   })
 }
 
@@ -67,11 +69,13 @@ export function exportFactoryBillExcel(factoryId, startDate, endDate, sortConfig
 }
 
 // 修改成衣厂账单
-export function editFactoryBillInfo(bill) {
+// confirmDuplicate 同上：确认过重复也要保存时传 true
+export function editFactoryBillInfo(bill, confirmDuplicate = false) {
   return request({
     url: '/admin/factoryBill/' + bill.id,
     method: 'put',
-    data: bill
+    data: bill,
+    params: { confirmDuplicate }
   })
 }
 
@@ -80,5 +84,15 @@ export function deleteFactoryBillInfo(id) {
   return request({
     url: '/admin/factoryBill/' + id,
     method: 'delete'
+  })
+}
+
+// 按成衣厂统计毛利（账单收入 - 工资支出）
+// 日期都不传时后端按「本月 1 号到今天」
+export function queryFactoryGrossProfit(startDate, endDate) {
+  return request({
+    url: '/admin/factoryBill/gross',
+    method: 'get',
+    params: { startDate, endDate }
   })
 }

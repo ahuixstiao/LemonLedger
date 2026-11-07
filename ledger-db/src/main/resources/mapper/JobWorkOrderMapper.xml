@@ -13,7 +13,15 @@
         jc.category,
         jwo.quantity,
         jwo.created_date,
-        jwo.flag
+        jwo.flag,
+        <!-- 已认领数量直接由子查询算出，列表里能一眼看到还剩多少，
+             不用员工先填一个大数字、被系统驳回之后再改小 -->
+        (select coalesce(sum(j.quantity), 0)
+           from job j
+          where j.work_order_id = jwo.id and j.flag = 0) as claimed_quantity,
+        (jwo.quantity - (select coalesce(sum(j.quantity), 0)
+                           from job j
+                          where j.work_order_id = jwo.id and j.flag = 0)) as remain_quantity
         from job_work_order jwo
         left join factory f on jwo.factory_id = f.id and f.flag = 0
         left join job_category jc on jwo.category_id = jc.id and jc.flag = 0

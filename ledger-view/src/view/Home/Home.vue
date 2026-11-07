@@ -122,7 +122,7 @@ import {
   queryFactoryList,
   queryCategoryList,
   querySalaryByCondition,
-  queryFactoryQuotationSampleList
+  queryFactoryPieceRateSampleList
 } from '../../network/index.js'
 
 const updateMobileState = () => {
@@ -370,7 +370,7 @@ const onHomeFilterAction = action => {
  * 加载样板款式编号选项（仅flag=0数据）。
  */
 const loadSampleStyleOptions = async () => {
-  const { data: res } = await queryFactoryQuotationSampleList('', 0)
+  const { data: res } = await queryFactoryPieceRateSampleList('', 0)
   if (res.status === 200) {
     const sourceList = Array.isArray(res.data) ? res.data : []
     const styleSet = new Set(sourceList.map(item => item.styleNumber).filter(Boolean))
@@ -391,7 +391,7 @@ const fetchSampleList = async () => {
     return
   }
 
-  const { data: res } = await queryFactoryQuotationSampleList(selectedStyleNumber, 0)
+  const { data: res } = await queryFactoryPieceRateSampleList(selectedStyleNumber, 0)
   data.sampleQueried = true
   if (res.status === 200) {
     data.sampleTableData = Array.isArray(res.data) ? res.data : []
@@ -426,7 +426,7 @@ const resolveImageUrl = imagePath => {
 
   if (normalizedPath.startsWith(imagePrefix)) {
     const relativePath = normalizedPath.slice(imagePrefix.length)
-    return `${baseUrl}/admin/factoryQuotation/imageView/${relativePath}?v=${data.imageVersion}`
+    return `${baseUrl}/admin/factoryPieceRate/imageView/${relativePath}?v=${data.imageVersion}`
   }
 
   return `${baseUrl}${normalizedPath}?v=${data.imageVersion}`

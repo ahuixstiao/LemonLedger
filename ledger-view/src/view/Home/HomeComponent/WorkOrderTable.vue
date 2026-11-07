@@ -23,6 +23,13 @@
       <el-table-column prop="styleNumber" sortable label="款式编号" align="center" show-overflow-tooltip />
       <el-table-column prop="category" sortable label="工作类型" align="center" show-overflow-tooltip />
       <el-table-column prop="quantity" label="数量" align="center" />
+      <el-table-column prop="claimedQuantity" label="已认领" align="center" width="90" />
+      <el-table-column label="剩余" align="center" width="90">
+        <template #default="scope">
+          <el-tag v-if="Number(scope.row.remainQuantity) <= 0" type="success" size="small">已认满</el-tag>
+          <el-tag v-else type="warning" size="small">{{ scope.row.remainQuantity }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="createdDate" sortable label="日期" align="center" show-overflow-tooltip />
       <el-table-column label="操作" align="center" width="170">
         <template #default="scope">
