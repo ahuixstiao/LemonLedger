@@ -12,6 +12,16 @@
   --admin-card-border: #e9eef7;
   --admin-text-secondary: #667085;
   --admin-text-muted: #98a2b3;
+  /* 消息框、图片预览这类组件会被 teleport 到 body，
+     拿不到 .app-theme 上的主题变量，这里给一组兜底值，
+     否则主色按钮的渐变解析不出来，会变成「白底白字」看不见。 */
+  --brand-1: #3f7cff;
+  --brand-2: #2f67df;
+  --text-primary: #1f2a44;
+  --text-regular: #4b5b7a;
+  --border-soft: #dce5f5;
+  --card-bg: #ffffff;
+  --shadow-press: 0 4px 14px rgba(39, 76, 150, 0.18);
 }
 
 .app-theme[data-theme='soft-blue'] {
@@ -223,15 +233,30 @@ ul {
   box-shadow: 0 0 0 2px rgba(63, 124, 255, 0.18) !important;
 }
 
-/* 按钮风格（轻拟物+蓝色） */
-.el-button--primary:not(.is-text):not(.is-link) {
+/* 按钮风格（轻拟物+蓝色）
+   带 el-button--danger 的确认按钮（比如删除确认）走下面单独的红色样式，
+   不能被这条蓝色渐变盖住。 */
+.el-button--primary:not(.is-text):not(.is-link):not(.el-button--danger) {
   background: linear-gradient(135deg, var(--brand-1), var(--brand-2)) !important;
   border: none !important;
   box-shadow: var(--shadow-press);
   border-radius: var(--radius-sm) !important;
 }
 
-.el-button--primary:not(.is-text):not(.is-link):hover {
+/* 删除确认里的「删除」不是普通主色按钮，用红色实心，避免和蓝色主操作混淆 */
+.el-message-box__btns .el-button--danger {
+  background: linear-gradient(135deg, #f4685a, #e0382a) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 4px 14px rgba(224, 56, 42, 0.28) !important;
+}
+
+.el-message-box__btns .el-button--danger:hover {
+  filter: brightness(1.04);
+}
+
+.el-button--primary:not(.is-text):not(.is-link):not(.el-button--danger):hover {
   transform: translateY(-1px);
   filter: brightness(1.03);
 }

@@ -302,8 +302,14 @@ const isReadOnlyRow = row => {
 const createFactoryPieceRate = async () => {
   const { data: res } = await saveFactoryPieceRateInfo(factoryPieceRateInfoRef)
   if (res.status === 200) {
-    ElMessage.success(res.message)
-    data.editPriceDialogVisible = false
+    ElMessage.success(`${res.message}，弹窗已重置，可以继续添加下一条`)
+    // 连续录入同一批单价是常态，这里不关弹窗：清空表单、留在「新增」模式，
+    // 让用户少点一次「添加工厂单价」。
+    data.editPriceDialogMode = 0
+    resetPriceForm()
+    if (priceImageUploadInputRef.value) {
+      priceImageUploadInputRef.value.value = ''
+    }
     await fetchFactoryPieceRateList()
   } else {
     ElMessage.error(res.message)
