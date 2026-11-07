@@ -31,6 +31,7 @@
           :current-page="data.currentPage"
           :page-size="data.pageSize"
           :mobile="data.isNarrow"
+          :empty-text="tableEmptyText"
           @update:currentPage="val => (data.currentPage = val)"
           @update:pageSize="val => (data.pageSize = val)"
           @query="fetchWorkOrderList"
@@ -181,6 +182,10 @@ import {
   validateDialogForm
 } from '../Admin/AdminComponent/factoryCrudShared.js'
 import { confirmDelete } from '../Admin/adminShared.js'
+import { recentDateRange } from '../../base/dateRange.js'
+
+// 默认看最近 30 天，避免当天没有待认领工单时整页空白
+const defaultDateRange = recentDateRange(30)
 
 const updateMobileState = () => {
   data.isMobile = window.matchMedia('(max-width: 960px)').matches
@@ -211,8 +216,8 @@ const data = reactive({
   claimModeRequired: false,
   factoryId: '',
   number: '',
-  startDate: '',
-  endDate: '',
+  startDate: defaultDateRange.startDate,
+  endDate: defaultDateRange.endDate,
   styleNumber: '',
   categoryId: '',
   currentPage: 1,
@@ -230,8 +235,8 @@ const workOrderFilterInitialValue = {
   number: '',
   styleNumber: '',
   categoryId: '',
-  startDate: '',
-  endDate: ''
+  startDate: defaultDateRange.startDate,
+  endDate: defaultDateRange.endDate
 }
 
 const workOrderFilters = computed({
@@ -252,6 +257,13 @@ const workOrderFilters = computed({
     data.endDate = value.endDate ?? ''
   }
 })
+
+// 空列表时区分“没有待认领”和“条件太窄”
+const tableEmptyText = computed(() =>
+  data.factoryId || data.number || data.styleNumber || data.categoryId
+    ? '没有符合筛选条件的工单，换个条件试试'
+    : '这段时间没有待认领的工单，换个日期范围试试'
+)
 
 const workOrderFilterFields = computed(() => [
   {
@@ -428,8 +440,8 @@ const resetQueryCondition = () => {
   data.number = ''
   data.styleNumber = ''
   data.categoryId = ''
-  data.startDate = ''
-  data.endDate = ''
+  data.startDate = defaultDateRange.startDate
+  data.endDate = defaultDateRange.endDate
   data.currentPage = 1
   fetchWorkOrderList()
 }

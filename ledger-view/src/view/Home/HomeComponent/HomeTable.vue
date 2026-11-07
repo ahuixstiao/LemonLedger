@@ -26,7 +26,7 @@
           </div>
         </article>
 
-        <p v-if="!tableData.length" class="m-empty">还没有工单记录</p>
+        <p v-if="!tableData.length" class="m-empty">{{ emptyText }}</p>
       </div>
 
       <div v-if="tableData.length" class="m-summary">
@@ -42,12 +42,11 @@
       v-else
       :data="tableData"
       class="front-table"
-      height="100%"
       table-layout="fixed"
       stripe
       fit
       highlight-current-row
-      empty-text="还没有工单记录"
+        :empty-text="emptyText"
       show-summary
       :summary-method="getSummaries"
     >
@@ -116,7 +115,8 @@ const props = defineProps({
   total: { type: Number, default: 0 },
   currentPage: { type: Number, default: 1 },
   pageSize: { type: Number, default: 10 },
-  mobile: { type: Boolean, default: false }
+  mobile: { type: Boolean, default: false },
+  emptyText: { type: String, default: "还没有记录" }
 })
 
 defineEmits(['edit', 'delete', 'query', 'update:currentPage', 'update:pageSize'])

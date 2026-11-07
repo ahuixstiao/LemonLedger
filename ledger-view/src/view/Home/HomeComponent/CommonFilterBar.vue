@@ -76,18 +76,36 @@
 </template>
 
 <script setup>
+import { onBeforeUnmount } from 'vue'
+
 const props = defineProps({
   modelValue: { type: Object, required: true },
   fields: { type: Array, default: () => [] },
   initialValue: { type: Object, default: () => ({}) },
   showReset: { type: Boolean, default: true },
   queryText: { type: String, default: '查询' },
-  resetText: { type: String, default: '重置' }
+  resetText: { type: String, default: '重置' },
+  // 改完筛选条件自动查一次（旧版就是这个行为，改成只认按钮后
+  // 很多人改完日期没点「查询」，以为数据没了）
+  queryOnChange: { type: Boolean, default: true },
+  queryDelay: { type: Number, default: 300 }
 })
 
 const emit = defineEmits(['update:modelValue', 'change', 'query', 'reset'])
 
 const fieldKey = field => field.key || (field.keys || []).join('-')
+
+let queryTimer = null
+
+const scheduleQuery = () => {
+  if (!props.queryOnChange) return
+  if (queryTimer) clearTimeout(queryTimer)
+  // 输入框逐字触发，压一下再查
+  queryTimer = setTimeout(() => {
+    queryTimer = null
+    emit('query')
+  }, props.queryDelay)
+}
 
 const updateField = (key, value) => {
   const nextModel = {
@@ -96,7 +114,12 @@ const updateField = (key, value) => {
   }
   emit('update:modelValue', nextModel)
   emit('change', { key, value: value ?? '', model: nextModel })
+  scheduleQuery()
 }
+
+onBeforeUnmount(() => {
+  if (queryTimer) clearTimeout(queryTimer)
+})
 
 const handleReset = () => {
   const resetModel = {

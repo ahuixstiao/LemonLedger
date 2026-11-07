@@ -33,6 +33,7 @@
           :current-page="data.currentPage"
           :page-size="data.pageSize"
           :mobile="data.isNarrow"
+          :empty-text="tableEmptyText"
           @update:currentPage="val => (data.currentPage = val)"
           @update:pageSize="val => (data.pageSize = val)"
           @query="queryJobListByEmployeeIdAndDateHandle"
@@ -118,6 +119,7 @@ import HomeTable from './HomeComponent/HomeTable.vue'
 import SalaryDialog from './HomeComponent/SalaryDialog.vue'
 import JobEditDialog from './HomeComponent/JobEditDialog.vue'
 import { confirmDelete } from '../Admin/adminShared.js'
+import { recentDateRange } from '../../base/dateRange.js'
 import {
   queryEmployees,
   updateJobInfo,
@@ -150,13 +152,16 @@ onBeforeUnmount(() => {
 
 const router = useRouter()
 
+// 默认看最近 30 天，而不是只查当天（当天没工单时整页空，会被当成丢数据）
+const defaultDateRange = recentDateRange(30)
+
 const data = reactive({
   editJobDialogVisible: false,
   dialogMode: 1,
   SalaryVisible: false,
   id: 0,
-  startDate: '',
-  endDate: '',
+  startDate: defaultDateRange.startDate,
+  endDate: defaultDateRange.endDate,
   factoryId: '',
   number: '',
   categoryId: 0,
@@ -181,8 +186,8 @@ const data = reactive({
 })
 
 const homeFilterInitialValue = {
-  startDate: '',
-  endDate: '',
+  startDate: defaultDateRange.startDate,
+  endDate: defaultDateRange.endDate,
   employeeId: 0,
   categoryId: 0,
   factoryId: '',
@@ -207,6 +212,13 @@ const homeFilters = computed({
     data.number = value.number ?? ''
   }
 })
+
+// 空列表时说清楚是“没数据”还是“条件太窄”
+const tableEmptyText = computed(() =>
+  data.factoryId || data.number || data.id || data.categoryId
+    ? '没有符合筛选条件的工单，换个条件试试'
+    : '这段时间没有工单记录，换个日期范围试试'
+)
 
 const homeFilterFields = computed(() => [
   {
@@ -417,8 +429,8 @@ const showUpdateJobInfoDialog = job => {
 }
 
 const resetQueryCondition = () => {
-  data.startDate = ''
-  data.endDate = ''
+  data.startDate = defaultDateRange.startDate
+  data.endDate = defaultDateRange.endDate
   data.id = 0
   data.factoryId = ''
   data.number = ''

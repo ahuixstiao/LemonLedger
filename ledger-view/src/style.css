@@ -148,7 +148,14 @@ ul {
 }
 
 .el-table .el-table__cell {
-  padding: 8px 0;
+  padding: 5px 0;
+}
+
+/* 表格里的「编辑 / 删除」是文字按钮，别让它们按 40px 的控件高度把整行撑高 */
+.el-table .el-button.is-text,
+.el-table .el-button.is-link {
+  min-height: 0;
+  padding: 2px 4px;
 }
 
 .el-table .cell {
@@ -159,6 +166,21 @@ ul {
   background: #f8fafc;
   font-weight: 600;
   color: #1f2a44;
+}
+
+/* 合计行固定在表格底部，表格内部滚动时让它和上面的行分开，
+   不然翻到一半的行看起来像被压住了 */
+.el-table__footer-wrapper {
+  position: relative;
+  box-shadow: 0 -8px 14px -10px rgba(16, 24, 40, 0.28);
+}
+
+.el-table__footer-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: #e6ecf6;
 }
 
 .el-table__empty-text {
@@ -445,6 +467,12 @@ ul {
   min-height: 0;
 }
 
+/* 前台表格按内容撑开：行数少时不要把表格拉高到视口底部，
+   否则合计行会盖住最后一行的下半截 */
+.table-card .el-table.front-table {
+  flex: 0 0 auto;
+}
+
 .table-card .el-table {
   --el-table-border-color: #eef2f8;
 }
@@ -631,6 +659,20 @@ ul {
 
 .front-content > .admin-page {
   height: 100%;
+}
+
+/* 前台按内容高度排版：行数多时整页滚动，而不是把表格压在卡片里裁掉 */
+.front-content {
+  overflow-y: auto;
+}
+
+.front-content > .admin-page {
+  height: auto;
+  min-height: 100%;
+}
+
+.front-content .table-card {
+  flex: 0 0 auto;
 }
 
 /* 表格卡片内的分页：与后台一致靠右 */
