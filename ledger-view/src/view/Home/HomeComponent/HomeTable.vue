@@ -1,44 +1,64 @@
 <template>
-  <div ref="tableSectionRef" class="home-work-table-section">
+  <div class="front-table-wrap">
     <el-table
       :data="tableData"
-      class="home-work-table"
-      style="width: 100%"
-      :max-height="isMobile ? null : tableMaxHeight"
+      class="front-table"
+      height="100%"
       table-layout="fixed"
       stripe
       fit
       highlight-current-row
+      empty-text="还没有工单记录"
       show-summary
-      :summary-method="summaryQuantityAndSalary"
+      :summary-method="getSummaries"
     >
-      <el-table-column sortable prop="name" label="员工名称" align="center" show-overflow-tooltip />
-      <el-table-column sortable prop="factoryName" label="厂名" align="center" show-overflow-tooltip />
-      <el-table-column sortable prop="number" label="床号" align="center" show-overflow-tooltip />
-      <el-table-column sortable prop="styleNumber" label="款式编号" align="center" show-overflow-tooltip />
-      <el-table-column sortable prop="category" label="类型" align="center" show-overflow-tooltip />
-      <el-table-column prop="quantity" label="数量" align="center" />
-      <el-table-column prop="salary" label="本床工资(单位: 元)" align="center" />
-      <el-table-column sortable prop="createdDate" label="日期" align="center" show-overflow-tooltip />
-      <el-table-column label="操作" align="center" width="140">
+      <el-table-column prop="name" label="员工" align="center" min-width="180" sortable show-overflow-tooltip>
         <template #default="scope">
-          <div class="op-actions">
-            <el-button link size="small" @click="$emit('edit', scope.row)">修改</el-button>
-            <span class="op-divider">|</span>
-            <el-button link type="danger" size="small" @click="$emit('delete', scope.row.id)">删除</el-button>
-          </div>
+          <span class="entity-cell">
+            <span class="entity-avatar">{{ avatarText(scope.row.name) }}</span>
+            <span class="entity-name">{{ scope.row.name }}</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="factoryName" label="厂名" align="center" min-width="190" sortable show-overflow-tooltip />
+      <el-table-column prop="number" label="床号" align="center" min-width="110" sortable show-overflow-tooltip />
+      <el-table-column prop="styleNumber" label="款式编号" align="center" min-width="160" sortable show-overflow-tooltip />
+      <el-table-column prop="category" label="类型" align="center" min-width="110" sortable show-overflow-tooltip>
+        <template #default="scope">
+          <el-tag size="small" effect="plain" type="info">{{ scope.row.category }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="quantity" label="数量" align="center" min-width="110">
+        <template #default="scope">
+          <span class="num">{{ formatNumber(scope.row.quantity) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="salary" label="本床工资" align="center" min-width="150">
+        <template #default="scope">
+          <span class="money">{{ formatMoney(scope.row.salary) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="createdDate" label="日期" align="center" min-width="140" sortable show-overflow-tooltip>
+        <template #default="scope">
+          <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="150" fixed="right">
+        <template #default="scope">
+          <el-button link type="primary" size="small" @click="$emit('edit', scope.row)">编辑</el-button>
+          <el-button link type="danger" size="small" @click="$emit('delete', scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <div class="home-page">
+    <div class="pager-row front-pager">
       <el-pagination
         background
         :total="total"
         :current-page="currentPage"
         :page-size="pageSize"
         :page-sizes="[5, 10, 20, 50, 100]"
-        layout="sizes, prev, pager, next, jumper, ->"
+        layout="total, sizes, prev, pager, next"
         @update:current-page="val => $emit('update:currentPage', val)"
         @update:page-size="val => $emit('update:pageSize', val)"
         @current-change="$emit('query')"
@@ -49,9 +69,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUpdated, onBeforeUnmount } from 'vue'
+import { formatDate, formatMoney, formatNumber } from '../../Admin/adminShared.js'
 
-defineProps({
+const props = defineProps({
   tableData: { type: Array, default: () => [] },
   total: { type: Number, default: 0 },
   currentPage: { type: Number, default: 1 },
@@ -60,134 +80,28 @@ defineProps({
 
 defineEmits(['edit', 'delete', 'query', 'update:currentPage', 'update:pageSize'])
 
-const tableSectionRef = ref(null)
-const tableMaxHeight = ref(360)
-const isMobile = ref(false)
+const avatarText = name => (name ? String(name).slice(0, 1) : '?')
 
-const updateMobileState = () => {
-  isMobile.value = window.matchMedia('(max-width: 768px)').matches
-}
-
-const calcTableMaxHeight = () => {
-  if (isMobile.value) return
-  const sectionEl = tableSectionRef.value
-  if (!sectionEl) return
-  const sectionHeight = sectionEl.clientHeight
-  const pagerEl = sectionEl.querySelector('.home-page')
-  const pagerHeight = pagerEl ? pagerEl.offsetHeight : 0
-  tableMaxHeight.value = Math.max(180, Math.floor(sectionHeight - pagerHeight))
-}
-
-onMounted(() => {
-  updateMobileState()
-  calcTableMaxHeight()
-  window.addEventListener('resize', updateMobileState)
-  window.addEventListener('resize', calcTableMaxHeight)
-})
-
-onUpdated(() => {
-  calcTableMaxHeight()
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateMobileState)
-  window.removeEventListener('resize', calcTableMaxHeight)
-})
-
-const summaryQuantityAndSalary = ({ columns, data }) => {
-  const sums = []
-  columns.forEach((column, index) => {
-    if (index === 0) {
-      sums[index] = '合计'
-      return
+const getSummaries = ({ columns }) => {
+  return columns.map(column => {
+    if (column.label === '员工') return '合计'
+    if (column.property === 'quantity') {
+      return formatNumber(props.tableData.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0))
     }
-    if (['quantity', 'salary'].includes(column.property)) {
-      const total = data.reduce((sum, row) => {
-        const value = Number(row[column.property])
-        return !isNaN(value) ? sum + value : sum
-      }, 0)
-      sums[index] = column.property === 'salary' ? total.toFixed(2) : total
-    } else {
-      sums[index] = ''
+    if (column.property === 'salary') {
+      return formatMoney(props.tableData.reduce((sum, row) => sum + (Number(row.salary) || 0), 0))
     }
+    return ''
   })
-  return sums
 }
 </script>
 
 <style scoped>
-.home-work-table-section {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 8px;
-  border-radius: 10px;
-  background: #fff;
-}
-
-.home-work-table {
-  flex: 1;
-  min-height: 0;
-}
-
-:deep(.home-work-table .cell) {
+.front-table :deep(.cell) {
   white-space: nowrap;
 }
 
-:deep(.home-work-table .el-table__header-wrapper th) {
-  background: #f8fafc;
-}
-
-:deep(.home-work-table .el-table__row td) {
-  transition: background-color 0.2s ease;
-}
-
-.op-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.op-divider {
-  color: #d0d5dd;
-}
-
-.home-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 14px 0 2px;
-  flex-shrink: 0;
-}
-
-:deep(.el-pagination) {
-  flex-wrap: wrap;
-  justify-content: center;
-  row-gap: 8px;
-}
-
-@media (max-width: 768px) {
-  .home-work-table-section {
-    padding: 6px;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .home-page {
-    justify-content: center;
-    padding: 10px 0 2px;
-  }
-
-  :deep(.home-work-table .el-button) {
-    min-height: 32px;
-    padding: 4px 6px;
-  }
-
-  :deep(.home-work-table .el-scrollbar__wrap) {
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+.front-table :deep(.el-table__footer .cell) {
+  font-weight: 600;
 }
 </style>

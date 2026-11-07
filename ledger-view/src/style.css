@@ -122,16 +122,6 @@ ul {
   background: rgba(21, 30, 48, 0.9);
 }
 
-/* 通用容器 */
-.home-container,
-.workOrder-container {
-  background: linear-gradient(160deg, var(--bg-surface), #eef4ff 70%);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-  overflow: hidden;
-}
-
 /* 顶部工具栏 */
 .nav-container,
 .workOrder-button,
@@ -236,7 +226,7 @@ ul {
 /* 按钮风格（轻拟物+蓝色）
    带 el-button--danger 的确认按钮（比如删除确认）走下面单独的红色样式，
    不能被这条蓝色渐变盖住。 */
-.el-button--primary:not(.is-text):not(.is-link):not(.el-button--danger) {
+.el-button--primary:not(.is-text):not(.is-link):not(.is-plain):not(.el-button--danger) {
   background: linear-gradient(135deg, var(--brand-1), var(--brand-2)) !important;
   border: none !important;
   box-shadow: var(--shadow-press);
@@ -256,7 +246,7 @@ ul {
   filter: brightness(1.04);
 }
 
-.el-button--primary:not(.is-text):not(.is-link):not(.el-button--danger):hover {
+.el-button--primary:not(.is-text):not(.is-link):not(.is-plain):not(.el-button--danger):hover {
   transform: translateY(-1px);
   filter: brightness(1.03);
 }
@@ -538,6 +528,134 @@ ul {
   font-size: 12.5px;
 }
 
+/* ============================================================
+   前台（生产中心）外壳与页面
+   与后台共用同一套设计语言：白卡片、14px 圆角、浅灰底、
+   页头 + 筛选卡片 + 表格卡片的结构。
+   ============================================================ */
+.front-shell {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--admin-bg);
+}
+
+.front-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 10px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--admin-card-border);
+}
+
+.front-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.front-brand-mark {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(47, 103, 223, 0.28);
+}
+
+.front-brand-text strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.front-brand-text small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--admin-text-muted);
+}
+
+.front-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.front-nav-item {
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-regular);
+  text-decoration: none;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.front-nav-item:hover {
+  background: #f2f6ff;
+  color: var(--brand-2);
+}
+
+.front-nav-item.is-current {
+  background: linear-gradient(135deg, rgba(63, 124, 255, 0.14), rgba(47, 103, 223, 0.08));
+  color: var(--brand-2);
+}
+
+.front-topbar-meta {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--admin-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.front-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 24px 22px;
+}
+
+.front-content > .admin-page {
+  height: 100%;
+}
+
+/* 表格卡片内的分页：与后台一致靠右 */
+.front-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px 10px;
+}
+
+.front-table-wrap .el-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.front-pager {
+  padding: 10px 2px 0;
+}
+
+/* 弹窗统一宽度上限，手机上也留出边距 */
+.app-dialog {
+  max-width: 94vw;
+}
+
 /* 日期选择器：移动端仅保留按月份切换，避免误触切换年份 */
 @media (max-width: 768px) {
   html,
@@ -570,5 +688,38 @@ ul {
   .month-only-picker .el-date-picker__header-label:nth-child(1) {
     pointer-events: none;
     cursor: default;
+  }
+}
+
+@media (max-width: 960px) {
+  .front-topbar {
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    padding: 10px 14px;
+  }
+
+  .front-nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .front-nav-item {
+    white-space: nowrap;
+  }
+
+  .front-topbar-meta {
+    display: none;
+  }
+
+  .front-content {
+    padding: 12px;
+    overflow-y: auto;
+  }
+
+  .front-content > .admin-page {
+    height: auto;
+    min-height: 100%;
   }
 }

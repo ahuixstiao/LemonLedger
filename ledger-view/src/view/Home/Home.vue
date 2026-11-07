@@ -1,119 +1,122 @@
 <template>
-  <div class="home-container">
-    <section class="page-header-card">
-      <div>
-        <h2 class="page-title">生产管理中心</h2>
-        <p class="page-subtitle">集中查看工单、查询样板并进行工资核算</p>
-      </div>
-      <div class="page-stat">
-        <span class="label">当前工单总数</span>
-        <span class="value">{{ data.total }}</span>
-      </div>
-    </section>
-
-    <section class="panel-card">
-      <CommonFilterBar
-        v-model="homeFilters"
-        :actions="homeFilterActions"
-        :fields="homeFilterFields"
-        :initial-value="homeFilterInitialValue"
-        @action="onHomeFilterAction"
-        @query="queryJobListByEmployeeIdAndDateHandle"
-        @reset="onHomeFilterReset"
-      />
-    </section>
-
-    <section class="home-table-section panel-card table-card">
-      <HomeTable
-        :table-data="data.tableData"
-        :total="data.total"
-        :current-page="data.currentPage"
-        :page-size="data.pageSize"
-        @update:currentPage="val => (data.currentPage = val)"
-        @update:pageSize="val => (data.pageSize = val)"
-        @query="queryJobListByEmployeeIdAndDateHandle"
-        @edit="showUpdateJobInfoDialog"
-        @delete="deleteJobInfoByIdHandler"
-      />
-    </section>
-
-    <SalaryDialog
-      :visible="data.SalaryVisible"
-      :employee-list="data.employeeList"
-      @update:visible="val => (data.SalaryVisible = val)"
-      @submit="salaryInquiryHandle"
-    />
-
-    <JobEditDialog
-      :visible="data.editJobDialogVisible"
-      :dialog-mode="data.dialogMode"
-      :loading="data.isLoading"
-      :job-info="jobInfoRef"
-      :employee-list="data.employeeList"
-      :factory-list="data.factoryList"
-      :category-list="data.categoryList"
-      @update:visible="val => (data.editJobDialogVisible = val)"
-      @employee-change="handleEmployeeChange"
-      @cancel="handleCancelJobDialog"
-      @submit="submitJobInfo"
-    />
-
-    <el-dialog
-      v-model="data.sampleDialogVisible"
-      title="查询样板"
-      :width="data.isMobile ? '92%' : '50%'"
-      :top="data.isMobile ? '4vh' : '12vh'"
-      center
-      class="responsive-dialog sample-dialog"
-    >
-      <div class="sample-query-form">
-        <el-select
-          v-model="data.sampleStyleNumber"
-          filterable
-          allow-create
-          default-first-option
-          clearable
-          placeholder="输入或选择款式编号"
-          class="sample-input"
-          @change="onSampleStyleChange"
-        >
-          <el-option
-            v-for="item in data.sampleStyleOptions"
-            :key="item"
-            :label="item"
-            :value="item"
-          />
-        </el-select>
-      </div>
-
-      <div class="sample-result-section">
-        <el-empty v-if="!data.sampleQueried" description="请选择款式编号后查询样板图片" />
-        <el-empty v-else-if="!data.sampleTableData.length" description="暂无匹配样板图片" />
-        <div v-else class="sample-grid">
-          <div v-for="item in data.sampleTableData" :key="`${item.styleNumber}-${item.imagePath}`" class="sample-card">
-            <div class="sample-style-number">{{ item.styleNumber }}</div>
-            <el-image
-              :src="resolveImageUrl(item.imagePath)"
-              :preview-src-list="[resolveImageUrl(item.imagePath)]"
-              fit="cover"
-              class="sample-image"
-              preview-teleported
-            />
-          </div>
+  <FrontShell>
+    <div class="admin-page">
+      <div class="admin-page-head">
+        <div>
+          <h2 class="admin-page-head__title">工单总览</h2>
+          <p class="admin-page-head__desc">
+            查看并维护已认领的工单，按员工、成衣厂、工作类型和日期筛选；这里的数量与工资会计入当天的核算。
+          </p>
+        </div>
+        <div class="admin-page-head__aside">
+          <span class="admin-count-chip"><strong>{{ data.total }}</strong> 条工单</span>
+          <el-button @click="openSampleDialog">查询样板</el-button>
+          <el-button @click="clickSalary">计算工资</el-button>
+          <el-button type="primary" @click="goClaimWorkOrderPage">认领工单</el-button>
         </div>
       </div>
-    </el-dialog>
-  </div>
+
+      <div class="filter-card">
+        <CommonFilterBar
+          v-model="homeFilters"
+          :fields="homeFilterFields"
+          :initial-value="homeFilterInitialValue"
+          @query="queryJobListByEmployeeIdAndDateHandle"
+          @reset="onHomeFilterReset"
+        />
+      </div>
+
+      <div class="table-card">
+        <HomeTable
+          :table-data="data.tableData"
+          :total="data.total"
+          :current-page="data.currentPage"
+          :page-size="data.pageSize"
+          @update:currentPage="val => (data.currentPage = val)"
+          @update:pageSize="val => (data.pageSize = val)"
+          @query="queryJobListByEmployeeIdAndDateHandle"
+          @edit="showUpdateJobInfoDialog"
+          @delete="deleteJobInfoByIdHandler"
+        />
+      </div>
+
+      <SalaryDialog
+        :visible="data.SalaryVisible"
+        :employee-list="data.employeeList"
+        @update:visible="val => (data.SalaryVisible = val)"
+        @submit="salaryInquiryHandle"
+      />
+
+      <JobEditDialog
+        :visible="data.editJobDialogVisible"
+        :dialog-mode="data.dialogMode"
+        :loading="data.isLoading"
+        :job-info="jobInfoRef"
+        :employee-list="data.employeeList"
+        :factory-list="data.factoryList"
+        :category-list="data.categoryList"
+        @update:visible="val => (data.editJobDialogVisible = val)"
+        @employee-change="handleEmployeeChange"
+        @cancel="handleCancelJobDialog"
+        @submit="submitJobInfo"
+      />
+
+      <el-dialog
+        v-model="data.sampleDialogVisible"
+        title="查询样板"
+        :width="data.isMobile ? '94%' : '720px'"
+        class="app-dialog sample-dialog"
+      >
+        <div class="sample-query-form">
+          <el-select
+            v-model="data.sampleStyleNumber"
+            filterable
+            allow-create
+            default-first-option
+            clearable
+            placeholder="输入或选择款式编号"
+            class="sample-input"
+            @change="onSampleStyleChange"
+          >
+            <el-option v-for="item in data.sampleStyleOptions" :key="item" :label="item" :value="item" />
+          </el-select>
+        </div>
+
+        <div class="sample-result-section">
+          <el-empty v-if="!data.sampleQueried" description="选择款式编号后自动展示样板图片" :image-size="96" />
+          <el-empty v-else-if="!data.sampleTableData.length" description="暂无匹配的样板图片" :image-size="96" />
+          <div v-else class="sample-grid">
+            <div v-for="item in data.sampleTableData" :key="`${item.styleNumber}-${item.imagePath}`" class="sample-card">
+              <el-image
+                :src="resolveImageUrl(item.imagePath)"
+                :preview-src-list="[resolveImageUrl(item.imagePath)]"
+                fit="cover"
+                class="sample-image"
+                preview-teleported
+              >
+                <template #error>
+                  <div class="sample-image-empty">暂无图片</div>
+                </template>
+              </el-image>
+              <div class="sample-style-number">{{ item.styleNumber }}</div>
+            </div>
+          </div>
+        </div>
+      </el-dialog>
+    </div>
+  </FrontShell>
 </template>
 
 <script setup>
 import { reactive, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import FrontShell from './HomeComponent/FrontShell.vue'
 import CommonFilterBar from './HomeComponent/CommonFilterBar.vue'
 import HomeTable from './HomeComponent/HomeTable.vue'
 import SalaryDialog from './HomeComponent/SalaryDialog.vue'
 import JobEditDialog from './HomeComponent/JobEditDialog.vue'
+import { confirmDelete } from '../Admin/adminShared.js'
 import {
   queryEmployees,
   updateJobInfo,
@@ -126,7 +129,7 @@ import {
 } from '../../network/index.js'
 
 const updateMobileState = () => {
-  data.isMobile = window.matchMedia('(max-width: 768px)').matches
+  data.isMobile = window.matchMedia('(max-width: 960px)').matches
 }
 
 onMounted(() => {
@@ -202,18 +205,14 @@ const homeFilters = computed({
   }
 })
 
-const homeFilterActions = [
-  { key: 'claimWorkOrder', label: '认领工单', type: 'primary' },
-  { key: 'sampleQuery', label: '查询样板', type: 'primary' },
-  { key: 'salary', label: '计算工资', type: 'primary' }
-]
-
 const homeFilterFields = computed(() => [
   {
     key: 'factoryId',
     type: 'select',
     placeholder: '选择成衣厂',
     filterable: true,
+    clearable: true,
+    wide: true,
     options: data.factoryList,
     optionLabel: 'factoryName',
     optionValue: 'id'
@@ -221,13 +220,13 @@ const homeFilterFields = computed(() => [
   {
     key: 'number',
     type: 'input',
-    placeholder: '要查询的床号'
+    placeholder: '床号',
+    clearable: true
   },
   {
     key: 'categoryId',
     type: 'select',
-    placeholder: '选择工作类型',
-    filterable: false,
+    placeholder: '工作类型',
     options: data.selectCategoryList,
     optionLabel: 'text',
     optionValue: 'value'
@@ -235,24 +234,15 @@ const homeFilterFields = computed(() => [
   {
     key: 'employeeId',
     type: 'select',
-    placeholder: '选择员工',
-    filterable: false,
+    placeholder: '员工',
     options: data.selectEmployeeList,
     optionLabel: 'text',
     optionValue: 'value'
   },
   {
-    key: 'startDate',
-    type: 'date',
-    editable: false,
-    placeholder: '开始日期',
-    popperClass: 'month-only-picker'
-  },
-  {
-    key: 'endDate',
-    type: 'date',
-    editable: false,
-    placeholder: '结束日期',
+    type: 'date-range',
+    keys: ['startDate', 'endDate'],
+    placeholders: ['开始日期', '结束日期'],
     popperClass: 'month-only-picker'
   }
 ])
@@ -320,8 +310,10 @@ const updateJobInfoHandle = async () => {
   } else ElMessage.error(res.message)
 }
 
-const deleteJobInfoByIdHandler = async id => {
-  const { data: res } = await deleteJobInfoById(id)
+const deleteJobInfoByIdHandler = async row => {
+  const confirmed = await confirmDelete(`确定删除「${row.name || '该员工'} · ${row.styleNumber || '该款式'}」这条工单吗？`)
+  if (!confirmed) return
+  const { data: res } = await deleteJobInfoById(row.id)
   if (res.status === 200) ElMessage.success(res.message)
   else ElMessage.error(res.message)
   await queryJobListByEmployeeIdAndDateHandle()
@@ -347,23 +339,6 @@ const openSampleDialog = () => {
   data.sampleQueried = false
   data.sampleStyleNumber = ''
   data.sampleTableData = []
-}
-
-/**
- * 筛选栏动作处理。
- */
-const onHomeFilterAction = action => {
-  if (action === 'claimWorkOrder') {
-    goClaimWorkOrderPage()
-    return
-  }
-  if (action === 'sampleQuery') {
-    openSampleDialog()
-    return
-  }
-  if (action === 'salary') {
-    clickSalary()
-  }
 }
 
 /**
@@ -474,94 +449,6 @@ const submitJobInfo = () => {
 </script>
 
 <style scoped>
-.home-container {
-  --card-bg: #ffffff;
-  --card-border: #e9edf5;
-  --card-shadow: 0 10px 28px rgba(16, 24, 40, 0.06);
-  --text-primary: #1f2937;
-  --text-secondary: #667085;
-
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  padding: clamp(12px, 2.2vw, 24px);
-  box-sizing: border-box;
-  gap: clamp(10px, 1.6vw, 18px);
-  overflow: hidden;
-  background: #f6f8fc;
-}
-
-.page-header-card,
-.panel-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
-  box-shadow: var(--card-shadow);
-}
-
-.page-header-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: clamp(14px, 2vw, 20px);
-}
-
-.page-title {
-  margin: 0;
-  font-size: clamp(18px, 2vw, 24px);
-  line-height: 1.25;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.page-subtitle {
-  margin: 8px 0 0;
-  font-size: clamp(12px, 1.2vw, 14px);
-  color: var(--text-secondary);
-}
-
-.page-stat {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  min-width: 120px;
-}
-
-.page-stat .label {
-  font-size: 12px;
-  color: #98a2b3;
-}
-
-.page-stat .value {
-  font-size: clamp(20px, 2.2vw, 28px);
-  line-height: 1;
-  font-weight: 700;
-  color: #2563eb;
-}
-
-.panel-card {
-  padding: clamp(12px, 1.8vw, 16px);
-}
-
-.home-table-section {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  overflow: hidden;
-}
-
-.table-card {
-  padding: clamp(8px, 1.2vw, 12px);
-}
-
-.home-table-section > * {
-  flex: 1;
-  min-height: 0;
-}
-
 .sample-query-form {
   display: flex;
   align-items: center;
@@ -574,111 +461,58 @@ const submitJobInfo = () => {
 
 .sample-result-section {
   margin-top: 14px;
-  max-height: 58vh;
+  max-height: 56vh;
   overflow-y: auto;
 }
 
 .sample-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   gap: 12px;
 }
 
 .sample-card {
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 10px;
+  border: 1px solid var(--admin-card-border);
+  border-radius: 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   background: #ffffff;
 }
 
+.sample-image {
+  width: 100%;
+  height: 148px;
+  border-radius: 8px;
+  background: #f2f5fa;
+}
+
+.sample-image-empty {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--admin-text-muted);
+  font-size: 12px;
+}
+
 .sample-style-number {
-  font-size: 13px;
-  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1f2a44;
+  text-align: center;
   word-break: break-all;
 }
 
-.sample-image {
-  width: 100%;
-  height: 140px;
-  border-radius: 8px;
-  border: 1px solid var(--card-border);
-}
-
-:deep(.panel-card .filter-bar),
-:deep(.panel-card .common-filter-bar) {
-  margin: 0;
-}
-
-:deep(.table-card .el-table) {
-  border-radius: 10px;
-}
-
-:deep(.sample-dialog .el-dialog) {
-  border-radius: 14px;
-}
-
-:deep(.sample-dialog .el-dialog__header) {
-  padding: 16px 16px 6px;
-}
-
-:deep(.sample-dialog .el-dialog__title) {
-  font-weight: 700;
-}
-
-:deep(.sample-dialog .el-dialog__body) {
-  padding: 10px 16px 14px;
-}
-
-:deep(.sample-dialog .el-input__wrapper),
-:deep(.sample-dialog .el-select__wrapper) {
-  min-height: 40px;
-  border-radius: 9px;
-}
-
-@media (max-width: 768px) {
-  .home-container {
-    height: auto;
-    min-height: 100%;
-    padding: 12px;
-    gap: 10px;
-    overflow: visible;
-  }
-
-  .page-header-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .page-stat {
-    width: 100%;
-    align-items: flex-start;
-  }
-
-  .home-table-section {
-    overflow: visible;
-    min-height: auto;
-  }
-
+@media (max-width: 960px) {
   .sample-query-form {
     flex-direction: column;
     align-items: stretch;
   }
 
   .sample-result-section {
-    max-height: 64vh;
-  }
-
-  :deep(.responsive-dialog .el-dialog) {
-    margin: 0 auto;
-    border-radius: 12px;
-  }
-
-  :deep(.responsive-dialog .el-dialog__body) {
-    padding: 10px 14px;
+    max-height: 62vh;
   }
 }
-
 </style>

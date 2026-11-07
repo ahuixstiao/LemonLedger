@@ -1,83 +1,81 @@
 <template>
-  <div class="workOrder-container">
-    <section class="page-header-card">
-      <div>
-        <h2 class="page-title">认领工单中心</h2>
-        <p class="page-subtitle">快速筛选、认领与维护工单，提升分配效率</p>
+  <FrontShell>
+    <div class="admin-page">
+      <div class="admin-page-head">
+        <div>
+          <h2 class="admin-page-head__title">认领工单</h2>
+          <p class="admin-page-head__desc">
+            按成衣厂、床号、款式和日期筛选待认领工序；认领后可随时回到工单总览里修改。
+          </p>
+        </div>
+        <div class="admin-page-head__aside">
+          <span class="admin-count-chip"><strong>{{ data.total }}</strong> 条工单</span>
+          <el-button type="primary" @click="openCreateWorkOrderDialog">添加工单</el-button>
+        </div>
       </div>
-      <div class="page-stat">
-        <span class="label">待处理工单</span>
-        <span class="value">{{ data.total }}</span>
+
+      <div class="filter-card">
+        <CommonFilterBar
+          v-model="workOrderFilters"
+          :fields="workOrderFilterFields"
+          :initial-value="workOrderFilterInitialValue"
+          @query="fetchWorkOrderList"
+          @reset="onWorkOrderFilterReset"
+        />
       </div>
-    </section>
 
-    <section class="panel-card">
-      <CommonFilterBar
-        v-model="workOrderFilters"
-        :actions="workOrderFilterActions"
-        :fields="workOrderFilterFields"
-        :initial-value="workOrderFilterInitialValue"
-        @action="onWorkOrderFilterAction"
-        @query="fetchWorkOrderList"
-        @reset="onWorkOrderFilterReset"
-      />
-    </section>
-
-    <section class="workOrder-table-section panel-card table-card">
-      <WorkOrderTable
-        :table-data="data.tableData"
-        :total="data.total"
-        :current-page="data.currentPage"
-        :page-size="data.pageSize"
-        @update:currentPage="val => (data.currentPage = val)"
-        @update:pageSize="val => (data.pageSize = val)"
-        @query="fetchWorkOrderList"
-        @claim="openClaimDialog"
-        @edit="openEditWorkOrderDialog"
-        @delete="removeWorkOrder"
-      />
-    </section>
+      <div class="table-card">
+        <WorkOrderTable
+          :table-data="data.tableData"
+          :total="data.total"
+          :current-page="data.currentPage"
+          :page-size="data.pageSize"
+          @update:currentPage="val => (data.currentPage = val)"
+          @update:pageSize="val => (data.pageSize = val)"
+          @query="fetchWorkOrderList"
+          @claim="openClaimDialog"
+          @edit="openEditWorkOrderDialog"
+          @delete="removeWorkOrder"
+        />
+      </div>
     <!--  添加/编辑工单弹窗  -->
     <el-dialog
       v-model="data.editWorkOrderDialogVisible"
       :title="data.workOrderDialogMode === 0 ? '添加工单' : '编辑工单'"
-      :width="data.isMobile ? '92%' : '50%'"
-      :top="data.isMobile ? '4vh' : '12vh'"
-      center
-      class="responsive-dialog work-order-edit-dialog"
+      :width="data.isMobile ? '94%' : '480px'"
+      class="app-dialog"
     >
       <el-form
         ref="workOrderFormRef"
         :model="workOrderFormModel"
         :rules="workOrderFormRules"
-        label-width="auto"
-        :label-position="data.isMobile ? 'top' : 'left'"
+        label-position="top"
       >
-        <el-form-item size="large" label="工厂名称:" prop="factoryId">
-          <el-select filterable v-model="workOrderFormModel.factoryId" placeholder="选择工厂名称">
+        <el-form-item label="成衣厂" prop="factoryId">
+          <el-select filterable v-model="workOrderFormModel.factoryId" placeholder="选择成衣厂">
             <el-option v-for="item in data.factoryList" :key="item.id" :label="item.factoryName" :value="item.id" />
           </el-select>
         </el-form-item>
 
-        <el-form-item size="large" label="床号" prop="number">
+        <el-form-item label="床号" prop="number">
           <el-input v-model="workOrderFormModel.number" placeholder="输入床号" />
         </el-form-item>
 
-        <el-form-item size="large" label="款式编号:" prop="styleNumber">
+        <el-form-item label="款式编号" prop="styleNumber">
           <el-input v-model="workOrderFormModel.styleNumber" placeholder="输入款式编号" />
         </el-form-item>
 
-        <el-form-item size="large" label="工作类型:" prop="categoryId">
+        <el-form-item label="工作类型" prop="categoryId">
           <el-select v-model="workOrderFormModel.categoryId" placeholder="选择工作类型">
             <el-option v-for="item in data.categoryList" :key="item.id" :label="item.category" :value="item.id" />
           </el-select>
         </el-form-item>
 
-        <el-form-item size="large" label="数量:" prop="quantity">
+        <el-form-item label="数量" prop="quantity">
           <el-input v-model="workOrderFormModel.quantity" placeholder="输入数量" />
         </el-form-item>
 
-        <el-form-item size="large" label="工单日期:" prop="createdDate">
+        <el-form-item label="工单日期" prop="createdDate">
           <el-date-picker
             :editable="false"
             v-model="workOrderFormModel.createdDate"
@@ -85,6 +83,7 @@
             format="YYYY/MM/DD"
             value-format="YYYY-MM-DD"
             placeholder="工单日期"
+            style="width: 100%"
           />
         </el-form-item>
       </el-form>
@@ -101,45 +100,42 @@
     <el-dialog
       v-model="data.claimDialogVisible"
       title="认领工单"
-      :width="data.isMobile ? '92%' : '50%'"
-      :top="data.isMobile ? '4vh' : '12vh'"
-      center
-      class="responsive-dialog claim-dialog"
+      :width="data.isMobile ? '94%' : '460px'"
+      class="app-dialog"
     >
       <el-form
         ref="claimFormRef"
         :model="claimFormModel"
         :rules="claimFormRules"
-        label-width="auto"
-        :label-position="data.isMobile ? 'top' : 'left'"
+        label-position="top"
       >
-        <el-form-item size="large" label="员工:" prop="employeeId">
+        <el-form-item label="员工" prop="employeeId">
           <el-select v-model="claimFormModel.employeeId" placeholder="请选择员工姓名">
             <el-option v-for="item in data.employeeList" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
 
-        <el-form-item size="large" label="厂名:">
+        <el-form-item label="厂名">
           <el-input :model-value="claimFormModel.factoryName" disabled />
         </el-form-item>
 
-        <el-form-item size="large" label="床号:">
+        <el-form-item label="床号">
           <el-input :model-value="claimFormModel.number" disabled />
         </el-form-item>
 
-        <el-form-item size="large" label="数量:" prop="quantity">
+        <el-form-item label="数量" prop="quantity">
           <el-input v-model="claimFormModel.quantity" placeholder="请输入数量" />
         </el-form-item>
 
         <!-- 员工没有默认工作方式时必须让他选：同一个人压花、刮胶都会做 -->
-        <el-form-item v-if="data.claimModeRequired" size="large" label="工作方式:" prop="modeId">
+        <el-form-item v-if="data.claimModeRequired" label="工作方式" prop="modeId">
           <el-select v-model="claimFormModel.modeId" placeholder="请选择本次按哪种方式算工资">
             <el-option v-for="item in data.modeList" :key="item.id" :label="item.mode" :value="item.id" />
           </el-select>
         </el-form-item>
 
         <!-- 认领前先看这道工序还剩多少，不然只能提交了才知道超额 -->
-        <el-form-item v-if="data.claimProgress" size="large" label="认领情况:">
+        <el-form-item v-if="data.claimProgress" label="认领情况">
           <span class="claim-progress">
             工单数量 {{ data.claimProgress.quantity }}，已认领 {{ data.claimProgress.claimedQuantity }}，
             <strong>还可认领 {{ data.claimProgress.remainQuantity }}</strong>
@@ -154,13 +150,15 @@
         </div>
       </template>
     </el-dialog>
-  </div>
+    </div>
+  </FrontShell>
 </template>
 
 <script setup>
 import { onMounted, onBeforeUnmount, reactive, ref, computed, watch } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { onBeforeRouteLeave } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import FrontShell from './HomeComponent/FrontShell.vue'
 import CommonFilterBar from './HomeComponent/CommonFilterBar.vue'
 import WorkOrderTable from './HomeComponent/WorkOrderTable.vue'
 import {
@@ -181,9 +179,10 @@ import {
   resetReactiveForm,
   validateDialogForm
 } from '../Admin/AdminComponent/factoryCrudShared.js'
+import { confirmDelete } from '../Admin/adminShared.js'
 
 const updateMobileState = () => {
-  data.isMobile = window.matchMedia('(max-width: 768px)').matches
+  data.isMobile = window.matchMedia('(max-width: 960px)').matches
 }
 
 onMounted(() => {
@@ -199,8 +198,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateMobileState)
 })
-
-const router = useRouter()
 
 const data = reactive({
   tableData: [],
@@ -253,18 +250,14 @@ const workOrderFilters = computed({
   }
 })
 
-const workOrderFilterActions = [
-  { key: 'create', label: '添加工单', type: 'primary' },
-  { key: 'backHome', label: '返回首页' }
-]
-
 const workOrderFilterFields = computed(() => [
   {
     key: 'factoryId',
     type: 'select',
-    placeholder: '选择工厂名称',
+    placeholder: '选择成衣厂',
     filterable: true,
     clearable: true,
+    wide: true,
     options: data.factoryList,
     optionLabel: 'factoryName',
     optionValue: 'id'
@@ -284,46 +277,19 @@ const workOrderFilterFields = computed(() => [
   {
     key: 'categoryId',
     type: 'select',
-    placeholder: '选择工作类型',
-    filterable: false,
+    placeholder: '工作类型',
     clearable: true,
     options: data.categoryList,
     optionLabel: 'category',
     optionValue: 'id'
   },
   {
-    key: 'startDate',
-    type: 'date',
-    editable: false,
-    placeholder: '开始日期',
-    popperClass: 'month-only-picker'
-  },
-  {
-    key: 'endDate',
-    type: 'date',
-    editable: false,
-    placeholder: '结束日期',
+    type: 'date-range',
+    keys: ['startDate', 'endDate'],
+    placeholders: ['开始日期', '结束日期'],
     popperClass: 'month-only-picker'
   }
 ])
-
-/**
- * 返回首页并清理认领员工缓存。
- */
-const goHome = () => {
-  clearClaimEmployeeCache()
-  router.push('/')
-}
-
-const onWorkOrderFilterAction = action => {
-  if (action === 'create') {
-    openCreateWorkOrderDialog()
-    return
-  }
-  if (action === 'backHome') {
-    goHome()
-  }
-}
 
 const loadFactoryList = async () => {
   await loadFactoryOptions(data, queryFactoryList)
@@ -442,8 +408,10 @@ const modifyWorkOrder = async () => {
   }
 }
 
-const removeWorkOrder = async id => {
-  const { data: res } = await deleteWorkOrder(id)
+const removeWorkOrder = async row => {
+  const confirmed = await confirmDelete(`确定删除「${row.factoryName || '该厂'} · ${row.styleNumber || '该款式'}」这条工单吗？`)
+  if (!confirmed) return
+  const { data: res } = await deleteWorkOrder(row.id)
   if (res.status === 200) {
     ElMessage.success(res.message)
     await fetchWorkOrderList()
@@ -702,137 +670,16 @@ onBeforeRouteLeave(() => {
 </script>
 
 <style scoped>
-.workOrder-container {
-  --card-bg: #ffffff;
-  --card-border: #e9edf5;
-  --card-shadow: 0 10px 28px rgba(16, 24, 40, 0.06);
-  --text-primary: #1f2937;
-  --text-secondary: #667085;
-
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  padding: clamp(12px, 2.2vw, 24px);
-  gap: clamp(10px, 1.6vw, 18px);
-  box-sizing: border-box;
-  overflow: hidden;
-  background: #f6f8fc;
+.claim-progress {
+  display: block;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--admin-text-secondary);
 }
 
-.page-header-card,
-.panel-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
-  box-shadow: var(--card-shadow);
-}
-
-.page-header-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: clamp(14px, 2vw, 20px);
-}
-
-.page-title {
-  margin: 0;
-  font-size: clamp(18px, 2vw, 24px);
-  line-height: 1.25;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.page-subtitle {
-  margin: 8px 0 0;
-  font-size: clamp(12px, 1.2vw, 14px);
-  color: var(--text-secondary);
-}
-
-.page-stat {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  min-width: 120px;
-}
-
-.page-stat .label {
-  font-size: 12px;
-  color: #98a2b3;
-}
-
-.page-stat .value {
-  font-size: clamp(20px, 2.2vw, 28px);
-  line-height: 1;
-  font-weight: 700;
-  color: #2563eb;
-}
-
-.panel-card {
-  padding: clamp(12px, 1.8vw, 16px);
-}
-
-.workOrder-table-section {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  overflow: hidden;
-}
-
-.table-card {
-  padding: clamp(8px, 1.2vw, 12px);
-}
-
-.workOrder-table-section > * {
-  flex: 1;
-  min-height: 0;
-}
-
-:deep(.panel-card .filter-bar),
-:deep(.panel-card .common-filter-bar) {
-  margin: 0;
-}
-
-:deep(.table-card .el-table) {
-  border-radius: 10px;
-}
-
-:deep(.el-form-item__content) {
-  flex-wrap: nowrap;
-  gap: 10px;
-}
-
-:deep(.responsive-dialog .el-dialog) {
-  border-radius: 14px;
-}
-
-:deep(.responsive-dialog .el-dialog__header) {
-  margin-right: 0;
-  padding: 16px 16px 8px;
-}
-
-:deep(.responsive-dialog .el-dialog__title) {
-  font-weight: 700;
-}
-
-:deep(.responsive-dialog .el-dialog__body) {
-  padding: 12px 16px;
-}
-
-:deep(.responsive-dialog .el-form-item) {
-  margin-bottom: 16px;
-}
-
-:deep(.work-order-edit-dialog .el-input__wrapper),
-:deep(.work-order-edit-dialog .el-select__wrapper),
-:deep(.work-order-edit-dialog .el-date-editor.el-input__wrapper),
-:deep(.claim-dialog .el-input__wrapper),
-:deep(.claim-dialog .el-select__wrapper),
-:deep(.claim-dialog .el-date-editor.el-input__wrapper) {
-  min-height: 40px;
-  border-radius: 9px;
+.claim-progress strong {
+  color: #d97706;
+  font-weight: 600;
 }
 
 .dialog-footer {
@@ -842,91 +689,7 @@ onBeforeRouteLeave(() => {
   gap: 10px;
 }
 
-.claim-progress {
-  color: #606266;
-  line-height: 1.6;
-}
-
-.claim-progress strong {
-  color: #e6a23c;
-}
-
 .dialog-footer :deep(.el-button + .el-button) {
   margin-left: 0;
-}
-
-@media (max-width: 768px) {
-  .workOrder-container {
-    height: auto;
-    min-height: 100%;
-    padding: 12px;
-    gap: 10px;
-    overflow: visible;
-  }
-
-  .page-header-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .page-stat {
-    width: 100%;
-    align-items: flex-start;
-  }
-
-  .workOrder-table-section {
-    overflow: visible;
-  }
-
-  :deep(.el-button),
-  :deep(.el-select),
-  :deep(.el-input),
-  :deep(.el-date-editor) {
-    width: 100%;
-  }
-
-  :deep(.panel-card .common-filter-bar),
-  :deep(.panel-card .common-filter-bar .action-group),
-  :deep(.panel-card .common-filter-bar .field-group) {
-    width: 100%;
-  }
-
-  :deep(.panel-card .common-filter-bar .action-btn),
-  :deep(.panel-card .common-filter-bar .reset-btn) {
-    width: 100%;
-    min-width: 0;
-  }
-
-  :deep(.responsive-dialog .el-dialog) {
-    margin: 0 auto;
-    border-radius: 12px;
-  }
-
-  :deep(.responsive-dialog .el-dialog__header) {
-    margin-right: 0;
-    padding: 14px 14px 8px;
-  }
-
-  :deep(.responsive-dialog .el-dialog__body) {
-    padding: 8px 14px;
-    max-height: 72vh;
-    overflow-y: auto;
-    box-sizing: border-box;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  :deep(.responsive-dialog .el-dialog__footer) {
-    padding: 8px 14px 14px;
-  }
-
-  :deep(.responsive-dialog .el-form-item__content) {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  :deep(.responsive-dialog .el-dialog__footer .el-button) {
-    min-width: 92px;
-    min-height: 40px;
-  }
 }
 </style>

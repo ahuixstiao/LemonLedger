@@ -1,54 +1,70 @@
 <template>
-  <div ref="tableSectionRef" class="work-order-table-section-inner">
+  <div class="front-table-wrap">
     <el-table
       :data="tableData"
-      class="work-order-table-inner"
-      style="width: 100%"
-      :max-height="isMobile ? null : tableMaxHeight"
+      class="front-table"
+      height="100%"
       table-layout="fixed"
       stripe
       fit
       highlight-current-row
-      empty-text="暂无数据"
+      empty-text="还没有待认领的工单"
       show-summary
       :summary-method="getSummaries"
     >
-      <el-table-column label="认领" align="center" width="100">
+      <el-table-column label="认领" align="center" width="96">
         <template #default="scope">
-          <el-button type="warning" class="claim-btn" @click="$emit('claim', scope.row)">认领</el-button>
+          <el-button type="primary" plain size="small" @click="$emit('claim', scope.row)">认领</el-button>
         </template>
       </el-table-column>
-      <el-table-column prop="factoryName" sortable label="厂名" align="center" show-overflow-tooltip />
-      <el-table-column prop="number" sortable label="床号" align="center" show-overflow-tooltip />
-      <el-table-column prop="styleNumber" sortable label="款式编号" align="center" show-overflow-tooltip />
-      <el-table-column prop="category" sortable label="工作类型" align="center" show-overflow-tooltip />
-      <el-table-column prop="quantity" label="数量" align="center" />
-      <el-table-column prop="claimedQuantity" label="已认领" align="center" width="90" />
-      <el-table-column label="剩余" align="center" width="90">
+      <el-table-column prop="factoryName" label="厂名" align="center" min-width="190" sortable show-overflow-tooltip />
+      <el-table-column prop="number" label="床号" align="center" min-width="110" sortable show-overflow-tooltip />
+      <el-table-column prop="styleNumber" label="款式编号" align="center" min-width="160" sortable show-overflow-tooltip />
+      <el-table-column prop="category" label="工作类型" align="center" min-width="120" sortable show-overflow-tooltip>
         <template #default="scope">
-          <el-tag v-if="Number(scope.row.remainQuantity) <= 0" type="success" size="small">已认满</el-tag>
-          <el-tag v-else type="warning" size="small">{{ scope.row.remainQuantity }}</el-tag>
+          <el-tag size="small" effect="plain" type="info">{{ scope.row.category }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdDate" sortable label="日期" align="center" show-overflow-tooltip />
-      <el-table-column label="操作" align="center" width="170">
+      <el-table-column prop="quantity" label="数量" align="center" min-width="100">
+        <template #default="scope">
+          <span class="num">{{ formatNumber(scope.row.quantity) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="claimedQuantity" label="已认领" align="center" min-width="110">
+        <template #default="scope">
+          <span class="num">{{ formatNumber(scope.row.claimedQuantity) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="剩余" align="center" min-width="110">
+        <template #default="scope">
+          <span v-if="Number(scope.row.remainQuantity) <= 0" class="status-pill is-active">已认满</span>
+          <span v-else class="status-pill is-remaining">{{ formatNumber(scope.row.remainQuantity) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="createdDate" label="日期" align="center" min-width="140" sortable show-overflow-tooltip>
+        <template #default="scope">
+          <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="168" fixed="right">
         <template #default="scope">
           <template v-if="scope.row.flag === 0">
-            <el-button text @click="$emit('edit', scope.row)">编辑</el-button>
-            <el-button type="danger" text @click="$emit('delete', scope.row.id)">删除</el-button>
+            <el-button link type="primary" size="small" @click="$emit('edit', scope.row)">编辑</el-button>
+            <el-button link type="danger" size="small" @click="$emit('delete', scope.row)">删除</el-button>
           </template>
+          <span v-else class="readonly-text">不可操作</span>
         </template>
       </el-table-column>
     </el-table>
 
-    <div class="work-order-page-inner">
+    <div class="pager-row front-pager">
       <el-pagination
         background
         :total="total"
         :current-page="currentPage"
         :page-size="pageSize"
         :page-sizes="[5, 10, 20, 50, 100]"
-        layout="sizes, prev, pager, next, jumper, ->"
+        layout="total, sizes, prev, pager, next"
         @update:current-page="val => $emit('update:currentPage', val)"
         @update:page-size="val => $emit('update:pageSize', val)"
         @current-change="$emit('query')"
@@ -59,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUpdated, onBeforeUnmount } from 'vue'
+import { formatDate, formatNumber } from '../../Admin/adminShared.js'
 
 const props = defineProps({
   tableData: { type: Array, default: () => [] },
@@ -70,125 +86,34 @@ const props = defineProps({
 
 defineEmits(['claim', 'edit', 'delete', 'query', 'update:currentPage', 'update:pageSize'])
 
+const sumBy = prop =>
+  props.tableData.reduce((sum, row) => sum + (Number(row[prop]) || 0), 0)
+
 const getSummaries = ({ columns }) => {
-  return columns.map((column, index) => {
-    if (index === 0) return '总计'
-    if (column.property === 'quantity') {
-      const totalQuantity = props.tableData.reduce((sum, row) => {
-        const quantity = Number(row.quantity)
-        return sum + (Number.isNaN(quantity) ? 0 : quantity)
-      }, 0)
-      return totalQuantity
+  return columns.map(column => {
+    if (column.label === '认领') return '总计'
+    if (['quantity', 'claimedQuantity'].includes(column.property)) {
+      return formatNumber(sumBy(column.property))
+    }
+    if (column.label === '剩余') {
+      return formatNumber(sumBy('remainQuantity'))
     }
     return ''
   })
 }
-
-const tableSectionRef = ref(null)
-const tableMaxHeight = ref(360)
-const isMobile = ref(false)
-
-const updateMobileState = () => {
-  isMobile.value = window.matchMedia('(max-width: 768px)').matches
-}
-
-const calcTableMaxHeight = () => {
-  if (isMobile.value) return
-  const sectionEl = tableSectionRef.value
-  if (!sectionEl) return
-  const sectionHeight = sectionEl.clientHeight
-  const pagerEl = sectionEl.querySelector('.work-order-page-inner')
-  const pagerHeight = pagerEl ? pagerEl.offsetHeight : 0
-  tableMaxHeight.value = Math.max(180, Math.floor(sectionHeight - pagerHeight))
-}
-
-onMounted(() => {
-  updateMobileState()
-  calcTableMaxHeight()
-  window.addEventListener('resize', updateMobileState)
-  window.addEventListener('resize', calcTableMaxHeight)
-})
-
-onUpdated(() => {
-  calcTableMaxHeight()
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateMobileState)
-  window.removeEventListener('resize', calcTableMaxHeight)
-})
 </script>
 
 <style scoped>
-.work-order-table-section-inner {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 8px;
-  border-radius: 10px;
-  background: #fff;
-}
-
-.work-order-table-inner {
-  flex: 1;
-  min-height: 0;
-}
-
-:deep(.work-order-table-inner .cell) {
+.front-table :deep(.cell) {
   white-space: nowrap;
 }
 
-:deep(.work-order-table-inner .el-table__header-wrapper th) {
-  background: #f8fafc;
+.front-table :deep(.el-table__footer .cell) {
+  font-weight: 600;
 }
 
-.claim-btn {
-  min-height: 32px;
-  min-width: 58px;
-  border-radius: 8px;
-}
-
-.work-order-page-inner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 14px 0 2px;
-  flex-shrink: 0;
-}
-
-:deep(.el-pagination) {
-  flex-wrap: wrap;
-  justify-content: center;
-  row-gap: 8px;
-}
-
-@media (max-width: 768px) {
-  .work-order-table-section-inner {
-    padding: 6px;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .claim-btn {
-    min-height: 34px;
-    min-width: 62px;
-  }
-
-  .work-order-page-inner {
-    justify-content: center;
-    padding: 10px 0 2px;
-  }
-
-  :deep(.work-order-table-inner .el-button) {
-    min-height: 32px;
-    padding: 4px 6px;
-  }
-
-  :deep(.work-order-table-inner .el-scrollbar__wrap) {
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+.status-pill.is-remaining {
+  background: #fff4e6;
+  color: #d97706;
 }
 </style>

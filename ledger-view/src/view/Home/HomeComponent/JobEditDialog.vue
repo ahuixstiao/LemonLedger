@@ -2,13 +2,12 @@
   <el-dialog
     :model-value="visible"
     :title="dialogMode === 0 ? '添加工作记录' : dialogMode === 1 ? '修改工作记录' : ''"
-    width="90%"
-    center
-    class="job-edit-dialog"
+    width="460px"
+    class="app-dialog"
     @update:model-value="val => $emit('update:visible', val)"
   >
     <el-form ref="jobInfoFormRef" :model="jobInfo" :rules="jobRules" label-position="top">
-      <el-form-item label="员工姓名:" size="large" prop="employeeId">
+      <el-form-item label="员工姓名" prop="employeeId">
         <el-select
           filterable
           v-model="jobInfo.employeeId"
@@ -18,26 +17,26 @@
           <el-option v-for="item in employeeList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="选择厂名:" size="large" prop="factoryId">
-        <el-select filterable v-model="jobInfo.factoryId" placeholder="请选择厂名">
+      <el-form-item label="成衣厂" prop="factoryId">
+        <el-select filterable v-model="jobInfo.factoryId" placeholder="请选择成衣厂">
           <el-option v-for="item in factoryList" :key="item.id" :label="item.factoryName" :value="item.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="床号：" prop="number">
-        <el-input v-model="jobInfo.number" autocomplete="off" size="large" placeholder="请输入床号" type="text" />
+      <el-form-item label="床号" prop="number">
+        <el-input v-model="jobInfo.number" autocomplete="off" placeholder="请输入床号" type="text" />
       </el-form-item>
-      <el-form-item label="选择工作类型:" size="large" prop="categoryId">
+      <el-form-item label="工作类型" prop="categoryId">
         <el-select v-model="jobInfo.categoryId" placeholder="请选择工作类型">
           <el-option v-for="item in categoryList" :key="item.id" :label="item.category" :value="item.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="款式编号：" prop="styleNumber">
-        <el-input v-model="jobInfo.styleNumber" autocomplete="off" size="large" placeholder="请输入款式编号" type="text" />
+      <el-form-item label="款式编号" prop="styleNumber">
+        <el-input v-model="jobInfo.styleNumber" autocomplete="off" placeholder="请输入款式编号" type="text" />
       </el-form-item>
-      <el-form-item label="数量：" prop="quantity">
-        <el-input v-model="jobInfo.quantity" autocomplete="off" size="large" placeholder="请输入数量" type="text" />
+      <el-form-item label="数量" prop="quantity">
+        <el-input v-model="jobInfo.quantity" autocomplete="off" placeholder="请输入数量" type="text" />
       </el-form-item>
-      <el-form-item label="工作日期:" size="large" prop="createdDate">
+      <el-form-item label="工作日期" prop="createdDate">
         <el-date-picker
           :editable="false"
           v-model="jobInfo.createdDate"
@@ -45,13 +44,14 @@
           format="YYYY/MM/DD"
           value-format="YYYY-MM-DD"
           placeholder="工作记录日期"
+          style="width: 100%"
         />
       </el-form-item>
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button type="default" size="large" @click="handleCancel">取消</el-button>
-        <el-button type="primary" size="large" :loading="loading" @click="handleSubmit">
+        <el-button @click="handleCancel">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="handleSubmit">
           {{ dialogMode === 0 ? '新增' : '修改' }}
         </el-button>
       </div>
@@ -115,33 +115,17 @@ const handleCancel = () => {
   gap: 10px;
 }
 
-.dialog-footer :deep(.el-button) {
-  min-width: 88px;
-  border-radius: 9px;
+.dialog-footer :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 
-:deep(.job-edit-dialog .el-dialog__body) {
-  padding: 14px 16px 8px;
+:deep(.el-date-editor.el-input) {
+  width: 100%;
 }
 
-:deep(.job-edit-dialog .el-form-item__label) {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-@media (max-width: 768px) {
-  .dialog-footer {
-    gap: 8px;
-  }
-
-  .dialog-footer :deep(.el-button) {
-    min-height: 40px;
-    min-width: 96px;
-  }
-
-  :deep(.job-edit-dialog .el-dialog__body) {
-    padding: 10px 14px 6px;
-    max-height: 72vh;
+@media (max-width: 960px) {
+  :deep(.el-dialog__body) {
+    max-height: 66vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }

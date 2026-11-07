@@ -2,34 +2,38 @@
   <el-dialog
     :model-value="visible"
     title="工资计算"
-    width="90%"
-    center
-    class="salary-dialog"
+    width="420px"
+    class="app-dialog"
     @update:model-value="val => $emit('update:visible', val)"
   >
     <el-form ref="querySalaryFormRef" label-position="top" :model="form" :rules="rules" class="salary-form">
-      <el-form-item label="员工姓名:" size="large" prop="employeeId">
+      <el-form-item label="员工姓名" prop="employeeId">
         <el-select v-model="form.employeeId" placeholder="请选择员工">
           <el-option v-for="item in employeeList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="计算日期:" size="large" class="date-range-item">
+      <el-form-item label="计算日期" class="date-range-item">
         <el-date-picker v-model="form.startDate" type="date" format="YYYY/MM/DD" value-format="YYYY-MM-DD" placeholder="开始日期" />
         <el-date-picker v-model="form.endDate" type="date" format="YYYY/MM/DD" value-format="YYYY-MM-DD" placeholder="结束日期" />
       </el-form-item>
-      <el-form-item size="large">
-        <el-button type="primary" class="submit-btn" size="large" @click="submit">计算</el-button>
-      </el-form-item>
-      <el-form-item size="large">
-        <el-statistic title="工资总和" :value="outputValue" :precision="2" class="salary-stat" />
-      </el-form-item>
+      <div class="salary-result">
+        <span class="salary-result__label">工资总和</span>
+        <span class="salary-result__value">{{ salaryOutput }}</span>
+      </div>
     </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="$emit('update:visible', false)">关闭</el-button>
+        <el-button type="primary" @click="submit">计算</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useTransition } from '@vueuse/core'
+import { formatMoney } from '../../Admin/adminShared.js'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -40,6 +44,7 @@ const emit = defineEmits(['update:visible', 'submit'])
 
 const salaryTotal = ref(0)
 const outputValue = useTransition(salaryTotal, { duration: 1000 })
+const salaryOutput = computed(() => formatMoney(Number(outputValue.value) || 0))
 
 const form = reactive({
   employeeId: '',
@@ -65,6 +70,13 @@ const rules = reactive({
   ]
 })
 
+watch(
+  () => props.visible,
+  visible => {
+    if (!visible) salaryTotal.value = 0
+  }
+)
+
 const submit = async () => {
   if (!querySalaryFormRef.value) return
   await querySalaryFormRef.value.validate(valid => {
@@ -82,52 +94,61 @@ const submit = async () => {
 
 <style scoped>
 .salary-form {
-  padding: 4px 2px;
+  padding: 2px;
 }
 
 .date-range-item :deep(.el-form-item__content) {
   flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.date-range-item :deep(.el-date-editor) {
+  flex: 1 1 0;
+  width: auto;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
   gap: 10px;
 }
 
-.submit-btn {
-  width: 100%;
-  min-height: 42px;
-  border-radius: 10px;
-  font-weight: 600;
+.dialog-footer :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 
-.salary-stat {
-  text-align: center;
-  margin: 0 auto;
-  display: block;
+.salary-result {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f4f7fe;
+  border: 1px solid var(--admin-card-border);
 }
 
-:deep(.el-statistic__number::after) {
-  content: '元';
+.salary-result__label {
+  font-size: 13px;
+  color: var(--admin-text-secondary);
 }
 
-:deep(.el-form-item__label) {
-  font-size: 15px;
-  font-weight: 600;
+.salary-result__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand-1);
+  font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .date-range-item :deep(.el-form-item__content) {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
   }
 
-  .submit-btn {
-    min-height: 44px;
-  }
-
-  :deep(.salary-dialog .el-dialog__body) {
-    padding: 10px 14px;
-    max-height: 72vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+  .date-range-item :deep(.el-date-editor) {
+    width: 100%;
   }
 }
 </style>
