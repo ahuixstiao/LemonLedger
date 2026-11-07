@@ -25,9 +25,20 @@ public class JobWorkOrderDTO implements Serializable {
     private String createdDate;
     private Integer flag;
 
-    /** 已被认领的数量（所有工作方式合计），由 SQL 子查询算出 */
+    /**
+     * 已完成数量：取「压花/刮胶」两个工种里做得少的那个。
+     *
+     * <p>一床布压花、刮胶两道工序都要各做一遍，一件只有两道都领过才算做完；
+     * 两个工种直接相加会得到 2 倍数量，剩余就成了负数，所以这里取较小值。</p>
+     */
     private Integer claimedQuantity;
 
-    /** 剩余可认领数量 = 预设数量 - 已认领数量 */
+    /** 压花（工作方式 1）已认领数量 */
+    private Integer claimedEmboss;
+
+    /** 刮胶（工作方式 2）已认领数量 */
+    private Integer claimedGlue;
+
+    /** 剩余数量 = 预设数量 - 已完成数量（两道工序都做完才算完成），最小为 0 */
     private Integer remainQuantity;
 }

@@ -4,57 +4,82 @@
 
     <select id="selectWorkOrderListByCondition" resultType="com.ledger.db.entity.dto.JobWorkOrderDTO">
         select
-        jwo.id,
-        jwo.factory_id,
-        f.factory_name,
-        jwo.number,
-        jwo.style_number,
-        jwo.category_id,
-        jc.category,
-        jwo.quantity,
-        jwo.created_date,
-        jwo.flag,
-        <!-- 已认领数量直接由子查询算出，列表里能一眼看到还剩多少，
-             不用员工先填一个大数字、被系统驳回之后再改小 -->
-        (select coalesce(sum(j.quantity), 0)
-           from job j
-          where j.work_order_id = jwo.id and j.flag = 0) as claimed_quantity,
-        (jwo.quantity - (select coalesce(sum(j.quantity), 0)
-                           from job j
-                          where j.work_order_id = jwo.id and j.flag = 0)) as remain_quantity
-        from job_work_order jwo
-        left join factory f on jwo.factory_id = f.id and f.flag = 0
-        left join job_category jc on jwo.category_id = jc.id and jc.flag = 0
-        <where>
-            jwo.flag = #{flag}
-            <if test="factoryId != null">
-                and jwo.factory_id = #{factoryId}
-            </if>
-            <if test="number != null and number != ''">
-                and jwo.number like concat('%', #{number}, '%')
-            </if>
-            <if test="styleNumber != null and styleNumber != ''">
-                and jwo.style_number like concat('%', #{styleNumber}, '%')
-            </if>
-            <if test="categoryId != null">
-                and jwo.category_id = #{categoryId}
-            </if>
-            <choose>
-                <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-                    and jwo.created_date between #{startDate} and #{endDate}
-                </when>
-                <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
-                    and jwo.created_date = #{startDate}
-                </when>
-                <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
-                    and jwo.created_date &lt;= #{endDate}
-                </when>
-                <otherwise>
-                    and jwo.created_date = curdate()
-                </otherwise>
-            </choose>
-        </where>
-        order by jwo.created_date desc, f.factory_name collate utf8mb4_zh_0900_as_cs asc, jwo.number asc
+        t.id,
+        t.factory_id,
+        t.factory_name,
+        t.number,
+        t.style_number,
+        t.category_id,
+        t.category,
+        t.quantity,
+        t.created_date,
+        t.flag,
+        <!-- 压花、刮胶各自认领了多少，分开给前端看 -->
+        coalesce(m1.claimed, 0) as claimed_emboss,
+        coalesce(m2.claimed, 0) as claimed_glue,
+        <!-- 一床布压花、刮胶两道工序都要各做一遍，一件只有两道都领过才算做完，
+             所以「已完成」取两者中较小的那个；直接相加会得到 2 倍数量 -->
+        least(coalesce(m1.claimed, 0), coalesce(m2.claimed, 0)) as claimed_quantity,
+        greatest(t.quantity - least(coalesce(m1.claimed, 0), coalesce(m2.claimed, 0)), 0) as remain_quantity
+        from (
+            select
+            jwo.id,
+            jwo.factory_id,
+            f.factory_name,
+            jwo.number,
+            jwo.style_number,
+            jwo.category_id,
+            jc.category,
+            jwo.quantity,
+            jwo.created_date,
+            jwo.flag
+            from job_work_order jwo
+            left join factory f on jwo.factory_id = f.id and f.flag = 0
+            left join job_category jc on jwo.category_id = jc.id and jc.flag = 0
+            <where>
+                jwo.flag = #{flag}
+                <if test="factoryId != null">
+                    and jwo.factory_id = #{factoryId}
+                </if>
+                <if test="number != null and number != ''">
+                    and jwo.number like concat('%', #{number}, '%')
+                </if>
+                <if test="styleNumber != null and styleNumber != ''">
+                    and jwo.style_number like concat('%', #{styleNumber}, '%')
+                </if>
+                <if test="categoryId != null">
+                    and jwo.category_id = #{categoryId}
+                </if>
+                <choose>
+                    <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+                        and jwo.created_date between #{startDate} and #{endDate}
+                    </when>
+                    <when test="startDate != null and startDate != '' and (endDate == null or endDate == '')">
+                        and jwo.created_date = #{startDate}
+                    </when>
+                    <when test="endDate != null and endDate != '' and (startDate == null or startDate == '')">
+                        and jwo.created_date &lt;= #{endDate}
+                    </when>
+                    <otherwise>
+                        and jwo.created_date = curdate()
+                    </otherwise>
+                </choose>
+            </where>
+        ) t
+        <!-- 1 = 压花、2 = 刮胶，见 job_mode 表 -->
+        left join (
+            select work_order_id, sum(quantity) as claimed
+            from job
+            where flag = 0 and mode_id = 1
+            group by work_order_id
+        ) m1 on m1.work_order_id = t.id
+        left join (
+            select work_order_id, sum(quantity) as claimed
+            from job
+            where flag = 0 and mode_id = 2
+            group by work_order_id
+        ) m2 on m2.work_order_id = t.id
+        order by t.created_date desc, t.factory_name collate utf8mb4_zh_0900_as_cs asc, t.number asc
     </select>
 
 </mapper>

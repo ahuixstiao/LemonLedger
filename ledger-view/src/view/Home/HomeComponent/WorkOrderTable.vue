@@ -15,7 +15,8 @@
           </p>
           <div class="m-item__foot">
             <span class="num">{{ formatNumber(row.quantity) }} 件</span>
-            <span class="num">已认领 {{ formatNumber(row.claimedQuantity) }}</span>
+            <span class="num">压花 {{ formatNumber(row.claimedEmboss) }}</span>
+            <span class="num">刮胶 {{ formatNumber(row.claimedGlue) }}</span>
             <span class="date-cell">{{ formatDate(row.createdDate) }}</span>
           </div>
           <div class="m-item__actions">
@@ -43,7 +44,8 @@
         <span>本页合计</span>
         <span>
           <strong>{{ formatNumber(totalQuantity) }}</strong> 件 ·
-          已认领 <strong>{{ formatNumber(totalClaimed) }}</strong> ·
+          压花 <strong>{{ formatNumber(totalEmboss) }}</strong> ·
+          刮胶 <strong>{{ formatNumber(totalGlue) }}</strong> ·
           剩 <strong>{{ formatNumber(totalRemain) }}</strong>
         </span>
       </div>
@@ -61,41 +63,55 @@
       show-summary
       :summary-method="getSummaries"
     >
-      <el-table-column label="认领" align="center" width="96">
+      <el-table-column label="认领" align="center" width="84">
         <template #default="scope">
-          <el-button type="primary" plain size="small" @click="$emit('claim', scope.row)">认领</el-button>
+          <el-button
+            v-if="Number(scope.row.remainQuantity) > 0 && scope.row.flag === 0"
+            type="primary"
+            plain
+            size="small"
+            @click="$emit('claim', scope.row)"
+          >
+            认领
+          </el-button>
+          <span v-else class="readonly-text">—</span>
         </template>
       </el-table-column>
-      <el-table-column prop="factoryName" label="厂名" align="center" min-width="190" sortable show-overflow-tooltip />
-      <el-table-column prop="number" label="床号" align="center" min-width="110" sortable show-overflow-tooltip />
-      <el-table-column prop="styleNumber" label="款式编号" align="center" min-width="160" sortable show-overflow-tooltip />
-      <el-table-column prop="category" label="工作类型" align="center" min-width="120" sortable show-overflow-tooltip>
+      <el-table-column prop="factoryName" label="厂名" align="center" min-width="160" sortable show-overflow-tooltip />
+      <el-table-column prop="number" label="床号" align="center" min-width="96" sortable show-overflow-tooltip />
+      <el-table-column prop="styleNumber" label="款式编号" align="center" min-width="132" sortable show-overflow-tooltip />
+      <el-table-column prop="category" label="工作类型" align="center" min-width="108" sortable show-overflow-tooltip>
         <template #default="scope">
           <el-tag size="small" effect="plain" type="info">{{ scope.row.category }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="quantity" label="数量" align="center" min-width="100">
+      <el-table-column prop="quantity" label="数量" align="center" min-width="88">
         <template #default="scope">
           <span class="num">{{ formatNumber(scope.row.quantity) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="claimedQuantity" label="已认领" align="center" min-width="110">
+      <el-table-column prop="claimedEmboss" label="已认领·压花" align="center" min-width="112">
         <template #default="scope">
-          <span class="num">{{ formatNumber(scope.row.claimedQuantity) }}</span>
+          <span class="num">{{ formatNumber(scope.row.claimedEmboss) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="剩余" align="center" min-width="110">
+      <el-table-column prop="claimedGlue" label="已认领·刮胶" align="center" min-width="112">
+        <template #default="scope">
+          <span class="num">{{ formatNumber(scope.row.claimedGlue) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="剩余" align="center" min-width="96">
         <template #default="scope">
           <span v-if="Number(scope.row.remainQuantity) <= 0" class="status-pill is-active">已认满</span>
           <span v-else class="status-pill is-remaining">{{ formatNumber(scope.row.remainQuantity) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="createdDate" label="日期" align="center" min-width="140" sortable show-overflow-tooltip>
+      <el-table-column prop="createdDate" label="日期" align="center" min-width="116" sortable show-overflow-tooltip>
         <template #default="scope">
           <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="168" fixed="right">
+      <el-table-column label="操作" align="center" width="140" fixed="right">
         <template #default="scope">
           <template v-if="scope.row.flag === 0">
             <el-button link type="primary" size="small" @click="$emit('edit', scope.row)">编辑</el-button>
@@ -142,14 +158,15 @@ const sumBy = prop =>
   props.tableData.reduce((sum, row) => sum + (Number(row[prop]) || 0), 0)
 
 const totalQuantity = computed(() => sumBy('quantity'))
-const totalClaimed = computed(() => sumBy('claimedQuantity'))
+const totalEmboss = computed(() => sumBy('claimedEmboss'))
+const totalGlue = computed(() => sumBy('claimedGlue'))
 const totalRemain = computed(() => sumBy('remainQuantity'))
 const totalSalary = computed(() => sumBy('salary'))
 
 const getSummaries = ({ columns }) => {
   return columns.map(column => {
     if (column.label === '认领') return '总计'
-    if (['quantity', 'claimedQuantity'].includes(column.property)) {
+    if (['quantity', 'claimedEmboss', 'claimedGlue'].includes(column.property)) {
       return formatNumber(sumBy(column.property))
     }
     if (column.label === '剩余') {

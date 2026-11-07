@@ -130,6 +130,19 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
             throw new BizException("修改工单失败：该工单不存在或已被删除");
         }
 
+        // 数量不能被改到「已经认领的量」以下：
+        // 一床布压花、刮胶各领一遍，用的是同一个预设数量，所以只要任一个工种已经领了，
+        // 数量就不能小于它，否则那部分认领记录就凭空超出工单了。
+        Integer newQuantity = workOrder.getQuantity();
+        if (ObjectUtil.isNotNull(newQuantity) && !newQuantity.equals(original.getQuantity())) {
+            Integer maxClaimed = jobMapper.maxClaimedQuantityByMode(workOrder.getId());
+            int claimed = maxClaimed == null ? 0 : maxClaimed;
+            if (newQuantity < claimed) {
+                throw new BizException("该工单已被认领 " + claimed + " 件，数量不能小于 " + claimed
+                        + "；如需下调，请先撤销多出来的认领记录");
+            }
+        }
+
         // 床号/款式/厂改了，先改床本身，由它把关联的工单、账单、工作记录一起刷新；
         // 没挂床的老数据（迁移前的）这里补挂一张
         Integer batchId = original.getBatchId();

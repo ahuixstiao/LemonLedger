@@ -583,3 +583,16 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.2 ledger-api`，基础镜像 `eclipse-temurin:17-jre`，体积 544 MB。`:2.2` 与 `:latest` 均已推送，digest 同为 `sha256:88f5726eec9107b20641fd7b7fb35f1b4cd1a362ecdd1f682e256b7f4da82c3f`。
 - **冒烟测试**：以 `SPRING_PROFILES_ACTIVE=db,common` 连接 mysql 容器启动，日志出现 `LemonLedger Application Started`；`GET /emp/list` 返回 200 与真实员工数据；容器内`/` 为 404 属正常（前端由 nginx 单独提供，镜像只做 API）。
 - **`docker-compose.yml`** 的 image 改为 `2.2`；`ledger-api/Dockerfile` 注释里的构建命令同步为 2.2。服务器上 `docker compose pull && docker compose up -d` 即可升级。
+
+## 16. 认领工单剩余量按工序拆分、防超领校验（2026-11-07）
+
+- **问题**：认领工单列表的「剩余」底部合计出现负数。原因是 `JobWorkOrderMapper.xml` 把压花、刮胶两个工种的认领量直接相加，而一床布两道工序各做一遍，相加就是 2 倍数量。
+- **口径**：压花、刮胶两道工序都要各做一遍，一件布两道都领过才算做完。因此已完成量取两者较小值，剩余 = 预设数量 − 较小值，最小为 0，合计不会再出现负数。
+- **列表**：「已认领」拆成「已认领·压花」「已认领·刮胶」两列，剩余一列，总计行分别汇总；没有剩余量时认领按钮显示「—」。手机卡片显示「压花 X 刮胶 Y」。
+- **防超领校验**：
+  - 改工单数量时，不能小于该工单已被认领的最大数量，否则提示先撤销多出来的认领记录。
+  - 改工单记录数量时，往上改不能超过该工单这个工种「数量 − 其他人已认领」的余额；往下改和改日期不拦，历史脏数据仍可修正或删除。
+- **踩坑**：MyBatis 注解里的不等于要写 `<>`，写成 XML 的 `&lt;&gt;` 会拼进 SQL 报语法错；PowerShell 写 Java 文件带 BOM 会导致 `非法字符: '\ufeff'` 编译失败。
+- **验证**：床 378 压花 310 / 刮胶 0 → 剩余 310；金狐 76 压花 714 / 刮胶 714 → 剩余 0；首屏总计 数量 3,663 / 压花 3,663 / 刮胶 2,551 / 剩余 1,112。接口实测把工单数量改到 10 被拒，把单条记录改到 800 被拒、改回 714 通过。
+- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.3 ledger-api`，`:2.3` 与 `:latest` 已推送，digest `sha256:f10023bed683f31c8cc37d3269202671a04e1be937ec24affbc1976067d79f4b`；`docker-compose.yml` 的 image 改为 2.3。
+- 涉及文件：`ledger-db/.../mapper/JobWorkOrderMapper.xml`、`JobMapper.java`、`entity/dto/JobWorkOrderDTO.java`、`impl/job/JobWorkOrderServiceImpl.java`、`impl/job/JobServiceImpl.java`、`ledger-view/src/view/Home/HomeComponent/WorkOrderTable.vue`、`docker-compose.yml`。

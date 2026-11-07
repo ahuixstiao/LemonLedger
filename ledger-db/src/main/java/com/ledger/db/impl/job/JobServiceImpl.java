@@ -292,6 +292,28 @@ public class JobServiceImpl extends LedgerServiceImpl<JobMapper, Job> implements
         job.setCategoryId(ObjectUtil.defaultIfNull(job.getCategoryId(), original.getCategoryId()));
         job.setModeId(ObjectUtil.defaultIfNull(job.getModeId(), original.getModeId()));
 
+        // 认领来的记录改数量要重新校验：这条记录是挂在某张工单上的，
+        // 同一工种「别人已领 + 这次改后的数量」不能超过工单数量，否则剩余量又会被改成负数。
+        // 只在「往上改」时校验：往下改、改日期这些都不该被挡；
+        // 历史上已经超量的老记录也因此仍然可以改小或删除。
+        Integer newQuantity = job.getQuantity();
+        boolean increased = ObjectUtil.isNull(original.getQuantity())
+                ? ObjectUtil.isNotNull(newQuantity)
+                : (ObjectUtil.isNotNull(newQuantity) && newQuantity > original.getQuantity());
+        if (ObjectUtil.isNotNull(original.getWorkOrderId()) && increased) {
+            JobWorkOrder workOrder = jobWorkOrderService.getById(original.getWorkOrderId());
+            if (ObjectUtil.isNotNull(workOrder) && ObjectUtil.isNotNull(workOrder.getQuantity())) {
+                Integer othersClaimed = jobMapper.sumClaimedQuantityByModeExcludeJob(
+                        original.getWorkOrderId(), job.getModeId(), original.getId());
+                int others = othersClaimed == null ? 0 : othersClaimed;
+                int remainForThisMode = workOrder.getQuantity() - others;
+                if (newQuantity > remainForThisMode) {
+                    throw new BizException("改不了：该工单这个工种其他记录已认领 " + others
+                            + " 件，这条最多只能填 " + Math.max(remainForThisMode, 0) + " 件");
+                }
+            }
+        }
+
         // 计算工作工资
         calculateJobSalary(job);
 

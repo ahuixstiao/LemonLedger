@@ -73,4 +73,38 @@ public interface JobMapper extends BaseMapper<Job> {
             @Param("workOrderId") Integer workOrderId,
             @Param("modeId") Integer modeId);
 
+    /**
+     * 统计某个工单里「认领最多的那个工种」已认领的数量。
+     *
+     * <p>压花和刮胶各自认领同一床布，两者不是相加关系；
+     * 要判断这床布还能不能改小数量，看的是做得最多的那个工种。</p>
+     *
+     * @param workOrderId 工单ID
+     * @return 各工种已认领数量的最大值，没有记录时返回 0
+     */
+    @Select("SELECT COALESCE(MAX(s), 0) FROM ("
+            + "  SELECT SUM(quantity) AS s FROM job"
+            + "  WHERE work_order_id = #{workOrderId} AND flag = 0"
+            + "  GROUP BY mode_id"
+            + ") t")
+    Integer maxClaimedQuantityByMode(@Param("workOrderId") Integer workOrderId);
+
+    /**
+     * 统计某个工单在某种工作方式下已被认领的数量，并排除指定的一条记录。
+     *
+     * <p>编辑一条工作记录时，它自己原来的数量不算占用，用「别人 + 修改后数量」判断是否超量。</p>
+     *
+     * @param workOrderId  工单ID
+     * @param modeId       工作方式ID
+     * @param excludeJobId 要排除的工作记录ID
+     * @return 已认领数量，没有记录时返回 0
+     */
+    @Select("SELECT COALESCE(SUM(quantity), 0) FROM job"
+            + " WHERE work_order_id = #{workOrderId} AND mode_id = #{modeId} AND flag = 0"
+            + " AND id <> #{excludeJobId}")
+    Integer sumClaimedQuantityByModeExcludeJob(
+            @Param("workOrderId") Integer workOrderId,
+            @Param("modeId") Integer modeId,
+            @Param("excludeJobId") Integer excludeJobId);
+
 }
