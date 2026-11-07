@@ -509,4 +509,15 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 
 实测：10-01~10-23 + 「李春」→ 一行：收入 3238.92、工资 812.56、毛利 2426.36、毛利/收入 74.9%，卡片和总计行同步。
 
+---
+
+## 12. 重新打包并发布镜像（2026-11-07）
+
+- **后端**：`mvn clean package`。`ledger-api/pom.xml` 的 `exec-maven-plugin` 会顺带跑 `npm run build`，Windows 上 `executable=npm` 找不到 `npm.cmd`，直接报 `CreateProcess error=2`。做法是前端先单独构建，再用 `-Dexec.skip=true` 跳过这一步。
+- **前端**：`ledger-view` 下 `npm run build`，`dist` 已更新（nginx 挂载的就是它）。
+- **改写 `ledger-api/Dockerfile`**：`eclipse-temurin:17-jre`（原来是 17-jdk），`WORKDIR /app`，`COPY target/LemonLedger.jar`（构建上下文就是 `ledger-api` 目录），`EXPOSE 8080`，`JAVA_OPTS` 默认 `-Xms256m -Xmx512m`。新增 `ledger-api/.dockerignore`，只放行打好的 jar，`target/classes` 等不进上下文。
+- **镜像**：`docker build -t 794862853/lemonledger:2.1 -t 794862853/lemonledger:latest ./ledger-api`，两个 tag 都推送成功，digest 同为 `sha256:fc0e0467a1300e8a3048eab40f81ac676604a86cc4a5e7b895a10118b5b4dab8`。体积 544 MB（原 2.0 是 820 MB 的 JDK 版）。
+- **`docker-compose.yml`** 的 image 从 `2.0` 改成 `2.1`；服务器上 `docker compose pull && docker compose up -d` 即可换到新镜像。
+- 推送时 Docker Hub 的 `auth.docker.io` 偶发 `EOF`，重试即可。
+
 

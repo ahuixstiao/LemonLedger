@@ -1,0 +1,3 @@
+# 构建上下文是 ledger-api 目录，只需要打好的 jar，其余 target 产物不要
+target/*
+!target/LemonLedger.jar
