@@ -445,12 +445,12 @@ ul {
   padding: 2px 2px 0;
 }
 
-/* 列表里的主体单元格（头像 + 名称） */
+/* 列表里的主体单元格（头像 + 名称）：跟其他列一样居中 */
 .entity-cell {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  text-align: left;
 }
 
 .entity-avatar {

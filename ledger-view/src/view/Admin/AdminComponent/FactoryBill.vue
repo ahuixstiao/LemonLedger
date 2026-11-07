@@ -92,7 +92,7 @@
 
     <div class="table-card">
       <el-table height="100%" :data="data.tableData" stripe highlight-current-row empty-text="没有找到账单记录">
-        <el-table-column prop="factoryName" sortable label="厂名" min-width="170">
+        <el-table-column prop="factoryName" sortable label="厂名" min-width="180" align="center">
           <template #default="scope">
             <div class="entity-cell">
               <span class="entity-avatar">{{ (scope.row.factoryName || '?').slice(0, 1) }}</span>
@@ -100,29 +100,29 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="number" sortable label="床号" align="center" width="90" />
-        <el-table-column prop="styleNumber" sortable label="款式编号" min-width="130" show-overflow-tooltip />
-        <el-table-column prop="category" sortable label="工作类型" align="center" width="120">
+        <el-table-column prop="number" sortable label="床号" min-width="90" align="center" />
+        <el-table-column prop="styleNumber" sortable label="款式编号" show-overflow-tooltip min-width="140" align="center" />
+        <el-table-column prop="category" sortable label="工作类型" min-width="120" align="center">
           <template #default="scope">
             <el-tag type="info" effect="plain">{{ scope.row.category }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="quantity" sortable label="数量" align="right" width="100">
+        <el-table-column prop="quantity" sortable label="数量" min-width="90" align="center">
           <template #default="scope">
             <span class="num">{{ formatNumber(scope.row.quantity) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="bill" sortable label="账单" align="right" width="130">
+        <el-table-column prop="bill" sortable label="账单" min-width="130" align="center">
           <template #default="scope">
             <span class="money">{{ formatMoney(scope.row.bill) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="createdDate" sortable label="日期" align="center" width="130">
+        <el-table-column prop="createdDate" sortable label="日期" min-width="120" align="center">
           <template #default="scope">
             <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="flag" sortable label="状态" align="center" width="110">
+        <el-table-column prop="flag" sortable label="状态" min-width="100" align="center">
           <template #default="scope">
             <span
               class="status-pill"
@@ -130,7 +130,7 @@
             >{{ scope.row.flag === 0 ? '正常' : '删除' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="160" fixed="right">
+        <el-table-column label="操作" fixed="right" min-width="140" align="center">
           <template #default="scope">
             <span v-if="isReadOnlyRow(scope.row)" class="readonly-text">已删除，不可操作</span>
             <template v-else>

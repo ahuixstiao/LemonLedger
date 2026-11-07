@@ -35,8 +35,8 @@
 
     <div class="table-card">
       <el-table height="100%" :data="data.tableData" stripe highlight-current-row empty-text="没有找到成衣厂">
-        <el-table-column prop="id" label="ID" align="center" width="72" sortable />
-        <el-table-column label="工厂名称" min-width="200" sortable prop="factoryName">
+        <el-table-column prop="id" label="ID" sortable min-width="90" align="center" />
+        <el-table-column label="工厂名称" sortable prop="factoryName" min-width="340" align="center">
           <template #default="scope">
             <div class="entity-cell">
               <span class="entity-avatar">{{ (scope.row.factoryName || '?').slice(0, 1) }}</span>
@@ -44,12 +44,12 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="createdDate" label="创建日期" align="center" width="140" sortable>
+        <el-table-column prop="createdDate" label="创建日期" sortable min-width="170" align="center">
           <template #default="scope">
             <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="flag" label="状态" align="center" width="110" sortable>
+        <el-table-column prop="flag" label="状态" sortable min-width="120" align="center">
           <template #default="scope">
             <span
               class="status-pill"
@@ -57,7 +57,7 @@
             >{{ scope.row.flag === 0 ? '正常' : '删除' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="160" fixed="right">
+        <el-table-column label="操作" fixed="right" min-width="180" align="center">
           <template #default="scope">
             <span v-if="isReadOnlyRow(scope.row)" class="readonly-text">已删除，不可编辑</span>
             <template v-else>

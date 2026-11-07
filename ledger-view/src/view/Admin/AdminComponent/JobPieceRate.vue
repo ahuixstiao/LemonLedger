@@ -31,24 +31,24 @@
 
     <div class="table-card">
       <el-table height="100%" :data="data.tableData" stripe empty-text="还没有员工计件单价">
-        <el-table-column prop="id" label="ID" width="72" align="center" sortable />
-        <el-table-column prop="mode" label="工作方式" min-width="140" sortable>
+        <el-table-column prop="id" label="ID" sortable min-width="90" align="center" />
+        <el-table-column prop="mode" label="工作方式" sortable min-width="180" align="center">
           <template #default="scope">
             <el-tag :type="modeTagType(scope.row.modeId)" effect="light">{{ scope.row.mode }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="category" label="工作类型" min-width="160" sortable />
-        <el-table-column prop="price" label="计件单价" align="right" width="140" sortable>
+        <el-table-column prop="category" label="工作类型" sortable min-width="200" align="center" />
+        <el-table-column prop="price" label="计件单价" sortable min-width="150" align="center">
           <template #default="scope">
             <span class="money">{{ formatMoney(scope.row.price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="createdDate" label="创建日期" align="center" width="140" sortable>
+        <el-table-column prop="createdDate" label="创建日期" sortable min-width="170" align="center">
           <template #default="scope">
             <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="flag" label="状态" align="center" width="110" sortable>
+        <el-table-column prop="flag" label="状态" sortable min-width="120" align="center">
           <template #default="scope">
             <span
               class="status-pill"
@@ -56,7 +56,7 @@
             >{{ scope.row.flag === 0 ? '正常' : '删除' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" align="center" fixed="right">
+        <el-table-column label="操作" fixed="right" min-width="160" align="center">
           <template #default="scope">
             <span v-if="isReadOnlyRow(scope.row)" class="readonly-text">已删除，不可操作</span>
             <template v-else>

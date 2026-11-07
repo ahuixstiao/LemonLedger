@@ -84,7 +84,7 @@
         highlight-current-row
         empty-text="这个条件下没有账单和工资记录"
       >
-        <el-table-column prop="factoryName" label="成衣厂" min-width="180" show-overflow-tooltip>
+        <el-table-column prop="factoryName" label="成衣厂" show-overflow-tooltip min-width="320" align="center">
           <template #default="scope">
             <div class="entity-cell">
               <span class="entity-avatar">{{ (scope.row.factoryName || '?').slice(0, 1) }}</span>
@@ -92,24 +92,24 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="billTotal" label="账单收入" align="right" min-width="140">
+        <el-table-column prop="billTotal" label="账单收入" min-width="180" align="center">
           <template #default="scope">
             <span class="money">{{ formatMoney(scope.row.billTotal) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="salaryTotal" label="工资支出" align="right" min-width="140">
+        <el-table-column prop="salaryTotal" label="工资支出" min-width="180" align="center">
           <template #default="scope">
             <span class="money">{{ formatMoney(scope.row.salaryTotal) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="grossProfit" label="毛利" align="right" min-width="140">
+        <el-table-column prop="grossProfit" label="毛利" min-width="180" align="center">
           <template #default="scope">
             <span class="money" :class="{ 'is-negative': Number(scope.row.grossProfit) < 0 }">
               {{ formatMoney(scope.row.grossProfit) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="毛利率" align="right" width="120">
+        <el-table-column label="毛利率" min-width="140" align="center">
           <template #default="scope">
             <span class="num">{{ marginRate(scope.row) }}</span>
           </template>
