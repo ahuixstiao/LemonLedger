@@ -1,106 +1,109 @@
 <template>
-  <div class="factoryPieceRate-container">
-    <!-- 筛选条件 -->
-    <div class="factoryPieceRate-button">
-      <el-button type="primary" @click="openCreatePriceDialog">添加</el-button>
+  <div class="admin-page">
+    <AdminPageHeader
+      title="成衣厂计件单价"
+      desc="一个「成衣厂 + 款式编号 + 工作类型」对应一个厂价，账单金额按这里的单价计算。"
+      :count="data.total"
+      count-label="条单价"
+    >
+      <template #actions>
+        <el-button type="primary" @click="openCreatePriceDialog">添加工厂单价</el-button>
+      </template>
+    </AdminPageHeader>
 
-      <!-- 成衣厂筛选条件 -->
-      <el-select
+    <div class="filter-card">
+      <div class="filter-bar">
+        <el-select
           v-model="data.factoryId"
           filterable
           clearable
-          placeholder="选择工厂名称"
-          @change="fetchFactoryPieceRateList"
-      >
-        <el-option
-            v-for="item in data.factoryList"
-            :label="item.factoryName"
-            :value="item.id"
-        />
-      </el-select>
-
-      <!-- 款式编号筛选条件 -->
-      <el-input
-          clearable
+          placeholder="全部成衣厂"
+          class="filter-wide"
+          @change="onFilterChange"
+        >
+          <el-option v-for="item in data.factoryList" :key="item.id" :label="item.factoryName" :value="item.id" />
+        </el-select>
+        <el-input
           v-model="data.styleNumber"
-          placeholder="款式编号"
-          @input="fetchFactoryPieceRateList"
-      >
-      </el-input>
-
-      <!-- 工作类型筛选条件 -->
-      <el-select
-          v-model="data.categoryId"
           clearable
-          placeholder="选择工作类型"
-          @change="fetchFactoryPieceRateList"
-      >
-        <el-option
-            v-for="item in data.categoryList"
-            :label="item.category"
-            :value="item.id"
-        />
-      </el-select>
-
-      <!-- 状态筛选条件 -->
-      <el-select
-          v-model="data.flag"
-          placeholder="状态"
-          @change="fetchFactoryPieceRateList"
-      >
-        <el-option label="正常" :value="0" />
-        <el-option label="删除" :value="1" />
-      </el-select>
-
-      <el-button type="warning" plain class="toolbar-reset-btn" @click="resetPriceFilter">重置</el-button>
+          placeholder="搜索款式编号"
+          @input="onSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-select v-model="data.categoryId" clearable placeholder="工作类型" @change="onFilterChange">
+          <el-option v-for="item in data.categoryList" :key="item.id" :label="item.category" :value="item.id" />
+        </el-select>
+        <el-select v-model="data.flag" placeholder="状态" @change="onFilterChange">
+          <el-option label="正常" :value="0" />
+          <el-option label="删除" :value="1" />
+        </el-select>
+        <div class="filter-actions">
+          <el-button @click="resetPriceFilter">重置</el-button>
+        </div>
+      </div>
     </div>
 
-    <!-- 成衣厂计件单价表格 -->
-    <el-table
-        :data="data.tableData"
-        style="width: 100%"
-        stripe
-        fit
-        highlight-current-row
-        empty-text="暂无数据"
-    >
-      <el-table-column prop="factoryName" sortable label="厂名" align="center"/>
-      <el-table-column prop="styleNumber" sortable label="款式编号" align="center"/>
-      <el-table-column prop="category" sortable label="工作类型" align="center"/>
-      <el-table-column prop="price" sortable label="计件单价 (元)" align="center"/>
-      <el-table-column label="样板" align="center" width="100">
-        <template #default="scope">
-          <el-image
-            v-if="scope.row.imagePath"
-            :src="resolveImageUrl(scope.row.imagePath)"
-            :preview-src-list="[resolveImageUrl(scope.row.imagePath)]"
-            fit="cover"
-            class="sample-image"
-            preview-teleported
-          />
-          <span v-else class="readonly-text">暂无</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdDate" sortable label="创建日期" align="center"/>
-      <el-table-column prop="flag" sortable label="状态" align="center" width="100">
-        <template #default="scope">
-          <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
-          <el-tag v-else type="danger">删除</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" width="220px">
-        <template #default="scope">
-          <template v-if="isReadOnlyRow(scope.row)">
-            <span class="readonly-text">已删除</span>
+    <div class="table-card">
+      <el-table height="100%" :data="data.tableData" stripe highlight-current-row empty-text="没有找到成衣厂计件单价">
+        <el-table-column prop="factoryName" sortable label="厂名" min-width="180">
+          <template #default="scope">
+            <div class="entity-cell">
+              <span class="entity-avatar">{{ (scope.row.factoryName || '?').slice(0, 1) }}</span>
+              <span class="entity-name">{{ scope.row.factoryName }}</span>
+            </div>
           </template>
-          <template v-else>
-            <el-button text @click="openEditPriceDialog(scope.row)">编辑</el-button>
-            <el-button type="danger" text @click="removeFactoryPieceRate(scope.row.id)">删除</el-button>
+        </el-table-column>
+        <el-table-column prop="styleNumber" sortable label="款式编号" min-width="140" />
+        <el-table-column prop="category" sortable label="工作类型" align="center" width="130">
+          <template #default="scope">
+            <el-tag type="info" effect="plain">{{ scope.row.category }}</el-tag>
           </template>
-        </template>
-      </el-table-column>
-
-    </el-table>
+        </el-table-column>
+        <el-table-column prop="price" sortable label="计件单价" align="right" width="130">
+          <template #default="scope">
+            <span class="money">{{ formatMoney(scope.row.price) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="样板" align="center" width="86">
+          <template #default="scope">
+            <el-image
+              v-if="scope.row.imagePath"
+              :src="resolveImageUrl(scope.row.imagePath)"
+              :preview-src-list="[resolveImageUrl(scope.row.imagePath)]"
+              fit="cover"
+              class="sample-image"
+              preview-teleported
+            />
+            <span v-else class="muted">暂无</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createdDate" sortable label="创建日期" align="center" width="130">
+          <template #default="scope">
+            <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="flag" sortable label="状态" align="center" width="110">
+          <template #default="scope">
+            <span
+              class="status-pill"
+              :class="scope.row.flag === 0 ? 'is-active' : 'is-removed'"
+            >{{ scope.row.flag === 0 ? '正常' : '删除' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="160" fixed="right">
+          <template #default="scope">
+            <span v-if="isReadOnlyRow(scope.row)" class="readonly-text">已删除，不可操作</span>
+            <template v-else>
+              <el-button text type="primary" @click="openEditPriceDialog(scope.row)">编辑</el-button>
+              <el-button text type="danger" @click="removeFactoryPieceRate(scope.row)">删除</el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <input
       ref="priceImageUploadInputRef"
@@ -110,121 +113,93 @@
       @change="handlePriceImageUpload"
     />
 
-    <!-- 分页组件 -->
-    <div class="factoryPieceRate-page">
+    <div class="pager-row">
       <el-pagination
-          background
-          :total="data.total"
-          v-model:current-page="data.currentPage"
-          v-model:page-size="data.pageSize"
-          :page-sizes="[5, 10, 20, 50, 100]"
-          layout="sizes, prev, pager, next, jumper, ->"
-          @current-change="fetchFactoryPieceRateList"
-          @size-change="fetchFactoryPieceRateList"
+        background
+        :total="data.total"
+        v-model:current-page="data.currentPage"
+        v-model:page-size="data.pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="fetchFactoryPieceRateList"
+        @size-change="onSizeChange"
       />
     </div>
 
-    <!--  添加或编辑成衣厂账单信息弹窗  -->
     <el-dialog
-        v-model="data.editPriceDialogVisible"
-        :title="
-        data.editPriceDialogMode === 0 ? '添加成衣厂计件单价' : data.editPriceDialogMode === 1 ? '修改成衣厂计件单价': ''"
-        width="50%"
-        center
+      v-model="data.editPriceDialogVisible"
+      :title="data.editPriceDialogMode === 0 ? '添加工厂计件单价' : '修改工厂计件单价'"
+      width="520px"
     >
       <el-form
-          ref="priceInfoFormRef"
-          :model="factoryPieceRateInfoRef"
-          :rules="addPriceInfoRules"
-          label-width="auto"
-          label-position="left"
+        ref="priceInfoFormRef"
+        :model="factoryPieceRateInfoRef"
+        :rules="addPriceInfoRules"
+        label-position="top"
       >
-        <el-form-item size="large" label="工厂名称:" prop="factoryId">
-          <el-select
-              filterable
-              v-model="factoryPieceRateInfoRef.factoryId"
-              placeholder="选择工厂名称"
-          >
-            <el-option
-                v-for="item in data.factoryList"
-                :label="item.factoryName"
-                :value="item.id"
-            />
+        <el-form-item label="成衣厂" prop="factoryId">
+          <el-select filterable v-model="factoryPieceRateInfoRef.factoryId" placeholder="选择成衣厂">
+            <el-option v-for="item in data.factoryList" :key="item.id" :label="item.factoryName" :value="item.id" />
           </el-select>
         </el-form-item>
 
-        <el-form-item size="large" label="款式编号:" prop="styleNumber">
-          <el-input
-              v-model="factoryPieceRateInfoRef.styleNumber"
-              placeholder="输入款式编号"
-          />
+        <el-form-item label="款式编号" prop="styleNumber">
+          <el-input v-model="factoryPieceRateInfoRef.styleNumber" placeholder="输入款式编号" />
         </el-form-item>
 
-        <el-form-item size="large" label="工作类型:" prop="categoryId">
-          <el-select
-              v-model="factoryPieceRateInfoRef.categoryId"
-              placeholder="选择工作类型"
-          >
-            <el-option
-                v-for="item in data.categoryList"
-                :label="item.category"
-                :value="item.id"
-            />
+        <el-form-item label="工作类型" prop="categoryId">
+          <el-select v-model="factoryPieceRateInfoRef.categoryId" placeholder="选择工作类型">
+            <el-option v-for="item in data.categoryList" :key="item.id" :label="item.category" :value="item.id" />
           </el-select>
         </el-form-item>
 
-        <el-form-item size="large" label="计件单价:" prop="price">
-          <el-input
-              v-model="factoryPieceRateInfoRef.price"
-              placeholder="输入计件单价"
-          />
+        <el-form-item label="计件单价（元 / 件）" prop="price">
+          <el-input v-model="factoryPieceRateInfoRef.price" placeholder="输入计件单价">
+            <template #prefix>¥</template>
+          </el-input>
         </el-form-item>
 
-        <el-form-item v-if="data.editPriceDialogMode === 1" size="large" label="样板图片:">
-          <el-button :disabled="!factoryPieceRateInfoRef.id" @click="triggerPriceImageUpload(factoryPieceRateInfoRef.id)">
-            上传图片
-          </el-button>
-          <el-button
-            type="danger"
-            plain
-            :disabled="!factoryPieceRateInfoRef.id || !factoryPieceRateInfoRef.imagePath"
-            @click="removePriceImageByDialog"
-          >
-            删除图片
-          </el-button>
-          <el-image
-            v-if="factoryPieceRateInfoRef.imagePath"
-            :src="resolveImageUrl(factoryPieceRateInfoRef.imagePath)"
-            :preview-src-list="[resolveImageUrl(factoryPieceRateInfoRef.imagePath)]"
-            fit="cover"
-            class="sample-image"
-            preview-teleported
-          />
-          <span v-else class="readonly-text">当前单价单暂无图片</span>
+        <el-form-item v-if="data.editPriceDialogMode === 1" label="样板图片">
+          <div class="sample-upload-row">
+            <el-button :disabled="!factoryPieceRateInfoRef.id" @click="triggerPriceImageUpload(factoryPieceRateInfoRef.id)">
+              上传图片
+            </el-button>
+            <el-button
+              type="danger"
+              plain
+              :disabled="!factoryPieceRateInfoRef.id || !factoryPieceRateInfoRef.imagePath"
+              @click="removePriceImageByDialog"
+            >
+              删除图片
+            </el-button>
+            <el-image
+              v-if="factoryPieceRateInfoRef.imagePath"
+              :src="resolveImageUrl(factoryPieceRateInfoRef.imagePath)"
+              :preview-src-list="[resolveImageUrl(factoryPieceRateInfoRef.imagePath)]"
+              fit="cover"
+              class="sample-image"
+              preview-teleported
+            />
+            <span v-else class="muted">暂无图片</span>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closePriceDialog">取消</el-button>
-          <el-button type="primary" v-if="data.editPriceDialogMode === 0"
-                     @click="validatePriceForm(priceInfoFormRef)">
-            新增
-          </el-button>
-          <el-button type="primary"
-                     v-if="data.editPriceDialogMode === 1" @click="validatePriceForm(priceInfoFormRef)">
-            修改
-          </el-button>
-        </div>
+        <el-button @click="closePriceDialog">取消</el-button>
+        <el-button type="primary" @click="validatePriceForm(priceInfoFormRef)">
+          {{ data.editPriceDialogMode === 0 ? '新增' : '保存' }}
+        </el-button>
       </template>
     </el-dialog>
-
   </div>
 </template>
 
-
 <script setup>
-
 import { onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
+import AdminPageHeader from '../AdminPageHeader.vue'
+import { confirmDelete, formatDate, formatMoney } from '../adminShared.js'
 import { queryFactoryList } from '../../../network/index.js'
 import {
   deleteFactoryPieceRateInfo,
@@ -235,7 +210,6 @@ import {
   updateFactoryPieceRateInfo,
   uploadFactoryPieceRateImage
 } from '../../../network/admin/index.js'
-import { ElMessage } from 'element-plus'
 import {
   loadFactoryOptions,
   loadFactoryCategoryOptions,
@@ -245,6 +219,22 @@ import {
   validateDialogForm
 } from './factoryCrudShared.js'
 
+const data = reactive({
+  tableData: [],
+  factoryList: [],
+  categoryList: [],
+  factoryId: '',
+  styleNumber: '',
+  categoryId: '',
+  flag: 0,
+  currentPage: 1,
+  pageSize: 10,
+  total: 0,
+  uploadingPieceRateId: '',
+  editPriceDialogVisible: false,
+  editPriceDialogMode: 0,
+  imageVersion: 0
+})
 
 onMounted(() => {
   loadFactoryList()
@@ -252,59 +242,45 @@ onMounted(() => {
   fetchFactoryPieceRateList()
 })
 
-const data = reactive({
-  // 表格数据
-  tableData: [],
-
-  factoryList: [],
-  categoryList: [],
-
-  factoryId: '',
-  number: '',
-  styleNumber: '',
-  categoryId: '',
-  flag: 0,
-  currentPage: 1,
-  pageSize: 10,
-  total: 0,
-
-  uploadingPieceRateId: '',
-
-  editPriceDialogVisible: false,
-  editPriceDialogMode: 0,
-
-  imageVersion: 0
-})
-
-// 加载成衣厂选项
 const loadFactoryList = async () => {
   await loadFactoryOptions(data, queryFactoryList)
 }
 
-// 加载工作类型选项
 const loadCategoryList = async () => {
   await loadFactoryCategoryOptions(data, queryJobCategoryList)
 }
 
-// TODO 查询成衣厂计件单价列表
 const fetchFactoryPieceRateList = async () => {
-
-  const {data: res} = await queryFactoryPieceRateList(
-      data.factoryId,
-      data.styleNumber,
-      data.categoryId,
-      data.currentPage,
-      data.pageSize,
-      data.flag
+  const { data: res } = await queryFactoryPieceRateList(
+    data.factoryId,
+    data.styleNumber,
+    data.categoryId,
+    data.currentPage,
+    data.pageSize,
+    data.flag
   )
-  // 判断请求是否成功
   if (res.status === 200) {
     data.tableData = res.data.records
     data.total = res.data.total
   } else {
     data.tableData = []
+    data.total = 0
   }
+}
 
+const onSearch = () => {
+  data.currentPage = 1
+  fetchFactoryPieceRateList()
+}
+
+const onFilterChange = () => {
+  data.currentPage = 1
+  fetchFactoryPieceRateList()
+}
+
+const onSizeChange = () => {
+  data.currentPage = 1
+  fetchFactoryPieceRateList()
 }
 
 const resetPriceFilter = () => {
@@ -345,8 +321,13 @@ const updateFactoryPieceRate = async () => {
   }
 }
 
-const removeFactoryPieceRate = async id => {
-  const { data: res } = await deleteFactoryPieceRateInfo(id)
+const removeFactoryPieceRate = async row => {
+  const confirmed = await confirmDelete(
+    `确定删除「${row.factoryName} · ${row.styleNumber} · ${row.category}」这条单价吗？`
+  )
+  if (!confirmed) return
+
+  const { data: res } = await deleteFactoryPieceRateInfo(row.id)
   if (res.status === 200) {
     ElMessage.success(res.message)
     await fetchFactoryPieceRateList()
@@ -472,6 +453,9 @@ const removePriceImageByDialog = async () => {
     return
   }
 
+  const confirmed = await confirmDelete('确定删除这张样板图片吗？')
+  if (!confirmed) return
+
   const { data: res } = await deleteFactoryPieceRateImage(factoryPieceRateInfoRef.id)
   if (res.status === 200) {
     ElMessage.success(res.message || '删除图片成功')
@@ -493,9 +477,7 @@ const factoryPieceRateInfoInit = {
   imagePath: ''
 }
 
-// 构建计件单价单实体
-const factoryPieceRateInfoRef = reactive({...factoryPieceRateInfoInit})
-
+const factoryPieceRateInfoRef = reactive({ ...factoryPieceRateInfoInit })
 
 const openCreatePriceDialog = () => {
   openCreateDialog(
@@ -526,98 +508,31 @@ const closePriceDialog = () => {
   data.editPriceDialogVisible = false
 }
 
-// 添加账单记录校验规则
 const addPriceInfoRules = reactive({
-  factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
-  styleNumber: [{required: true, message: '请输入款式编号', trigger: 'blur'}],
-  categoryId: [{required: true, message: '请选择工作类型', trigger: 'blur'}],
-  price: [{required: true, message: '请输入计件单价', trigger: 'blur'}],
+  factoryId: [{ required: true, message: '请选择成衣厂', trigger: 'blur' }],
+  styleNumber: [{ required: true, message: '请输入款式编号', trigger: 'blur' }],
+  categoryId: [{ required: true, message: '请选择工作类型', trigger: 'blur' }],
+  price: [{ required: true, message: '请输入计件单价', trigger: 'blur' }]
 })
-
 </script>
 
 <style scoped>
-.factoryPieceRate-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.factoryPieceRate-button {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  padding: 12px;
-  gap: 12px;
-  border-bottom: 1px solid var(--el-border-color);
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.factoryPieceRate-button > *:nth-child(1) {
-  width: 96px;
-}
-
-.factoryPieceRate-button > *:nth-child(2) {
-  width: 200px;
-}
-
-.factoryPieceRate-button > *:nth-child(3) {
-  width: 180px;
-}
-
-.factoryPieceRate-button > *:nth-child(4) {
-  width: 160px;
-}
-
-.factoryPieceRate-button > *:nth-child(5) {
-  width: 110px;
-}
-
-.factoryPieceRate-button > *:nth-child(6) {
-  width: 96px;
-}
-
-.factoryPieceRate-button > * {
-  flex-shrink: 0;
-}
-
-.factoryPieceRate-button :deep(.el-input__wrapper),
-.factoryPieceRate-button :deep(.el-select__wrapper) {
-  min-height: 32px;
-}
-
-.factoryPieceRate-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  padding: 25px 0;
-}
-
-:deep(.el-form-item__content) {
-  flex-wrap: nowrap;
-  gap: 10px;
-}
-
-:deep(.el-table--fit) {
-  flex: auto;
-}
-
-.readonly-text {
-  color: var(--el-text-color-placeholder);
-}
-
 .hidden-upload-input {
   display: none;
 }
 
 .sample-image {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 6px;
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid #e9eef7;
+  cursor: zoom-in;
 }
 
+.sample-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 </style>

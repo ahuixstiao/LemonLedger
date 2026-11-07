@@ -1,109 +1,130 @@
-﻿<template>
-  <div class="grossProfit-container">
-    <!-- 筛选条件：名称宽度跟其它列表页一致，日期框 145px -->
-    <div class="grossProfit-toolbar">
-      <el-select
-        v-model="data.factoryName"
-        placeholder="成衣厂名称"
-        clearable
-        filterable
-        class="name-select"
-        @change="handleFilterChange"
-        @clear="handleFilterChange"
-      >
-        <el-option
-          v-for="item in factoryOptions"
-          :key="item.factoryName"
-          :label="item.factoryName"
-          :value="item.factoryName"
-        />
-      </el-select>
-      <el-date-picker
-        v-model="data.startDate"
-        type="date"
-        format="YYYY/MM/DD"
-        value-format="YYYY-MM-DD"
-        placeholder="开始日期"
-        class="date-picker"
-        @change="handleFilterChange"
-      />
-      <el-date-picker
-        v-model="data.endDate"
-        type="date"
-        format="YYYY/MM/DD"
-        value-format="YYYY-MM-DD"
-        placeholder="结束日期"
-        class="date-picker"
-        @change="handleFilterChange"
-      />
-      <el-button type="primary" @click="handleFilterChange">查询</el-button>
-      <el-button type="warning" plain class="reset-btn" @click="resetFilter">重置</el-button>
-      <span class="toolbar-tip">不选日期时默认看本月 1 号到今天</span>
+<template>
+  <div class="admin-page">
+    <AdminPageHeader
+      title="毛利统计"
+      desc="账单收入减去工资支出，按成衣厂汇总。金额口径是筛选后的整个区间，不是当前这一页。"
+      :count="filteredData.length"
+      count-label="家成衣厂"
+    />
+
+    <div class="filter-card">
+      <div class="filter-bar">
+        <el-select
+          v-model="data.factoryName"
+          placeholder="全部成衣厂"
+          clearable
+          filterable
+          class="filter-wide"
+          @change="handleFilterChange"
+          @clear="handleFilterChange"
+        >
+          <el-option
+            v-for="item in factoryOptions"
+            :key="item.factoryName"
+            :label="item.factoryName"
+            :value="item.factoryName"
+          />
+        </el-select>
+        <div class="filter-dates">
+          <el-date-picker
+            v-model="data.startDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            placeholder="开始日期"
+            class="filter-date"
+            @change="handleFilterChange"
+          />
+          <span class="range-sep">→</span>
+          <el-date-picker
+            v-model="data.endDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            placeholder="结束日期"
+            class="filter-date"
+            @change="handleFilterChange"
+          />
+        </div>
+        <div class="filter-actions">
+          <span class="filter-hint">不选日期时默认看本月 1 号到今天</span>
+          <el-button type="primary" @click="handleFilterChange">查询</el-button>
+          <el-button @click="resetFilter">重置</el-button>
+        </div>
+      </div>
     </div>
 
     <!-- 汇总卡片：口径是「筛选后的整个区间」，不是当前这一页 -->
-    <div class="summary-row">
-      <div class="summary-card">
-        <span class="summary-label">账单收入</span>
-        <span class="summary-value">{{ money(totalBill) }}</span>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-label">账单收入</span>
+        <span class="stat-value">{{ formatMoney(totalBill) }}</span>
       </div>
-      <div class="summary-card">
-        <span class="summary-label">工资支出</span>
-        <span class="summary-value">{{ money(totalSalary) }}</span>
+      <div class="stat-card">
+        <span class="stat-label">工资支出</span>
+        <span class="stat-value">{{ formatMoney(totalSalary) }}</span>
       </div>
-      <div class="summary-card">
-        <span class="summary-label">毛利</span>
-        <span class="summary-value" :class="{ negative: Number(totalGross) < 0 }">{{ money(totalGross) }}</span>
+      <div class="stat-card">
+        <span class="stat-label">毛利</span>
+        <span class="stat-value" :class="{ 'is-negative': Number(totalGross) < 0 }">
+          {{ formatMoney(totalGross) }}
+        </span>
       </div>
-      <div class="summary-card">
-        <span class="summary-label">{{ data.factoryName ? '当前成衣厂' : '涉及成衣厂' }}</span>
-        <span class="summary-value">{{ data.factoryName || `${filteredData.length} 家` }}</span>
+      <div class="stat-card">
+        <span class="stat-label">毛利率</span>
+        <span class="stat-value">{{ totalMarginRate }}</span>
       </div>
     </div>
 
-    <!-- 明细表：只渲染当前页，汇总行仍按筛选后的整个区间算 -->
-    <div v-if="filteredData.length && !totalBill && !totalSalary" class="empty-hint">
-      这个条件下没有账单和工资记录（名称是按包含关系匹配的，日期不选时默认查本月 1 号到今天）。
-    </div>
-    <div class="table-wrap">
+    <div class="table-card is-fill">
       <el-table
         :data="pageData"
-        style="width: 100%"
         height="100%"
         stripe
-        fit
         highlight-current-row
-        empty-text="暂无数据"
-        show-summary
-        :summary-method="getSummaries"
+        empty-text="这个条件下没有账单和工资记录"
       >
-        <el-table-column prop="factoryName" label="成衣厂" align="center" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="billTotal" label="账单收入" align="center" min-width="120">
-          <template #default="scope">{{ money(scope.row.billTotal) }}</template>
-        </el-table-column>
-        <el-table-column prop="salaryTotal" label="工资支出" align="center" min-width="120">
-          <template #default="scope">{{ money(scope.row.salaryTotal) }}</template>
-        </el-table-column>
-        <el-table-column prop="grossProfit" label="毛利" align="center" min-width="120">
+        <el-table-column prop="factoryName" label="成衣厂" min-width="180" show-overflow-tooltip>
           <template #default="scope">
-            <span :class="{ negative: Number(scope.row.grossProfit) < 0 }">{{ money(scope.row.grossProfit) }}</span>
+            <div class="entity-cell">
+              <span class="entity-avatar">{{ (scope.row.factoryName || '?').slice(0, 1) }}</span>
+              <span class="entity-name">{{ scope.row.factoryName }}</span>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column label="毛利/收入" align="center" min-width="110">
-          <template #default="scope">{{ marginRate(scope.row) }}</template>
+        <el-table-column prop="billTotal" label="账单收入" align="right" min-width="140">
+          <template #default="scope">
+            <span class="money">{{ formatMoney(scope.row.billTotal) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="salaryTotal" label="工资支出" align="right" min-width="140">
+          <template #default="scope">
+            <span class="money">{{ formatMoney(scope.row.salaryTotal) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="grossProfit" label="毛利" align="right" min-width="140">
+          <template #default="scope">
+            <span class="money" :class="{ 'is-negative': Number(scope.row.grossProfit) < 0 }">
+              {{ formatMoney(scope.row.grossProfit) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="毛利率" align="right" width="120">
+          <template #default="scope">
+            <span class="num">{{ marginRate(scope.row) }}</span>
+          </template>
         </el-table-column>
       </el-table>
     </div>
 
-    <!-- 分页：和"成衣厂账单"页同一个样式 -->
-    <div class="grossProfit-page">
+    <div class="pager-row">
       <el-pagination
         background
         :total="filteredData.length"
         v-model:current-page="data.currentPage"
         v-model:page-size="data.pageSize"
-        :page-sizes="[5, 10, 20, 50, 100]"
-        layout="sizes, prev, pager, next, jumper, ->"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next"
       />
     </div>
   </div>
@@ -112,6 +133,8 @@
 <script setup>
 import { computed, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import AdminPageHeader from '../AdminPageHeader.vue'
+import { formatMoney } from '../adminShared.js'
 import { queryFactoryGrossProfit } from '../../../network/admin/index.js'
 
 const data = reactive({
@@ -130,15 +153,15 @@ const data = reactive({
  */
 const factoryOptions = computed(() =>
   data.tableData
-    .filter((row) => row.factoryName)
-    .map((row) => ({ factoryName: row.factoryName }))
+    .filter(row => row.factoryName)
+    .map(row => ({ factoryName: row.factoryName }))
     .sort((a, b) => String(a.factoryName).localeCompare(String(b.factoryName), 'zh-Hans-CN'))
 )
 
 /** 选定某家厂就只看这一行；没选就全看。名称在库里唯一（factory_name 唯一键），可以按名字匹配。 */
 const filteredData = computed(() => {
   if (!data.factoryName) return data.tableData
-  return data.tableData.filter((row) => row.factoryName === data.factoryName)
+  return data.tableData.filter(row => row.factoryName === data.factoryName)
 })
 
 /** 当前页要显示的行；分页在前端切片，避免为了分页再造一个接口 */
@@ -151,6 +174,12 @@ const pageData = computed(() => {
 const totalBill = computed(() => sumField('billTotal'))
 const totalSalary = computed(() => sumField('salaryTotal'))
 const totalGross = computed(() => sumField('grossProfit'))
+
+/** 整体毛利率：没有收入时显示「–」，避免除零出现 Infinity */
+const totalMarginRate = computed(() => {
+  if (!totalBill.value) return '–'
+  return `${((totalGross.value / totalBill.value) * 100).toFixed(1)}%`
+})
 
 onMounted(fetchList)
 
@@ -188,15 +217,7 @@ function clampCurrentPage() {
 }
 
 /**
- * 金额统一两位小数展示。后端算的是 BigDecimal，这里只负责显示。
- */
-function money(value) {
-  const number = Number(value || 0)
-  return `¥${number.toFixed(2)}`
-}
-
-/**
- * 毛利率：没有收入时显示"–"，避免除零出现 Infinity。
+ * 毛利率：没有收入时显示「–」，避免除零出现 Infinity。
  */
 function marginRate(row) {
   const bill = Number(row.billTotal || 0)
@@ -204,134 +225,53 @@ function marginRate(row) {
   return `${((Number(row.grossProfit || 0) / bill) * 100).toFixed(1)}%`
 }
 
-/**
- * 表格底部合计行：口径是整个筛选区间，不是当前页，所以不用 pageData 求和。
- */
-const getSummaries = ({ columns }) => {
-  return columns.map((column, index) => {
-    if (index === 0) return '总计（整个区间）'
-    if (column.property === 'billTotal') return money(totalBill.value)
-    if (column.property === 'salaryTotal') return money(totalSalary.value)
-    if (column.property === 'grossProfit') return money(totalGross.value)
-    if (index === columns.length - 1 && totalBill.value) {
-      return `${((totalGross.value / totalBill.value) * 100).toFixed(1)}%`
-    }
-    return ''
-  })
-}
 </script>
 
 <style scoped>
-.grossProfit-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  /* 和 FactoryBill.vue 等列表页一致：表格吃掉剩余高度，分页永远贴底，不随行数上下跳 */
-  justify-content: space-between;
-  gap: 10px;
-  overflow: hidden;
-}
-
-/* 跟 FactoryBill.vue 的 .factoryBill-button 一套规则：不换行、固定宽度、超宽横向滚动 */
-.grossProfit-toolbar {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  padding: 10px 12px;
-  gap: 8px;
-  border-bottom: 1px solid var(--el-border-color);
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.grossProfit-toolbar > * {
-  flex-shrink: 0;
-}
-
-.grossProfit-toolbar .name-select {
-  width: 180px;
-}
-
-.grossProfit-toolbar .date-picker {
-  width: 145px;
-}
-
-.grossProfit-toolbar .reset-btn {
-  width: 80px;
-}
-
-.grossProfit-toolbar :deep(.el-input__wrapper),
-.grossProfit-toolbar :deep(.el-date-editor.el-input__wrapper) {
-  min-height: 32px;
-}
-
-/* 提示文字允许被压缩，不参与固定宽度，避免把前面的控件挤变形 */
-.toolbar-tip {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.summary-row {
-  display: flex;
-  flex-wrap: wrap;
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
-  padding: 10px 12px 0;
 }
 
-.summary-card {
-  flex: 1 1 160px;
-  min-width: 150px;
+.stat-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--el-fill-color-lighter);
+  gap: 8px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--admin-card-border);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(30, 58, 112, 0.04);
 }
 
-.summary-label {
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
+.stat-label {
+  font-size: 12.5px;
+  color: var(--admin-text-secondary);
 }
 
-.summary-value {
-  font-size: 18px;
-  font-weight: 600;
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1f2a44;
+  font-variant-numeric: tabular-nums;
 }
 
-.negative {
-  color: var(--el-color-danger);
+.stat-value.is-negative {
+  color: #f04438;
 }
 
-.empty-hint {
-  margin: 0 12px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: var(--el-color-warning-light-9);
-  color: var(--el-color-warning-dark-2);
+.range-sep {
+  color: var(--admin-text-muted);
   font-size: 13px;
 }
 
-/* 表格吃掉剩余高度；内部自己滚，行数再多也不会把分页顶下去。
-   flex-basis 必须是 0，否则 100 行那页会按内容高把容器撑破、分页被裁掉。 */
-.table-wrap {
+/* 表格吃掉剩余高度，内部自己滚，分页不会被行数顶下去 */
+.table-card.is-fill {
   flex: 1 1 0;
-  min-height: 0;
+  min-height: 320px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.grossProfit-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  padding: 8px 0 16px;
 }
 </style>

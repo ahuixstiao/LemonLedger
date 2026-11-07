@@ -1,60 +1,92 @@
 <template>
-  <div class="page-container">
-    <div class="toolbar">
-      <el-button type="primary" @click="openCreate">添加员工计件单价</el-button>
-      <el-select v-model="data.modeId" clearable placeholder="工作方式" @change="fetchList">
-        <el-option v-for="item in data.modeList" :key="item.id" :label="item.mode" :value="item.id" />
-      </el-select>
-      <el-select v-model="data.categoryId" clearable placeholder="工作类型" @change="fetchList">
-        <el-option v-for="item in data.categoryList" :key="item.id" :label="item.category" :value="item.id" />
-      </el-select>
-      <el-select v-model="data.flag" @change="fetchList">
-        <el-option label="正常" :value="0" />
-        <el-option label="删除" :value="1" />
-      </el-select>
-      <el-button type="warning" plain class="toolbar-reset-btn" @click="resetFilter">重置</el-button>
+  <div class="admin-page">
+    <AdminPageHeader
+      title="员工计件单价"
+      desc="按「工作方式 + 工作类型」维护员工工价，工资核算直接取这份数据。改价只影响之后新建的账单。"
+      :count="data.total"
+      count-label="条单价"
+    >
+      <template #actions>
+        <el-button type="primary" @click="openCreate">添加员工计件单价</el-button>
+      </template>
+    </AdminPageHeader>
+
+    <div class="filter-card">
+      <div class="filter-bar">
+        <el-select v-model="data.modeId" clearable placeholder="工作方式" @change="onFilterChange">
+          <el-option v-for="item in data.modeList" :key="item.id" :label="item.mode" :value="item.id" />
+        </el-select>
+        <el-select v-model="data.categoryId" clearable placeholder="工作类型" @change="onFilterChange">
+          <el-option v-for="item in data.categoryList" :key="item.id" :label="item.category" :value="item.id" />
+        </el-select>
+        <el-select v-model="data.flag" placeholder="状态" @change="onFilterChange">
+          <el-option label="正常" :value="0" />
+          <el-option label="删除" :value="1" />
+        </el-select>
+        <div class="filter-actions">
+          <el-button @click="resetFilter">重置</el-button>
+        </div>
+      </div>
     </div>
 
-    <el-table :data="data.tableData" stripe fit>
-      <el-table-column prop="id" label="ID" width="80" align="center" sortable />
-      <el-table-column prop="mode" label="工作方式" align="center" sortable />
-      <el-table-column prop="category" label="工作类型" align="center" sortable />
-      <el-table-column prop="price" label="计件单价" align="center" sortable />
-      <el-table-column prop="createdDate" label="创建日期" align="center" sortable />
-      <el-table-column prop="flag" label="状态" align="center" width="100" sortable>
-        <template #default="scope">
-          <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
-          <el-tag v-else type="danger">删除</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="160" align="center">
-        <template #default="scope">
-          <template v-if="isReadOnlyRow(scope.row)">
-            <span class="readonly-text">已删除</span>
+    <div class="table-card">
+      <el-table height="100%" :data="data.tableData" stripe empty-text="还没有员工计件单价">
+        <el-table-column prop="id" label="ID" width="72" align="center" sortable />
+        <el-table-column prop="mode" label="工作方式" min-width="140" sortable>
+          <template #default="scope">
+            <el-tag :type="modeTagType(scope.row.modeId)" effect="light">{{ scope.row.mode }}</el-tag>
           </template>
-          <template v-else>
-            <el-button text @click="openEdit(scope.row)">编辑</el-button>
-            <el-button type="danger" text @click="removeItem(scope.row.id)">删除</el-button>
+        </el-table-column>
+        <el-table-column prop="category" label="工作类型" min-width="160" sortable />
+        <el-table-column prop="price" label="计件单价" align="right" width="140" sortable>
+          <template #default="scope">
+            <span class="money">{{ formatMoney(scope.row.price) }}</span>
           </template>
-        </template>
-      </el-table-column>
-    </el-table>
+        </el-table-column>
+        <el-table-column prop="createdDate" label="创建日期" align="center" width="140" sortable>
+          <template #default="scope">
+            <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="flag" label="状态" align="center" width="110" sortable>
+          <template #default="scope">
+            <span
+              class="status-pill"
+              :class="scope.row.flag === 0 ? 'is-active' : 'is-removed'"
+            >{{ scope.row.flag === 0 ? '正常' : '删除' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="160" align="center" fixed="right">
+          <template #default="scope">
+            <span v-if="isReadOnlyRow(scope.row)" class="readonly-text">已删除，不可操作</span>
+            <template v-else>
+              <el-button text type="primary" @click="openEdit(scope.row)">编辑</el-button>
+              <el-button text type="danger" @click="removeItem(scope.row)">删除</el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
-    <div class="page">
+    <div class="pager-row">
       <el-pagination
         background
         :total="data.total"
         v-model:current-page="data.currentPage"
         v-model:page-size="data.pageSize"
-        :page-sizes="[5,10,20,50]"
-        layout="sizes, prev, pager, next, jumper, ->"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
         @current-change="fetchList"
-        @size-change="fetchList"
+        @size-change="onSizeChange"
       />
     </div>
 
-    <el-dialog v-model="data.dialogVisible" :title="data.dialogMode === 0 ? '添加员工计件单价' : '编辑员工计件单价'" width="40%" center>
-      <el-form ref="formRef" :model="formModel" :rules="rules" label-width="auto">
+    <el-dialog
+      v-model="data.dialogVisible"
+      :title="data.dialogMode === 0 ? '添加员工计件单价' : '编辑员工计件单价'"
+      width="420px"
+    >
+      <el-form ref="formRef" :model="formModel" :rules="rules" label-position="top">
         <el-form-item label="工作方式" prop="modeId">
           <el-select v-model="formModel.modeId" placeholder="请选择工作方式">
             <el-option v-for="item in data.modeList" :key="item.id" :label="item.mode" :value="item.id" />
@@ -65,13 +97,15 @@
             <el-option v-for="item in data.categoryList" :key="item.id" :label="item.category" :value="item.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="计件单价" prop="price">
-          <el-input v-model="formModel.price" placeholder="请输入计件单价" />
+        <el-form-item label="计件单价（元 / 件）" prop="price">
+          <el-input v-model="formModel.price" placeholder="请输入计件单价">
+            <template #prefix>¥</template>
+          </el-input>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="closeDialog">取消</el-button>
-        <el-button type="primary" @click="submit(formRef)">{{ data.dialogMode === 0 ? '保存' : '更新' }}</el-button>
+        <el-button type="primary" @click="submit(formRef)">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -80,12 +114,15 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import AdminPageHeader from '../AdminPageHeader.vue'
+import { confirmDelete, formatDate, formatMoney, modeTagType } from '../adminShared.js'
 import {
   queryJobPieceRateList,
   saveJobPieceRate,
   updateJobPieceRate,
   deleteJobPieceRate,
-  queryJobModeList, queryJobCategoryListCondition,
+  queryJobModeList,
+  queryJobCategoryListCondition
 } from '../../../network/admin/index.js'
 import { openCreateDialog, openEditDialog, resetReactiveForm, validateDialogForm } from './factoryCrudShared.js'
 
@@ -111,12 +148,12 @@ const rules = reactive({
   price: [{ required: true, message: '请输入计件单价', trigger: 'blur' }]
 })
 
+const OPTION_QUERY = { currentPage: 1, pageSize: 1000, keyword: '', flag: 0 }
+
 onMounted(async () => {
   await Promise.all([loadModeList(), loadCategoryList()])
   fetchList()
 })
-
-const OPTION_QUERY = { currentPage: 1, pageSize: 1000, keyword: '', flag: 0 }
 
 async function loadModeList() {
   const { data: res } = await queryJobModeList(
@@ -139,13 +176,28 @@ async function loadCategoryList() {
 }
 
 async function fetchList() {
-  const { data: res } = await queryJobPieceRateList(data.modeId, data.categoryId, data.currentPage, data.pageSize, data.flag)
+  const { data: res } = await queryJobPieceRateList(
+    data.modeId,
+    data.categoryId,
+    data.currentPage,
+    data.pageSize,
+    data.flag
+  )
   if (res.status === 200) {
     data.tableData = res?.data?.records || []
     data.total = res?.data?.total || 0
   } else ElMessage.error(res.message)
 }
 
+function onFilterChange() {
+  data.currentPage = 1
+  fetchList()
+}
+
+function onSizeChange() {
+  data.currentPage = 1
+  fetchList()
+}
 
 function openCreate() {
   openCreateDialog(formModel, formInit, data, 'dialogMode', 'dialogVisible')
@@ -184,8 +236,13 @@ function submit(formEl) {
   )
 }
 
-async function removeItem(id) {
-  const { data: res } = await deleteJobPieceRate(id)
+async function removeItem(row) {
+  const confirmed = await confirmDelete(
+    `确定删除「${row.mode} · ${row.category}」这条单价吗？`
+  )
+  if (!confirmed) return
+
+  const { data: res } = await deleteJobPieceRate(row.id)
   if (res.status === 200) {
     ElMessage.success(res.message)
     await fetchList()
@@ -207,17 +264,3 @@ function isReadOnlyRow(row) {
   return Number(row?.flag) === 1 || Number(data.flag) === 1
 }
 </script>
-
-<style scoped>
-.page-container { height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
-.toolbar { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--el-border-color); overflow-x: auto; overflow-y: hidden; }
-.toolbar > *:nth-child(1) { width: 120px; }
-.toolbar > *:nth-child(2), .toolbar > *:nth-child(3) { width: 150px; }
-.toolbar > *:nth-child(4) { width: 130px; }
-.toolbar > *:nth-child(5) { width: 96px; }
-.toolbar > * { flex-shrink: 0; }
-.toolbar :deep(.el-select__wrapper) { min-height: 32px; }
-.page { display: flex; justify-content: center; padding: 25px 0; }
-:deep(.el-table--fit) { flex: auto; }
-.readonly-text { color: var(--el-text-color-placeholder); }
-</style>

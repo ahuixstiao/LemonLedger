@@ -1,78 +1,104 @@
 <template>
-  <div class="employee-container">
-    <div class="employee-toolbar">
-      <el-button type="primary" @click="openCreateEmployeeDialog">添加员工</el-button>
-      <el-input
-        v-model="data.name"
-        clearable
-        placeholder="员工姓名"
-        @input="fetchEmployeeList"
-      />
-      <el-select v-model="data.flag" placeholder="状态" @change="fetchEmployeeList">
-        <el-option label="正常" :value="0" />
-        <el-option label="删除" :value="1" />
-      </el-select>
-      <el-button type="warning" plain class="toolbar-reset-btn" @click="resetEmployeeFilter">重置</el-button>
+  <div class="admin-page">
+    <AdminPageHeader
+      title="员工档案"
+      desc="维护员工姓名与工作方式。删除只是把记录标记为「删除」，切到对应状态还能找回。"
+      :count="data.total"
+      count-label="名员工"
+    >
+      <template #actions>
+        <el-button type="primary" @click="openCreateEmployeeDialog">添加员工</el-button>
+      </template>
+    </AdminPageHeader>
+
+    <div class="filter-card">
+      <div class="filter-bar">
+        <el-input
+          v-model="data.name"
+          clearable
+          placeholder="搜索员工姓名"
+          @input="fetchEmployeeList"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-select v-model="data.flag" placeholder="状态" @change="onStatusChange">
+          <el-option label="正常" :value="0" />
+          <el-option label="删除" :value="1" />
+        </el-select>
+        <div class="filter-actions">
+          <el-button @click="resetEmployeeFilter">重置</el-button>
+        </div>
+      </div>
     </div>
 
-    <el-table :data="data.tableData" stripe fit highlight-current-row empty-text="暂无数据">
-      <el-table-column prop="id" label="ID" align="center" width="80" sortable />
-      <el-table-column prop="name" label="员工姓名" align="center" sortable />
-      <el-table-column prop="modeId" label="工作方式" align="center" sortable>
-        <template #default="scope">
-          <el-tag v-if="scope.row.modeId === 1" type="primary">压花</el-tag>
-          <el-tag v-else-if="scope.row.modeId === 2" type="warning">刮胶</el-tag>
-          <el-tag v-else type="info">未知</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdDate" label="创建日期" align="center" sortable />
-      <el-table-column prop="flag" label="状态" align="center" width="100" sortable>
-        <template #default="scope">
-          <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
-          <el-tag v-else type="danger">删除</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" width="180">
-        <template #default="scope">
-          <el-button
-            text
-            :disabled="scope.row.flag !== 0"
-            @click="openEditEmployeeDialog(scope.row)"
-          >
-            编辑
-          </el-button>
-          <el-button v-if="scope.row.flag === 0" type="danger" text @click="removeEmployee(scope.row.id)">
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-card">
+      <el-table height="100%" :data="data.tableData" stripe highlight-current-row empty-text="没有找到员工记录">
+        <el-table-column prop="id" label="ID" align="center" width="72" sortable />
+        <el-table-column label="员工" min-width="160" sortable prop="name">
+          <template #default="scope">
+            <div class="entity-cell">
+              <span class="entity-avatar">{{ (scope.row.name || '?').slice(0, 1) }}</span>
+              <span class="entity-name">{{ scope.row.name }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="modeId" label="工作方式" align="center" width="120" sortable>
+          <template #default="scope">
+            <el-tag v-if="scope.row.modeId === 1" type="primary">压花</el-tag>
+            <el-tag v-else-if="scope.row.modeId === 2" type="warning">刮胶</el-tag>
+            <el-tag v-else type="info">未知</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createdDate" label="创建日期" align="center" width="140" sortable>
+          <template #default="scope">
+            <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="flag" label="状态" align="center" width="110" sortable>
+          <template #default="scope">
+            <span
+              class="status-pill"
+              :class="scope.row.flag === 0 ? 'is-active' : 'is-removed'"
+            >{{ scope.row.flag === 0 ? '正常' : '删除' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="160" fixed="right">
+          <template #default="scope">
+            <span v-if="scope.row.flag !== 0" class="readonly-text">已删除，不可操作</span>
+            <template v-else>
+              <el-button text type="primary" @click="openEditEmployeeDialog(scope.row)">编辑</el-button>
+              <el-button text type="danger" @click="removeEmployee(scope.row)">删除</el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
-    <div class="employee-page">
+    <div class="pager-row">
       <el-pagination
         background
         :total="data.total"
         v-model:current-page="data.currentPage"
         v-model:page-size="data.pageSize"
-        :page-sizes="[5, 10, 20, 50, 100]"
-        layout="sizes, prev, pager, next, jumper, ->"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next"
         @current-change="fetchEmployeeList"
-        @size-change="fetchEmployeeList"
+        @size-change="onSizeChange"
       />
     </div>
 
     <el-dialog
       v-model="data.editEmployeeDialogVisible"
       :title="data.editEmployeeDialogMode === 0 ? '添加员工' : '编辑员工'"
-      width="40%"
-      center
+      width="420px"
     >
       <el-form
         ref="employeeFormRef"
         :model="employeeFormRefModel"
         :rules="employeeFormRules"
-        label-position="left"
-        label-width="auto"
+        label-position="top"
       >
         <el-form-item label="员工姓名" prop="name">
           <el-input v-model="employeeFormRefModel.name" placeholder="请输入员工姓名" />
@@ -87,7 +113,7 @@
       <template #footer>
         <el-button @click="closeEmployeeDialog">取消</el-button>
         <el-button type="primary" @click="validateEmployeeForm(employeeFormRef)">
-          {{ data.editEmployeeDialogMode === 0 ? '新增' : '编辑' }}
+          {{ data.editEmployeeDialogMode === 0 ? '新增' : '保存' }}
         </el-button>
       </template>
     </el-dialog>
@@ -97,6 +123,9 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
+import AdminPageHeader from '../AdminPageHeader.vue'
+import { confirmDelete, formatDate } from '../adminShared.js'
 import {
   deleteAdminEmployee,
   queryAdminEmployeeList,
@@ -110,10 +139,6 @@ import {
   validateDialogForm
 } from './factoryCrudShared.js'
 
-onMounted(() => {
-  fetchEmployeeList()
-})
-
 const data = reactive({
   name: '',
   flag: 0,
@@ -123,6 +148,10 @@ const data = reactive({
   pageSize: 10,
   editEmployeeDialogVisible: false,
   editEmployeeDialogMode: 0
+})
+
+onMounted(() => {
+  fetchEmployeeList()
 })
 
 const fetchEmployeeList = async () => {
@@ -152,6 +181,16 @@ const fetchEmployeeList = async () => {
   data.total = list.length
 }
 
+const onStatusChange = () => {
+  data.currentPage = 1
+  fetchEmployeeList()
+}
+
+const onSizeChange = () => {
+  data.currentPage = 1
+  fetchEmployeeList()
+}
+
 const createEmployee = async () => {
   const { data: res } = await saveAdminEmployee(employeeFormRefModel)
   if (res.status === 200) {
@@ -174,8 +213,11 @@ const updateEmployee = async () => {
   }
 }
 
-const removeEmployee = async id => {
-  const { data: res } = await deleteAdminEmployee(id)
+const removeEmployee = async employee => {
+  const confirmed = await confirmDelete(`确定删除员工「${employee.name}」吗？删除后可在「删除」状态里找回。`)
+  if (!confirmed) return
+
+  const { data: res } = await deleteAdminEmployee(employee.id)
   if (res.status === 200) {
     ElMessage.success(res.message)
 
@@ -241,68 +283,3 @@ const employeeFormRules = reactive({
   modeId: [{ required: true, message: '请选择工作方式', trigger: 'change' }]
 })
 </script>
-
-<style scoped>
-.employee-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.employee-toolbar {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  padding: 12px;
-  gap: 12px;
-  border-bottom: 1px solid var(--el-border-color);
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.employee-toolbar > *:nth-child(1) {
-  width: 96px;
-}
-
-.employee-toolbar > *:nth-child(2) {
-  width: 200px;
-}
-
-.employee-toolbar > *:nth-child(3) {
-  width: 130px;
-}
-
-.employee-toolbar > *:nth-child(4) {
-  width: 96px;
-}
-
-.employee-toolbar > * {
-  flex-shrink: 0;
-}
-
-.employee-toolbar :deep(.el-input__wrapper),
-.employee-toolbar :deep(.el-select__wrapper) {
-  min-height: 32px;
-}
-
-.employee-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  padding: 25px 0;
-}
-
-:deep(.el-table--fit) {
-  flex: auto;
-}
-
-:deep(.employee-delete-popover .el-button) {
-  color: var(--el-text-color-primary);
-}
-
-:deep(.employee-delete-popover .el-button--primary) {
-  color: #fff;
-}
-</style>

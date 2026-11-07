@@ -1,318 +1,313 @@
 <template>
-  <div class="factoryBill-container">
-    <!-- 筛选条件 -->
-    <div class="factoryBill-button">
-      <el-button type="primary" @click="openCreateBillDialog">添加</el-button>
-      <el-button type="primary" @click="data.billVisible = true">账单</el-button>
-      <!-- 成衣厂筛选条件 -->
-      <el-select
+  <div class="admin-page">
+    <AdminPageHeader
+      title="成衣厂账单"
+      desc="按成衣厂、床号、款式和日期查账。这里的数量与金额会直接进入毛利统计。"
+      :count="data.total"
+      count-label="条账单"
+    >
+      <template #stats>
+        <span class="admin-count-chip" title="当前这一页的数量与金额合计">
+          本页
+          <strong>{{ formatNumber(pageQuantityTotal) }}</strong>
+          <span>件</span>
+          <strong>{{ formatMoney(pageBillTotal) }}</strong>
+        </span>
+      </template>
+      <template #actions>
+        <el-button @click="data.billVisible = true">
+          <el-icon><TrendCharts /></el-icon>
+          账单统计
+        </el-button>
+        <el-button type="primary" @click="openCreateBillDialog">
+          <el-icon><Plus /></el-icon>
+          添加账单
+        </el-button>
+      </template>
+    </AdminPageHeader>
+
+    <div class="filter-card">
+      <div class="filter-bar">
+        <el-select
           v-model="data.factoryId"
           filterable
           clearable
-          placeholder="选择工厂名称"
-          @change="fetchFactoryBillList"
-      >
-        <el-option
-            v-for="(item, index) in data.factoryList"
-            :label="item.factoryName"
-            :value="item.id"
-        />
-      </el-select>
-
-      <!-- 床号筛选条件 -->
-      <el-input
-          clearable
-          v-model="data.number"
-          placeholder="床号"
-          @input="fetchFactoryBillList"
-      >
-      </el-input>
-      <!-- 款式编号筛选条件 -->
-      <el-input
-          clearable
-          v-model="data.styleNumber"
-          placeholder="款式编号"
-          @input="fetchFactoryBillList"
-      >
-      </el-input>
-
-      <!-- 工作类型筛选条件 -->
-      <el-select
+          placeholder="全部成衣厂"
+          class="filter-wide"
+          @change="onFilterChange"
+        >
+          <el-option v-for="item in data.factoryList" :key="item.id" :label="item.factoryName" :value="item.id" />
+        </el-select>
+        <el-input v-model="data.number" clearable placeholder="床号" @input="onSearch">
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-input v-model="data.styleNumber" clearable placeholder="款式编号" @input="onSearch" />
+        <el-select
           v-model="data.category"
           filterable
           clearable
-          placeholder="选择工作类型"
-          @change="fetchFactoryBillList"
-      >
-        <el-option
+          placeholder="工作类型"
+          @change="onFilterChange"
+        >
+          <el-option
             v-for="item in data.jobCategoryList"
             :key="item.id"
             :label="item.category"
             :value="item.category"
-        />
-      </el-select>
-
-      <!-- 数据记录状态筛选条件 -->
-      <el-select
-          v-model="data.flag"
-          placeholder="状态"
-          @change="fetchFactoryBillList"
-      >
-        <el-option label="正常" :value="0"/>
-        <el-option label="删除" :value="1"/>
-      </el-select>
-
-      <!-- 日期筛选条件 -->
-      <el-date-picker
-          v-model="data.startDate"
-          type="date"
-          format="YYYY/MM/DD"
-          value-format="YYYY-MM-DD"
-          placeholder="开始日期"
-          @change="fetchFactoryBillList"
-      />
-      <el-date-picker
-          v-model="data.endDate"
-          type="date"
-          format="YYYY/MM/DD"
-          value-format="YYYY-MM-DD"
-          placeholder="结束日期"
-          @change="fetchFactoryBillList"
-      />
-      <!-- 重置按钮 -->
-      <el-button type="warning" plain class="toolbar-reset-btn" @click="resetQueryCondition">重置</el-button>
-    </div>
-
-    <!-- 成衣厂账单表格 -->
-    <el-table
-        :data="data.tableData"
-        style="width: 100%"
-        stripe
-        fit
-        highlight-current-row
-        show-summary
-        empty-text="暂无数据"
-        :summary-method="summaryQuantityAndBill"
-    >
-      <el-table-column prop="factoryName" sortable label="厂名" align="center"/>
-      <el-table-column prop="number" sortable label="床号" align="center"/>
-      <el-table-column prop="styleNumber" sortable label="款式编号" align="center"/>
-      <el-table-column prop="category" sortable label="工作类型" align="center"/>
-      <el-table-column prop="quantity" sortable label="数量" align="center"/>
-      <el-table-column prop="bill" sortable label="账单" align="center"/>
-      <el-table-column prop="createdDate" sortable label="日期" align="center"/>
-      <el-table-column prop="flag" sortable label="状态" align="center">
-        <template #default="scope">
-          <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
-          <el-tag v-if="scope.row.flag === 1" type="danger">删除</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" width="160px">
-        <template #default="scope">
-          <template v-if="isReadOnlyRow(scope.row)">
-            <span class="readonly-text">已删除</span>
-          </template>
-          <template v-else>
-            <el-button text @click="openEditBillDialog(scope.row)">编辑</el-button>
-            <el-button type="danger" text @click="removeFactoryBill(scope.row.id)">删除</el-button>
-          </template>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页组件 -->
-    <div class="factoryBill-page">
-      <el-pagination
-          background
-          :total="data.total"
-          v-model:current-page="data.currentPage"
-          v-model:page-size="data.pageSize"
-          :page-sizes="[5, 10, 20, 50, 100]"
-          layout="sizes, prev, pager, next, jumper, ->"
-          @current-change="fetchFactoryBillList"
-          @size-change="fetchFactoryBillList"
-      />
-    </div>
-
-    <!--  添加或编辑成衣厂账单信息弹窗  -->
-    <el-dialog v-model="data.editBillDialogVisible"
-               :title="data.editBillDialogMode === 0 ? '添加成衣厂账单' : data.editBillDialogMode === 1 ? '修改成衣厂账单': ''"
-               width="50%" center>
-      <el-form
-          ref="billInfoFormRef"
-          :model="factoryBillInfoRef"
-          :rules="addBillInfoRules"
-          label-width="auto"
-          label-position="left"
-      >
-        <el-form-item size="large" label="工厂名称:" prop="factoryId">
-          <el-select
-              filterable
-              v-model="factoryBillInfoRef.factoryId"
-              placeholder="选择工厂名称"
-              @change="onBillFactoryChange"
-          >
-            <el-option
-                v-for="item in data.factoryList"
-                :label="item.factoryName"
-                :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item size="large" label="床号" prop="number">
-          <el-input
-              v-model="factoryBillInfoRef.number"
-              placeholder="输入床号"
           />
-        </el-form-item>
-
-        <el-form-item size="large" label="计件单价编号:" prop="pieceRateId">
-          <el-select
-              filterable
-              v-model="factoryBillInfoRef.pieceRateId"
-              placeholder="选择计件单价"
-              @focus="queryFactoryStyleNumberListHandle(factoryBillInfoRef.factoryId)"
-          >
-            <el-option
-                v-for="item in data.styleNumberList"
-                :key="item.id"
-                :label="`${item.styleNumber} / ${item.category}`"
-                :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item size="large" label="数量:" prop="quantity">
-          <el-input
-              v-model="factoryBillInfoRef.quantity"
-              placeholder="输入数量"
-          />
-        </el-form-item>
-        <el-form-item size="large" label="账单日期:" prop="createdDate">
+        </el-select>
+        <el-select v-model="data.flag" placeholder="状态" @change="onFilterChange">
+          <el-option label="正常" :value="0" />
+          <el-option label="删除" :value="1" />
+        </el-select>
+        <div class="filter-dates">
           <el-date-picker
-              :editable="false"
-              v-model="factoryBillInfoRef.createdDate"
-              type="date"
-              format="YYYY/MM/DD"
-              value-format="YYYY-MM-DD"
-              placeholder="账单日期"
+            v-model="data.startDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            placeholder="开始日期"
+            class="filter-date"
+            @change="onFilterChange"
+          />
+          <span class="range-sep">→</span>
+          <el-date-picker
+            v-model="data.endDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            placeholder="结束日期"
+            class="filter-date"
+            @change="onFilterChange"
+          />
+        </div>
+        <div class="filter-actions">
+          <el-button type="primary" @click="onFilterChange">查询</el-button>
+          <el-button @click="resetQueryCondition">重置</el-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <el-table height="100%" :data="data.tableData" stripe highlight-current-row empty-text="没有找到账单记录">
+        <el-table-column prop="factoryName" sortable label="厂名" min-width="170">
+          <template #default="scope">
+            <div class="entity-cell">
+              <span class="entity-avatar">{{ (scope.row.factoryName || '?').slice(0, 1) }}</span>
+              <span class="entity-name">{{ scope.row.factoryName }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="number" sortable label="床号" align="center" width="90" />
+        <el-table-column prop="styleNumber" sortable label="款式编号" min-width="130" show-overflow-tooltip />
+        <el-table-column prop="category" sortable label="工作类型" align="center" width="120">
+          <template #default="scope">
+            <el-tag type="info" effect="plain">{{ scope.row.category }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="quantity" sortable label="数量" align="right" width="100">
+          <template #default="scope">
+            <span class="num">{{ formatNumber(scope.row.quantity) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="bill" sortable label="账单" align="right" width="130">
+          <template #default="scope">
+            <span class="money">{{ formatMoney(scope.row.bill) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createdDate" sortable label="日期" align="center" width="130">
+          <template #default="scope">
+            <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="flag" sortable label="状态" align="center" width="110">
+          <template #default="scope">
+            <span
+              class="status-pill"
+              :class="scope.row.flag === 0 ? 'is-active' : 'is-removed'"
+            >{{ scope.row.flag === 0 ? '正常' : '删除' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="160" fixed="right">
+          <template #default="scope">
+            <span v-if="isReadOnlyRow(scope.row)" class="readonly-text">已删除，不可操作</span>
+            <template v-else>
+              <el-button text type="primary" @click="openEditBillDialog(scope.row)">编辑</el-button>
+              <el-button text type="danger" @click="removeFactoryBill(scope.row)">删除</el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <div class="pager-row">
+      <el-pagination
+        background
+        :total="data.total"
+        v-model:current-page="data.currentPage"
+        v-model:page-size="data.pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="fetchFactoryBillList"
+        @size-change="onSizeChange"
+      />
+    </div>
+
+    <!-- 添加或编辑成衣厂账单 -->
+    <el-dialog
+      v-model="data.editBillDialogVisible"
+      :title="data.editBillDialogMode === 0 ? '添加成衣厂账单' : '修改成衣厂账单'"
+      width="520px"
+    >
+      <el-form
+        ref="billInfoFormRef"
+        :model="factoryBillInfoRef"
+        :rules="addBillInfoRules"
+        label-position="top"
+      >
+        <el-form-item label="成衣厂" prop="factoryId">
+          <el-select
+            filterable
+            v-model="factoryBillInfoRef.factoryId"
+            placeholder="选择成衣厂"
+            @change="onBillFactoryChange"
+          >
+            <el-option v-for="item in data.factoryList" :key="item.id" :label="item.factoryName" :value="item.id" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="床号" prop="number">
+          <el-input v-model="factoryBillInfoRef.number" placeholder="输入床号" />
+        </el-form-item>
+
+        <el-form-item label="计件单价" prop="pieceRateId">
+          <el-select
+            filterable
+            v-model="factoryBillInfoRef.pieceRateId"
+            placeholder="选择款式 / 工作类型"
+            @focus="queryFactoryStyleNumberListHandle(factoryBillInfoRef.factoryId)"
+          >
+            <el-option
+              v-for="item in data.styleNumberList"
+              :key="item.id"
+              :label="`${item.styleNumber} / ${item.category}`"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="数量（件）" prop="quantity">
+          <el-input v-model="factoryBillInfoRef.quantity" placeholder="输入数量" />
+        </el-form-item>
+        <el-form-item label="账单日期" prop="createdDate">
+          <el-date-picker
+            :editable="false"
+            v-model="factoryBillInfoRef.createdDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            placeholder="账单日期"
+            style="width: 100%"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closeBillDialog">取消</el-button>
-          <el-button type="primary" v-if="data.editBillDialogMode === 0"
-                     @click="validateBillForm(billInfoFormRef)">
-            添加
-          </el-button>
-          <el-button type="primary"
-                     v-if="data.editBillDialogMode === 1" @click="validateBillForm(billInfoFormRef)">
-            编辑
-          </el-button>
-        </div>
+        <el-button @click="closeBillDialog">取消</el-button>
+        <el-button type="primary" @click="validateBillForm(billInfoFormRef)">
+          {{ data.editBillDialogMode === 0 ? '添加' : '保存' }}
+        </el-button>
       </template>
     </el-dialog>
 
-    <!--  账单计算表单弹窗  -->
-    <el-dialog v-model="data.billVisible" title="成衣厂账单" width="50%" center>
+    <!-- 账单统计弹窗 -->
+    <el-dialog v-model="data.billVisible" title="账单统计与导出" width="520px">
       <el-form
-          ref="statisticalBillFormRef"
-          label-position="top"
-          :model="statisticalBillRef"
-          :rules="statisticalBillRules"
+        ref="statisticalBillFormRef"
+        label-position="top"
+        :model="statisticalBillRef"
+        :rules="statisticalBillRules"
       >
-        <el-form-item label="成衣厂名称:" size="large" prop="factoryId">
+        <el-form-item label="成衣厂" prop="factoryId">
           <el-select filterable v-model="statisticalBillRef.factoryId" placeholder="请选择成衣厂">
-            <el-option
-                v-for="(item) in data.factoryList"
-                :label="item.factoryName"
-                :value="item.id"
-            />
+            <el-option v-for="item in data.factoryList" :key="item.id" :label="item.factoryName" :value="item.id" />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="计算日期:" size="large">
-          <el-date-picker
+        <el-form-item label="计算日期">
+          <div class="date-range-row">
+            <el-date-picker
               v-model="statisticalBillRef.startDate"
               type="date"
               format="YYYY/MM/DD"
               value-format="YYYY-MM-DD"
               placeholder="开始日期"
-          />
-          <el-date-picker
+            />
+            <span class="range-sep">→</span>
+            <el-date-picker
               v-model="statisticalBillRef.endDate"
               type="date"
               format="YYYY/MM/DD"
               value-format="YYYY-MM-DD"
               placeholder="结束日期"
-          />
+            />
+          </div>
         </el-form-item>
 
-        <el-form-item label="排序依据（可多选）:" size="large" prop="sortFields">
+        <el-form-item label="排序依据（可多选）" prop="sortFields">
           <el-select
-              v-model="statisticalBillRef.sortFields"
-              multiple
-              clearable
-              collapse-tags
-              collapse-tags-tooltip
-              placeholder="请选择一个或多个排序字段"
-              @change="handleSortFieldsChange"
+            v-model="statisticalBillRef.sortFields"
+            multiple
+            clearable
+            collapse-tags
+            collapse-tags-tooltip
+            placeholder="请选择一个或多个排序字段"
+            @change="handleSortFieldsChange"
           >
             <el-option
-                v-for="item in sortFieldOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+              v-for="item in sortFieldOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
             />
           </el-select>
         </el-form-item>
 
-        <el-form-item v-if="statisticalBillRef.sortFields.length" label="字段排序方向:" size="large">
+        <el-form-item v-if="statisticalBillRef.sortFields.length" label="字段排序方向">
           <div class="sort-direction-list">
-            <div
-                v-for="field in statisticalBillRef.sortFields"
-                :key="field"
-                class="sort-direction-item"
-            >
+            <div v-for="field in statisticalBillRef.sortFields" :key="field" class="sort-direction-item">
               <span class="sort-direction-label">{{ getSortFieldLabel(field) }}</span>
-              <el-select
-                  v-model="statisticalBillRef.sortOrderMap[field]"
-                  placeholder="选择排序方向"
-              >
+              <el-select v-model="statisticalBillRef.sortOrderMap[field]" placeholder="选择排序方向">
                 <el-option label="升序" value="asc" />
                 <el-option label="降序" value="desc" />
               </el-select>
             </div>
           </div>
         </el-form-item>
-        <!-- 计算账单 -->
-        <el-form-item size="large">
-          <el-button
-              type="primary"
-              style="width: 100%"
-              size="large"
-              @click="statisticalBillForm(statisticalBillFormRef)"
-          >
+
+        <el-form-item>
+          <el-button type="primary" class="stat-submit" @click="statisticalBillForm(statisticalBillFormRef)">
             计算并导出账单
           </el-button>
         </el-form-item>
-        <el-form-item size="large">
-          <el-statistic
-              title="账单总和"
-              Transactions
-              :value="outputValue"
-              style="text-align: center; margin: 0 auto; display: block"
-          />
-        </el-form-item>
+
+        <div class="stat-result">
+          <span class="stat-result__label">账单总和</span>
+          <span class="stat-result__value">¥{{ Number(outputValue || 0).toFixed(2) }}</span>
+        </div>
       </el-form>
     </el-dialog>
-
   </div>
 </template>
 
 <script setup>
-import { reactive, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Search, TrendCharts } from '@element-plus/icons-vue'
+import { useTransition } from '@vueuse/core'
+import AdminPageHeader from '../AdminPageHeader.vue'
+import { confirmDelete, formatDate, formatMoney, formatNumber } from '../adminShared.js'
 import { queryFactoryList } from '../../../network/index.js'
 import {
   deleteFactoryBillInfo,
@@ -324,8 +319,6 @@ import {
   saveFactoryBillInfo,
   statisticalFactoryBill
 } from '../../../network/admin/index.js'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useTransition } from '@vueuse/core'
 import {
   loadFactoryOptions,
   openCreateDialog,
@@ -333,12 +326,6 @@ import {
   resetReactiveForm,
   validateDialogForm
 } from './factoryCrudShared.js'
-
-onMounted(() => {
-  loadFactoryList()
-  loadJobCategoryList()
-  fetchFactoryBillList()
-})
 
 const data = reactive({
   billVisible: false,
@@ -357,15 +344,21 @@ const data = reactive({
   pageSize: 10,
   total: 0,
   editBillDialogVisible: false,
-  editBillDialogMode: 0, // 0为新增、1为编辑
+  editBillDialogMode: 0 // 0 为新增、1 为编辑
 })
 
 // 账单总数
 const billTotal = ref(0)
 
-// 动画过渡
+// 数字滚动动画
 const outputValue = useTransition(billTotal, {
   duration: 1000
+})
+
+onMounted(() => {
+  loadFactoryList()
+  loadJobCategoryList()
+  fetchFactoryBillList()
 })
 
 const loadFactoryList = async () => {
@@ -382,13 +375,13 @@ const loadJobCategoryList = async () => {
   }
 }
 
-// TODO 查询成衣厂计件单价的款式编号列表
-const queryFactoryStyleNumberListHandle = async (factoryId) => {
+// 查询成衣厂计件单价的款式编号列表
+const queryFactoryStyleNumberListHandle = async factoryId => {
   if (!factoryId) {
     data.styleNumberList = []
     return
   }
-  const {data: res} = await queryFactoryPieceRateStyleNumberList(factoryId)
+  const { data: res } = await queryFactoryPieceRateStyleNumberList(factoryId)
   if (res.status === 200) {
     data.styleNumberList = res.data
   } else {
@@ -397,67 +390,76 @@ const queryFactoryStyleNumberListHandle = async (factoryId) => {
   }
 }
 
-const onBillFactoryChange = async (factoryId) => {
+const onBillFactoryChange = async factoryId => {
   factoryBillInfoRef.pieceRateId = ''
   await queryFactoryStyleNumberListHandle(factoryId)
 }
 
-// TODO 查询成衣厂账单列表
+// 查询成衣厂账单列表
 const fetchFactoryBillList = async () => {
-  const {data: res} = await queryFactoryBillList(
-      data.factoryId,
-      data.number,
-      data.styleNumber,
-      data.category,
-      data.flag,
-      data.startDate,
-      data.endDate,
-      data.currentPage,
-      data.pageSize
+  const { data: res } = await queryFactoryBillList(
+    data.factoryId,
+    data.number,
+    data.styleNumber,
+    data.category,
+    data.flag,
+    data.startDate,
+    data.endDate,
+    data.currentPage,
+    data.pageSize
   )
-  // 判断请求是否成功
   if (res.status === 200) {
     data.tableData = res.data.records
     data.total = res.data.total
   } else {
     data.tableData = []
+    data.total = 0
   }
 }
 
-// TODO 统计并导出账单
+const onSearch = () => {
+  data.currentPage = 1
+  fetchFactoryBillList()
+}
+
+const onFilterChange = () => {
+  data.currentPage = 1
+  fetchFactoryBillList()
+}
+
+const onSizeChange = () => {
+  data.currentPage = 1
+  fetchFactoryBillList()
+}
+
+// 统计并导出账单
 const statisticalAndExportFactoryBillHandle = async () => {
-  const {data: res} = await statisticalFactoryBill(
-      statisticalBillRef.factoryId,
-      statisticalBillRef.startDate,
-      statisticalBillRef.endDate
+  const { data: res } = await statisticalFactoryBill(
+    statisticalBillRef.factoryId,
+    statisticalBillRef.startDate,
+    statisticalBillRef.endDate
   )
-  // 判断账单是否计算成功
   if (res.status === 200) {
-    // 将计算结果赋值给账单总数
     billTotal.value = res.data.bill
-
-    // 导出账单
     await exportFactoryBillExcelHandle()
-
   } else {
     billTotal.value = 0
     ElMessage.error(res.message)
   }
 }
 
-// TODO 导出账单Excel
+// 导出账单 Excel
 const exportFactoryBillExcelHandle = async () => {
-  // 计算成功后导出账单
   const sortConfigList = (statisticalBillRef.sortFields || []).map(field => ({
     field,
     order: statisticalBillRef.sortOrderMap?.[field] || 'asc'
   }))
 
   const res = await exportFactoryBillExcel(
-      statisticalBillRef.factoryId,
-      statisticalBillRef.startDate,
-      statisticalBillRef.endDate,
-      sortConfigList
+    statisticalBillRef.factoryId,
+    statisticalBillRef.startDate,
+    statisticalBillRef.endDate,
+    sortConfigList
   )
 
   // 获取响应头中的文件名
@@ -475,30 +477,20 @@ const exportFactoryBillExcelHandle = async () => {
     }
   }
 
-  // 创建 blob 对象
   const blob = new Blob([res.data], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   })
 
-  // 创建下载链接
   const url = window.URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-
-  // 设置下载文件名
   link.download = fileName
-
-  // 添加到 DOM 并触发点击
   document.body.appendChild(link)
   link.click()
-
-  // 清理
   document.body.removeChild(link)
   window.URL.revokeObjectURL(url)
 
-  // 提示下载成功
   ElMessage.success('下载成功')
-
 }
 
 /**
@@ -526,6 +518,7 @@ const createFactoryBill = async () => {
   const { data: res } = await saveFactoryBillInfo(factoryBillInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
+    data.editBillDialogVisible = false
     await fetchFactoryBillList()
     return
   }
@@ -533,6 +526,7 @@ const createFactoryBill = async () => {
     const { data: retryRes } = await saveFactoryBillInfo(factoryBillInfoRef, true)
     if (retryRes.status === 200) {
       ElMessage.success(retryRes.message)
+      data.editBillDialogVisible = false
       await fetchFactoryBillList()
     } else {
       ElMessage.error(retryRes.message)
@@ -565,8 +559,13 @@ const updateFactoryBill = async () => {
   data.editBillDialogVisible = false
 }
 
-const removeFactoryBill = async id => {
-  const { data: res } = await deleteFactoryBillInfo(id)
+const removeFactoryBill = async row => {
+  const confirmed = await confirmDelete(
+    `确定删除「${row.factoryName} · 床号 ${row.number}」这条账单吗？删除后毛利统计会同步减少。`
+  )
+  if (!confirmed) return
+
+  const { data: res } = await deleteFactoryBillInfo(row.id)
   if (res.status === 200) {
     ElMessage.success(res.message)
     await fetchFactoryBillList()
@@ -578,52 +577,40 @@ const removeFactoryBill = async id => {
 // 查询指定成衣厂账单表单提交校验函数
 const statisticalBillForm = async formEl => {
   if (!formEl) return
-  await formEl.validate((valid, fields) => {
+  await formEl.validate(valid => {
     if (valid) {
-      // 校验通过后查询并导出账单
       statisticalAndExportFactoryBillHandle()
     }
   })
 }
 
-// 表格自定义合计
-const summaryQuantityAndBill = ({columns, data}) => {
-  const sums = []
-  columns.forEach((column, index) => {
-    // 第一列显示“合计”
-    if (index === 0) {
-      sums[index] = '合计'
-      return
-    }
+// 本页合计：数量与金额，显示在页头，避免表格底部的合计行压住最后一行
+const pageQuantityTotal = computed(() =>
+  data.tableData.reduce((sum, row) => {
+    const value = Number(row.quantity)
+    return Number.isNaN(value) ? sum : sum + value
+  }, 0)
+)
 
-    // 只对 quantity 和 salary 两列求和
-    if (['quantity', 'bill'].includes(column.property)) {
-      const total = data.reduce((sum, row) => {
-        const value = Number(row[column.property])
-        return !isNaN(value) ? sum + value : sum
-      }, 0)
-      // 工资列保留两位小数
-      sums[index] =
-          column.property === 'bill' ? total.toFixed(2) : total
-    } else {
-      sums[index] = ''
-    }
-  })
-  return sums
-}
-
+const pageBillTotal = computed(() =>
+  data.tableData.reduce((sum, row) => {
+    const value = Number(row.bill)
+    return Number.isNaN(value) ? sum : sum + value
+  }, 0)
+)
 
 // 重置按钮点击事件
 const resetQueryCondition = () => {
   data.factoryId = ''
+  data.number = ''
   data.styleNumber = ''
   data.category = ''
   data.flag = 0
   data.startDate = ''
   data.endDate = ''
+  data.currentPage = 1
   fetchFactoryBillList()
 }
-
 
 const statisticalBillFormRef = ref()
 const billInfoFormRef = ref()
@@ -647,8 +634,7 @@ const factoryBillInfoInit = {
   createdDate: ''
 }
 
-// 构建账单实体
-const factoryBillInfoRef = reactive({...factoryBillInfoInit})
+const factoryBillInfoRef = reactive({ ...factoryBillInfoInit })
 
 const openEditBillDialog = async bill => {
   await queryFactoryStyleNumberListHandle(bill.factoryId)
@@ -671,11 +657,11 @@ const closeBillDialog = () => {
 
 const validateBillForm = async formEl => {
   await validateDialogForm(
-      formEl,
-      data.editBillDialogMode,
-      createFactoryBill,
-      updateFactoryBill,
-      () => ElMessage.error('请检查是否填写正确')
+    formEl,
+    data.editBillDialogMode,
+    createFactoryBill,
+    updateFactoryBill,
+    () => ElMessage.error('请检查是否填写正确')
   )
 }
 
@@ -694,19 +680,16 @@ const onlyNumberRule = {
 
 // 添加账单记录校验规则
 const addBillInfoRules = reactive({
-  factoryId: [{required: true, message: '请选择厂名', trigger: 'blur'}],
-  pieceRateId: [{required: true, message: '请选择计件单价', trigger: 'blur'}],
-  number: [{required: true, message: '请输入床号', trigger: 'blur'}],
-  quantity: [
-    {required: true, message: '请输入数量', trigger: 'blur'},
-    onlyNumberRule
-  ],
-  createdDate: [{required: true, message: '请选择账单日期', trigger: 'blur'}]
+  factoryId: [{ required: true, message: '请选择厂名', trigger: 'blur' }],
+  pieceRateId: [{ required: true, message: '请选择计件单价', trigger: 'blur' }],
+  number: [{ required: true, message: '请输入床号', trigger: 'blur' }],
+  quantity: [{ required: true, message: '请输入数量', trigger: 'blur' }, onlyNumberRule],
+  createdDate: [{ required: true, message: '请选择账单日期', trigger: 'blur' }]
 })
 
 // 统计成衣厂账单校验规则
 const statisticalBillRules = reactive({
-  factoryId: [{required: true, message: '请选择成衣厂', trigger: 'blur'}]
+  factoryId: [{ required: true, message: '请选择成衣厂', trigger: 'blur' }]
 })
 
 const sortFieldOptions = [
@@ -738,91 +721,19 @@ const handleSortFieldsChange = selectedFields => {
     }
   })
 }
-
 </script>
 
 <style scoped>
-.factoryBill-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+.range-sep {
+  color: var(--admin-text-muted);
+  font-size: 13px;
 }
 
-.factoryBill-button {
+.date-range-row {
   display: flex;
-  flex-wrap: nowrap;
   align-items: center;
-  padding: 10px 12px;
   gap: 8px;
-  border-bottom: 1px solid var(--el-border-color);
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.factoryBill-button > *:nth-child(1),
-.factoryBill-button > *:nth-child(2) {
-  width: 80px;
-}
-
-.factoryBill-button > *:nth-child(3) {
-  width: 135px;
-}
-
-.factoryBill-button > *:nth-child(4) {
-  width: 90px;
-}
-
-.factoryBill-button > *:nth-child(5) {
-  width: 90px;
-}
-
-.factoryBill-button > *:nth-child(6) {
-  width: 150px;
-}
-
-.factoryBill-button > *:nth-child(7) {
-  width: 80px;
-}
-
-.factoryBill-button > *:nth-child(8),
-.factoryBill-button > *:nth-child(9) {
-  width: 145px;
-}
-
-.factoryBill-button > * {
-  flex-shrink: 0;
-}
-
-.factoryBill-button :deep(.el-input__wrapper),
-.factoryBill-button :deep(.el-select__wrapper),
-.factoryBill-button :deep(.el-date-editor.el-input__wrapper) {
-  min-height: 32px;
-}
-
-.factoryBill-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  padding: 25px 0;
-}
-
-:deep(.el-form-item__content) {
-  flex-wrap: nowrap;
-  gap: 10px;
-}
-
-:deep(.el-table--fit) {
-  flex: auto;
-}
-
-:deep(.el-statistic__number::after) {
-  content: '元';
-}
-
-.readonly-text {
-  color: var(--el-text-color-placeholder);
+  flex-wrap: wrap;
 }
 
 .sort-direction-list {
@@ -840,10 +751,37 @@ const handleSortFieldsChange = selectedFields => {
 
 .sort-direction-label {
   min-width: 88px;
-  color: var(--el-text-color-regular);
+  color: #475467;
+  font-size: 13px;
 }
 
 .sort-direction-item :deep(.el-select) {
   width: 140px;
+}
+
+.stat-submit {
+  width: 100%;
+}
+
+.stat-result {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f4f8ff;
+}
+
+.stat-result__label {
+  font-size: 13px;
+  color: var(--admin-text-secondary);
+}
+
+.stat-result__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand-1);
+  font-variant-numeric: tabular-nums;
 }
 </style>

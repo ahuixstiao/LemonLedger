@@ -1,52 +1,83 @@
 <template>
-  <div class="page-container">
-    <div class="toolbar">
-      <el-button type="primary" @click="openCreate">添加工作方式</el-button>
-      <el-input v-model="data.mode" clearable placeholder="工作方式" @input="fetchList" />
-      <el-select v-model="data.flag" @change="fetchList">
-        <el-option label="正常" :value="0" />
-        <el-option label="删除" :value="1" />
-      </el-select>
-      <el-button type="warning" plain class="toolbar-reset-btn" @click="resetFilter">重置</el-button>
+  <div class="admin-page">
+    <AdminPageHeader
+      title="工作方式"
+      desc="工作方式用于区分压花、刮胶等计件口径，员工计件单价按它来归类。"
+      :count="data.total"
+      count-label="种工作方式"
+    >
+      <template #actions>
+        <el-button type="primary" @click="openCreate">添加工作方式</el-button>
+      </template>
+    </AdminPageHeader>
+
+    <div class="filter-card">
+      <div class="filter-bar">
+        <el-input v-model="data.mode" clearable placeholder="搜索工作方式" @input="onSearch">
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-select v-model="data.flag" placeholder="状态" @change="onStatusChange">
+          <el-option label="正常" :value="0" />
+          <el-option label="删除" :value="1" />
+        </el-select>
+        <div class="filter-actions">
+          <el-button @click="resetFilter">重置</el-button>
+        </div>
+      </div>
     </div>
 
-    <el-table :data="data.tableData" stripe fit>
-      <el-table-column prop="id" label="ID" width="80" align="center" sortable />
-      <el-table-column prop="mode" label="工作方式" align="center" sortable />
-      <el-table-column prop="createdDate" label="创建日期" align="center" sortable />
-      <el-table-column prop="flag" label="状态" width="100" align="center" sortable>
-        <template #default="scope">
-          <el-tag v-if="scope.row.flag === 0" type="success">正常</el-tag>
-          <el-tag v-else type="danger">删除</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="120" align="center">
-        <template #default="scope">
-          <template v-if="isReadOnlyRow(scope.row)">
-            <span class="readonly-text">已删除</span>
+    <div class="table-card">
+      <el-table height="100%" :data="data.tableData" stripe empty-text="还没有工作方式，先添加一个">
+        <el-table-column prop="id" label="ID" width="72" align="center" sortable />
+        <el-table-column prop="mode" label="工作方式" min-width="200" sortable>
+          <template #default="scope">
+            <div class="entity-cell">
+              <span class="entity-avatar">{{ (scope.row.mode || '?').slice(0, 1) }}</span>
+              <span class="entity-name">{{ scope.row.mode }}</span>
+            </div>
           </template>
-          <el-button v-else type="danger" text @click="removeItem(scope.row.id)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+        </el-table-column>
+        <el-table-column prop="createdDate" label="创建日期" align="center" width="140" sortable>
+          <template #default="scope">
+            <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="flag" label="状态" width="110" align="center" sortable>
+          <template #default="scope">
+            <span
+              class="status-pill"
+              :class="scope.row.flag === 0 ? 'is-active' : 'is-removed'"
+            >{{ scope.row.flag === 0 ? '正常' : '删除' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" align="center" fixed="right">
+          <template #default="scope">
+            <span v-if="isReadOnlyRow(scope.row)" class="readonly-text">已删除，不可操作</span>
+            <el-button v-else text type="danger" @click="removeItem(scope.row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
-    <div class="page">
+    <div class="pager-row">
       <el-pagination
         background
         :total="data.total"
         v-model:current-page="data.currentPage"
         v-model:page-size="data.pageSize"
-        :page-sizes="[5,10,20,50]"
-        layout="sizes, prev, pager, next, jumper, ->"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
         @current-change="fetchList"
-        @size-change="fetchList"
+        @size-change="onSizeChange"
       />
     </div>
 
-    <el-dialog v-model="data.dialogVisible" title="添加工作方式" width="35%" center>
-      <el-form ref="formRef" :model="formModel" :rules="rules" label-width="auto">
+    <el-dialog v-model="data.dialogVisible" title="添加工作方式" width="400px">
+      <el-form ref="formRef" :model="formModel" :rules="rules" label-position="top">
         <el-form-item label="工作方式" prop="mode">
-          <el-input v-model="formModel.mode" />
+          <el-input v-model="formModel.mode" placeholder="例如：压花、刮胶" maxlength="30" show-word-limit />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -60,10 +91,21 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
+import AdminPageHeader from '../AdminPageHeader.vue'
+import { confirmDelete, formatDate } from '../adminShared.js'
 import { queryJobModeList, saveJobMode, deleteJobMode } from '../../../network/admin/index.js'
 import { openCreateDialog, resetReactiveForm, validateDialogForm } from './factoryCrudShared.js'
 
-const data = reactive({ mode: '', flag: 0, tableData: [], total: 0, currentPage: 1, pageSize: 10, dialogVisible: false })
+const data = reactive({
+  mode: '',
+  flag: 0,
+  tableData: [],
+  total: 0,
+  currentPage: 1,
+  pageSize: 10,
+  dialogVisible: false
+})
 const formRef = ref()
 const formInit = { mode: '' }
 const formModel = reactive({ ...formInit })
@@ -79,6 +121,21 @@ async function fetchList() {
   } else ElMessage.error(res.message)
 }
 
+function onSearch() {
+  data.currentPage = 1
+  fetchList()
+}
+
+function onStatusChange() {
+  data.currentPage = 1
+  fetchList()
+}
+
+function onSizeChange() {
+  data.currentPage = 1
+  fetchList()
+}
+
 function openCreate() {
   openCreateDialog(formModel, formInit, data, null, 'dialogVisible')
 }
@@ -89,18 +146,27 @@ function closeDialog() {
 }
 
 function submit(formEl) {
-  validateDialogForm(formEl, 0, async () => {
-    const { data: res } = await saveJobMode(formModel)
-    if (res.status === 200) {
-      ElMessage.success(res.message)
-      closeDialog()
-      await fetchList()
-    } else ElMessage.error(res.message)
-  }, null, () => ElMessage.error('请检查是否填写正确'))
+  validateDialogForm(
+    formEl,
+    0,
+    async () => {
+      const { data: res } = await saveJobMode(formModel)
+      if (res.status === 200) {
+        ElMessage.success(res.message)
+        closeDialog()
+        await fetchList()
+      } else ElMessage.error(res.message)
+    },
+    null,
+    () => ElMessage.error('请检查是否填写正确')
+  )
 }
 
-async function removeItem(id) {
-  const { data: res } = await deleteJobMode(id)
+async function removeItem(row) {
+  const confirmed = await confirmDelete(`确定删除工作方式「${row.mode}」吗？`)
+  if (!confirmed) return
+
+  const { data: res } = await deleteJobMode(row.id)
   if (res.status === 200) {
     ElMessage.success(res.message)
     await fetchList()
@@ -121,17 +187,3 @@ function isReadOnlyRow(row) {
   return Number(row?.flag) === 1 || Number(data.flag) === 1
 }
 </script>
-
-<style scoped>
-.page-container { height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
-.toolbar { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--el-border-color); overflow-x: auto; overflow-y: hidden; }
-.toolbar > *:nth-child(1) { width: 120px; }
-.toolbar > *:nth-child(2) { width: 200px; }
-.toolbar > *:nth-child(3) { width: 130px; }
-.toolbar > *:nth-child(4) { width: 96px; }
-.toolbar > * { flex-shrink: 0; }
-.toolbar :deep(.el-input__wrapper), .toolbar :deep(.el-select__wrapper) { min-height: 32px; }
-.page { display: flex; justify-content: center; padding: 25px 0; }
-:deep(.el-table--fit) { flex: auto; }
-.readonly-text { color: var(--el-text-color-placeholder); }
-</style>
