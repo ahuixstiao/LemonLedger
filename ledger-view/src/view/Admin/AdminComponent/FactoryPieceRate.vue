@@ -302,11 +302,15 @@ const isReadOnlyRow = row => {
 const createFactoryPieceRate = async () => {
   const { data: res } = await saveFactoryPieceRateInfo(factoryPieceRateInfoRef)
   if (res.status === 200) {
-    ElMessage.success(`${res.message}，弹窗已重置，可以继续添加下一条`)
-    // 连续录入同一批单价是常态，这里不关弹窗：清空表单、留在「新增」模式，
-    // 让用户少点一次「添加工厂单价」。
+    ElMessage.success(`${res.message}，已保留成衣厂/工作类型/单价，换个款式编号就能继续加`)
+    // 连续录入同一批单价是常态，这里不关弹窗，也不把整张表单清空：
+    // 只清「款式编号」和 id、图片，成衣厂、工作类型、单价留着，
+    // 因为同一批单价往往就是同厂同工种同价、只换款式。
     data.editPriceDialogMode = 0
-    resetPriceForm()
+    factoryPieceRateInfoRef.id = ''
+    factoryPieceRateInfoRef.styleNumber = ''
+    factoryPieceRateInfoRef.imagePath = ''
+    priceInfoFormRef.value?.clearValidate?.()
     if (priceImageUploadInputRef.value) {
       priceImageUploadInputRef.value.value = ''
     }
