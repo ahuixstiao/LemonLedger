@@ -1,6 +1,45 @@
 <template>
   <div class="front-table-wrap">
+    <template v-if="mobile">
+      <div class="m-list">
+        <article class="m-item" v-for="row in tableData" :key="row.id">
+          <div class="m-item__top">
+            <span class="entity-cell">
+              <span class="entity-avatar">{{ avatarText(row.name) }}</span>
+              <span class="entity-name">{{ row.name }}</span>
+            </span>
+            <span class="money">{{ formatMoney(row.salary) }}</span>
+          </div>
+          <p class="m-item__sub">
+            <span>{{ row.factoryName }}</span>
+            <span>床号 {{ row.number }}</span>
+            <span>款式 {{ row.styleNumber }}</span>
+          </p>
+          <div class="m-item__foot">
+            <el-tag size="small" effect="plain" type="info">{{ row.category }}</el-tag>
+            <span class="num">{{ formatNumber(row.quantity) }} 件</span>
+            <span class="date-cell">{{ formatDate(row.createdDate) }}</span>
+            <span class="m-item__actions">
+              <el-button link type="primary" size="small" @click="$emit('edit', row)">编辑</el-button>
+              <el-button link type="danger" size="small" @click="$emit('delete', row)">删除</el-button>
+            </span>
+          </div>
+        </article>
+
+        <p v-if="!tableData.length" class="m-empty">还没有工单记录</p>
+      </div>
+
+      <div v-if="tableData.length" class="m-summary">
+        <span>本页合计</span>
+        <span>
+          <strong>{{ formatNumber(totalQuantity) }}</strong> 件 ·
+          <strong>{{ formatMoney(totalSalary) }}</strong>
+        </span>
+      </div>
+    </template>
+
     <el-table
+      v-else
       :data="tableData"
       class="front-table"
       height="100%"
@@ -58,7 +97,7 @@
         :current-page="currentPage"
         :page-size="pageSize"
         :page-sizes="[5, 10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next"
+        :layout="mobile ? 'prev, pager, next' : 'total, sizes, prev, pager, next'"
         @update:current-page="val => $emit('update:currentPage', val)"
         @update:page-size="val => $emit('update:pageSize', val)"
         @current-change="$emit('query')"
@@ -69,27 +108,37 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { formatDate, formatMoney, formatNumber } from '../../Admin/adminShared.js'
 
 const props = defineProps({
   tableData: { type: Array, default: () => [] },
   total: { type: Number, default: 0 },
   currentPage: { type: Number, default: 1 },
-  pageSize: { type: Number, default: 10 }
+  pageSize: { type: Number, default: 10 },
+  mobile: { type: Boolean, default: false }
 })
 
 defineEmits(['edit', 'delete', 'query', 'update:currentPage', 'update:pageSize'])
 
 const avatarText = name => (name ? String(name).slice(0, 1) : '?')
 
+const totalQuantity = computed(() =>
+  props.tableData.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0)
+)
+
+const totalSalary = computed(() =>
+  props.tableData.reduce((sum, row) => sum + (Number(row.salary) || 0), 0)
+)
+
 const getSummaries = ({ columns }) => {
   return columns.map(column => {
     if (column.label === '员工') return '合计'
     if (column.property === 'quantity') {
-      return formatNumber(props.tableData.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0))
+      return formatNumber(totalQuantity.value)
     }
     if (column.property === 'salary') {
-      return formatMoney(props.tableData.reduce((sum, row) => sum + (Number(row.salary) || 0), 0))
+      return formatMoney(totalSalary.value)
     }
     return ''
   })
@@ -103,5 +152,12 @@ const getSummaries = ({ columns }) => {
 
 .front-table :deep(.el-table__footer .cell) {
   font-weight: 600;
+}
+
+.m-empty {
+  padding: 30px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--admin-text-muted);
 }
 </style>

@@ -32,6 +32,7 @@
           :total="data.total"
           :current-page="data.currentPage"
           :page-size="data.pageSize"
+          :mobile="data.isNarrow"
           @update:currentPage="val => (data.currentPage = val)"
           @update:pageSize="val => (data.pageSize = val)"
           @query="queryJobListByEmployeeIdAndDateHandle"
@@ -130,6 +131,7 @@ import {
 
 const updateMobileState = () => {
   data.isMobile = window.matchMedia('(max-width: 960px)').matches
+  data.isNarrow = window.matchMedia('(max-width: 960px)').matches
 }
 
 onMounted(() => {
@@ -174,6 +176,7 @@ const data = reactive({
   sampleStyleOptions: [],
   sampleQueried: false,
   isMobile: false,
+  isNarrow: false,
   imageVersion: 0
 })
 

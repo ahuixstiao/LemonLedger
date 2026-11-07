@@ -723,3 +723,159 @@ ul {
     min-height: 100%;
   }
 }
+
+/* ============================================================
+   手机端（≤768px）：页头/筛选收成单列，表格换成卡片列表
+   ============================================================ */
+.m-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 2px 0;
+}
+
+.m-item {
+  padding: 12px;
+  border: 1px solid var(--admin-card-border);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.m-item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.m-item__top .entity-cell {
+  justify-content: flex-start;
+}
+
+.m-item__sub {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 12.5px;
+  color: var(--admin-text-secondary);
+}
+
+.m-item__foot {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--admin-text-secondary);
+}
+
+.m-item__actions {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+/* 同一行里的操作区靠右，不和日期挤在一起 */
+.m-item__foot .m-item__actions {
+  margin-top: 0;
+  margin-left: auto;
+}
+
+/* 平板宽度下卡片两列排，避免一张卡拉得太长 */
+@media (min-width: 640px) and (max-width: 960px) {
+  .m-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.m-item__actions .el-button + .el-button {
+  margin-left: 0;
+}
+
+.m-item__claim {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.m-summary {
+  margin-top: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 10px;
+  background: #f7f9fd;
+  font-size: 12.5px;
+  color: var(--admin-text-secondary);
+}
+
+.m-summary strong {
+  color: var(--brand-1);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 960px) {
+  .admin-page-head {
+    align-items: flex-start;
+  }
+
+  .admin-page-head__aside {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .filter-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .filter-actions .el-button {
+    flex: 1 1 0;
+    margin-left: 0;
+  }
+
+  .filter-bar > .el-input,
+  .filter-bar > .el-select,
+  .filter-bar > .el-date-editor,
+  .filter-bar > .filter-wide,
+  .filter-bar > .filter-date {
+    width: 100%;
+  }
+
+  .filter-dates {
+    width: 100%;
+  }
+
+  .filter-dates .el-date-editor {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-card {
+    flex: 0 0 auto;
+  }
+
+  .front-table-wrap {
+    padding: 4px 6px 10px;
+  }
+
+  .front-pager {
+    justify-content: center;
+    padding-top: 12px;
+  }
+
+  .admin-page-head__aside .el-button {
+    flex: 1 1 0;
+    margin-left: 0;
+  }
+}
