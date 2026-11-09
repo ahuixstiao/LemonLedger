@@ -514,11 +514,22 @@ const confirmDuplicateAndRetry = async message => {
   }
 }
 
+/**
+ * 添加成功后弹窗不关，只把「床号 / 计件单价 / 数量」清空，
+ * 成衣厂和账单日期留着，方便同一个厂同一天连着录好几床。
+ */
+const clearBillInputsAfterCreate = () => {
+  factoryBillInfoRef.number = ''
+  factoryBillInfoRef.pieceRateId = ''
+  factoryBillInfoRef.quantity = ''
+  billInfoFormRef.value?.clearValidate?.(['number', 'pieceRateId', 'quantity'])
+}
+
 const createFactoryBill = async () => {
   const { data: res } = await saveFactoryBillInfo(factoryBillInfoRef)
   if (res.status === 200) {
     ElMessage.success(res.message)
-    data.editBillDialogVisible = false
+    clearBillInputsAfterCreate()
     await fetchFactoryBillList()
     return
   }
@@ -526,7 +537,7 @@ const createFactoryBill = async () => {
     const { data: retryRes } = await saveFactoryBillInfo(factoryBillInfoRef, true)
     if (retryRes.status === 200) {
       ElMessage.success(retryRes.message)
-      data.editBillDialogVisible = false
+      clearBillInputsAfterCreate()
       await fetchFactoryBillList()
     } else {
       ElMessage.error(retryRes.message)
