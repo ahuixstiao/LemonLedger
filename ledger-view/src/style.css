@@ -424,13 +424,20 @@ ul {
 
 /* 起止日期成组出现，换行时不会被拆到两行 */
 .filter-dates {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .filter-dates .el-date-editor {
-  width: 150px;
+  flex: 0 0 140px;
+  width: 140px;
+}
+
+.filter-bar .filter-dates .el-date-editor {
+  flex: 0 0 140px !important;
+  width: 140px !important;
 }
 
 .filter-bar .filter-hint {
@@ -465,12 +472,6 @@ ul {
 .table-card .el-table {
   flex: 1 1 auto;
   min-height: 0;
-}
-
-/* 前台表格按内容撑开：行数少时不要把表格拉高到视口底部，
-   否则合计行会盖住最后一行的下半截 */
-.table-card .el-table.front-table {
-  flex: 0 0 auto;
 }
 
 .table-card .el-table {
@@ -655,24 +656,13 @@ ul {
   display: flex;
   flex-direction: column;
   padding: 18px 24px 22px;
+  /* 与后台一致：内容区不滚动，长列表在表格内部滚 */
+  overflow: hidden;
 }
 
 .front-content > .admin-page {
   height: 100%;
-}
-
-/* 前台按内容高度排版：行数多时整页滚动，而不是把表格压在卡片里裁掉 */
-.front-content {
-  overflow-y: auto;
-}
-
-.front-content > .admin-page {
-  height: auto;
-  min-height: 100%;
-}
-
-.front-content .table-card {
-  flex: 0 0 auto;
+  min-height: 0;
 }
 
 /* 表格卡片内的分页：与后台一致靠右 */
@@ -691,6 +681,26 @@ ul {
 
 .front-pager {
   padding: 10px 2px 0;
+}
+
+/* 列表合计：放在表格外面，不随表格内部滚动遮挡最后一行 */
+.front-summary {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: #f7f9fd;
+  font-size: 12.5px;
+  color: var(--admin-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.front-summary strong {
+  color: var(--text-primary);
 }
 
 /* 弹窗统一宽度上限，手机上也留出边距 */
@@ -755,6 +765,7 @@ ul {
     display: none;
   }
 
+  /* 手机/平板：卡片列表按内容撑开，整页滚动 */
   .front-content {
     padding: 12px;
     overflow-y: auto;
@@ -763,6 +774,10 @@ ul {
   .front-content > .admin-page {
     height: auto;
     min-height: 100%;
+  }
+
+  .front-content .table-card {
+    flex: 0 0 auto;
   }
 }
 
