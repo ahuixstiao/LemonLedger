@@ -74,7 +74,12 @@
         </el-form-item>
 
         <el-form-item label="数量" prop="quantity">
-          <el-input v-model="workOrderFormModel.quantity" placeholder="输入数量" />
+          <div class="qty-row">
+            <el-input v-model="workOrderFormModel.quantity" placeholder="输入数量" />
+            <el-checkbox v-if="data.workOrderDialogMode === 0" v-model="doubleQuantity" class="qty-double">
+              数量 ×2
+            </el-checkbox>
+          </div>
         </el-form-item>
 
         <el-form-item label="工单日期" prop="createdDate">
@@ -382,17 +387,19 @@ const fetchWorkOrderList = async () => {
  * 新增工单。
  */
 const createWorkOrder = async () => {
+  const inputQuantity = Number(workOrderFormModel.quantity)
+  const quantity = doubleQuantity.value ? inputQuantity * 2 : inputQuantity
   const payload = {
     factoryId: workOrderFormModel.factoryId,
     number: workOrderFormModel.number,
     styleNumber: workOrderFormModel.styleNumber,
     categoryId: workOrderFormModel.categoryId,
-    quantity: Number(workOrderFormModel.quantity),
+    quantity,
     createdDate: workOrderFormModel.createdDate
   }
   const { data: res } = await saveWorkOrder(payload)
   if (res.status === 200) {
-    ElMessage.success(res.message)
+    ElMessage.success(doubleQuantity.value ? `${res.message}（已按 ×2 记为 ${quantity} 件）` : res.message)
     //closeWorkOrderDialog()
     await fetchWorkOrderList()
   } else {
@@ -451,6 +458,8 @@ const onWorkOrderFilterReset = () => {
 }
 
 const workOrderFormRef = ref()
+// 添加工单时勾选，提交的数量按输入值 ×2
+const doubleQuantity = ref(false)
 const workOrderFormInit = {
   id: '',
   factoryId: '',
@@ -466,6 +475,7 @@ const workOrderFormModel = reactive({ ...workOrderFormInit })
  * 打开新增工单弹窗。
  */
 const openCreateWorkOrderDialog = () => {
+  doubleQuantity.value = false
   openCreateDialog(
     workOrderFormModel,
     workOrderFormInit,
@@ -496,6 +506,7 @@ const openEditWorkOrderDialog = workOrder => {
  * 关闭工单弹窗并重置表单。
  */
 const closeWorkOrderDialog = () => {
+  doubleQuantity.value = false
   resetReactiveForm(workOrderFormModel, workOrderFormInit, workOrderFormRef)
   data.workOrderDialogMode = 0
   data.editWorkOrderDialogVisible = false
@@ -706,5 +717,39 @@ onBeforeRouteLeave(() => {
 
 .dialog-footer :deep(.el-button + .el-button) {
   margin-left: 0;
+}
+
+/* 数量输入框 + 「数量 ×2」勾选 */
+.qty-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.qty-row .el-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.qty-double {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  margin-right: 0;
+}
+
+.qty-double :deep(.el-checkbox__label) {
+  padding-left: 6px;
+  font-size: 13px;
+}
+
+@media (max-width: 960px) {
+  .qty-row {
+    align-items: center;
+  }
+
+  .qty-double :deep(.el-checkbox__label) {
+    font-size: 12.5px;
+  }
 }
 </style>
