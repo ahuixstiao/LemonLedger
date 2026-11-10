@@ -596,3 +596,15 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **验证**：床 378 压花 310 / 刮胶 0 → 剩余 310；金狐 76 压花 714 / 刮胶 714 → 剩余 0；首屏总计 数量 3,663 / 压花 3,663 / 刮胶 2,551 / 剩余 1,112。接口实测把工单数量改到 10 被拒，把单条记录改到 800 被拒、改回 714 通过。
 - **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.3 ledger-api`，`:2.3` 与 `:latest` 已推送，digest `sha256:f10023bed683f31c8cc37d3269202671a04e1be937ec24affbc1976067d79f4b`；`docker-compose.yml` 的 image 改为 2.3。
 - 涉及文件：`ledger-db/.../mapper/JobWorkOrderMapper.xml`、`JobMapper.java`、`entity/dto/JobWorkOrderDTO.java`、`impl/job/JobWorkOrderServiceImpl.java`、`impl/job/JobServiceImpl.java`、`ledger-view/src/view/Home/HomeComponent/WorkOrderTable.vue`、`docker-compose.yml`。
+
+## 17. 导出账单文件名带上成衣厂名称（2026-11-10）
+
+- **问题**：成衣厂账单导出的 Excel 文件名固定为「成衣厂账单.xlsx」，没有厂名。
+- **根因**：后端确实拼了 `fileName = 厂名 + "成衣厂账单.xlsx"`，但把它放进了 `Content-Disposition` 的 `filename="中文名"` 里。响应头里出现非 ASCII 字符时，Tomcat 会**直接丢弃整个 `Content-Disposition` 头**（可在 nginx 侧看到该头完全不存在，不是被 nginx 剥掉）。前端拿不到头，就退回硬编码的默认文件名。
+- **后端修复**：`filename=` 改成纯 ASCII 的 `factory-bill-{厂 id}.xlsx` 作为兜底，中文名改由 RFC 5987 的 `filename*=UTF-8''...` 承载；`replace("+", "%20")` 修正空格的编码（原来写的 `replaceAll("\\\\+", ...)` 匹配不到加号）。
+- **前端修复**：`filename*` 的正则原来是 `/filename\\*=UTF-8''.../`，`\\` 是字面反斜杠，永远匹配不到；改成 `/filename\*=UTF-8''([^;\n]*)/i`。同时默认文件名优先取当前筛选的成衣厂名，而不是写死。
+- **验证**：本地把新 jar 放进容器后，响应头为
+  `attachment; filename="factory-bill-1.xlsx"; filename*=UTF-8''%E9%87%8E%E7%8B%BC%E4%BC%A0%E8%AF%B4%E6%88%90%E8%A1%A3%E5%8E%82%E8%B4%A6%E5%8D%95.xlsx`，
+  解码后是「野狼传说成衣厂账单.xlsx」，下载内容 11,552 字节未变；前端解析用同一段响应头实测得到同名。
+- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.4 ledger-api`；`docker-compose.yml` 的 image 改为 2.4，容器已切到 2.4。
+- 涉及文件：`ledger-api/src/main/java/com/ledger/api/controller/admin/factory/FactoryBillController.java`、`ledger-view/src/view/Admin/AdminComponent/FactoryBill.vue`、`docker-compose.yml`。

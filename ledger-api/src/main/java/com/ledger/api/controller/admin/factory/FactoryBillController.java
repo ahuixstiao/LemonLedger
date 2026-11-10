@@ -158,9 +158,12 @@ public class FactoryBillController {
         // 将总计行添加到列表末尾
         list.add(summaryRow);
 
-        // 格式化文件名，兼容 MacOS/Windows 下载行为
-        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
-        String contentDisposition = "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName;
+        // 文件名必须是纯 ASCII 才能放进 filename=：中文名直接塞进这个参数时，
+        // Tomcat 会丢掉整个 Content-Disposition 头，浏览器只能退回默认名，
+        // 表现就是“导出的文件名没有成衣厂名称”。中文名改由 RFC 5987 的 filename* 承载。
+        String asciiFileName = "factory-bill-" + parsedFactoryId + ".xlsx";
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        String contentDisposition = "attachment; filename=\"" + asciiFileName + "\"; filename*=UTF-8''" + encodedFileName;
 
         // 设置响应内容文件类型
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); // 设为输出 excel文件

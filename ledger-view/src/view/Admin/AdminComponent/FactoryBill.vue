@@ -462,8 +462,10 @@ const exportFactoryBillExcelHandle = async () => {
     sortConfigList
   )
 
-  // 获取响应头中的文件名
-  let fileName = '成衣厂账单.xlsx'
+  // 文件名优先用响应头里的 filename*（RFC 5987，带成衣厂名称）；
+  // 拿不到响应头时按当前选中的成衣厂自己拼一个，避免又退回成“成衣厂账单.xlsx”
+  const selectedFactory = data.factoryList.find(item => String(item.id) === String(statisticalBillRef.factoryId))
+  let fileName = `${selectedFactory?.factoryName || '成衣厂'}成衣厂账单.xlsx`
   const contentDisposition = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition']
   if (contentDisposition) {
     const fileNameStarMatch = contentDisposition.match(/filename\*=UTF-8''([^;\n]*)/i)
