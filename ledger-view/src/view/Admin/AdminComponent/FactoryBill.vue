@@ -515,14 +515,13 @@ const confirmDuplicateAndRetry = async message => {
 }
 
 /**
- * 添加成功后弹窗不关，只把「床号 / 计件单价 / 数量」清空，
- * 成衣厂和账单日期留着，方便同一个厂同一天连着录好几床。
+ * 添加成功后弹窗不关，只把「床号 / 数量」清空，
+ * 成衣厂、计件单价和账单日期留着，方便同一个厂同一天连着录好几床。
  */
 const clearBillInputsAfterCreate = () => {
   factoryBillInfoRef.number = ''
-  factoryBillInfoRef.pieceRateId = ''
   factoryBillInfoRef.quantity = ''
-  billInfoFormRef.value?.clearValidate?.(['number', 'pieceRateId', 'quantity'])
+  billInfoFormRef.value?.clearValidate?.(['number', 'quantity'])
 }
 
 const createFactoryBill = async () => {
