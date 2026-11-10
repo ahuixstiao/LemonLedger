@@ -606,5 +606,5 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **验证**：本地把新 jar 放进容器后，响应头为
   `attachment; filename="factory-bill-1.xlsx"; filename*=UTF-8''%E9%87%8E%E7%8B%BC%E4%BC%A0%E8%AF%B4%E6%88%90%E8%A1%A3%E5%8E%82%E8%B4%A6%E5%8D%95.xlsx`，
   解码后是「野狼传说成衣厂账单.xlsx」，下载内容 11,552 字节未变；前端解析用同一段响应头实测得到同名。
-- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.4 ledger-api`；`docker-compose.yml` 的 image 改为 2.4，容器已切到 2.4。
+- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.4 ledger-api`；`:2.4` 与 `:latest` 均已推送 Docker Hub，digest 同为 `sha256:86bf90dc113286ee5016cd0c84d7b30250d06f02cddf71ce0b0aaf42e7b106f3`；`docker-compose.yml` 的 image 改为 2.4，容器已切到 2.4。
 - 涉及文件：`ledger-api/src/main/java/com/ledger/api/controller/admin/factory/FactoryBillController.java`、`ledger-view/src/view/Admin/AdminComponent/FactoryBill.vue`、`docker-compose.yml`。
