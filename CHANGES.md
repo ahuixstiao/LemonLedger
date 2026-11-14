@@ -617,5 +617,5 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **问题二**：项目部署在 docker 里，样板图片写在容器内 `/lemonLedgerImages`，每次删容器重建就丢。
 - **修复**：先把容器里现有 90 个文件（39.7 MB）`docker cp` 出来到仓库旁 `lemonLedgerImages/`，`docker-compose.yml` 的 lemonledger 服务加卷 `./lemonLedgerImages:/lemonLedgerImages`；`.gitignore` 忽略该目录（真实图片不进仓库）。以后换镜像/删容器图片都还在，备份时连同 `mysql-data` 和 `lemonLedgerImages` 一起拷走即可。
 - **验证**：新建测试账单（李波 / ZZTEST-9 / 3301）→ 编辑换成 3306 的单价 → 返回 200，款式变 3306，旧床自动删除，只剩一张 `ZZTEST-9 / 3306` 的床；测试账单与床已清理（flag=1）。容器重建后 `/lemonLedgerImages` 有 90 个文件，`GET /api/admin/factoryPieceRate/imageView/factoryPieceRate/745/52b4f6bc….png` 返回 200（470,614 字节）。
-- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.5 ledger-api`；`docker-compose.yml` 的 image 改为 2.5 并挂上图片卷，容器已重建为 2.5。
+- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.5 ledger-api`；`docker-compose.yml` 的 image 改为 2.5 并挂上图片卷，容器已重建为 2.5。`:2.5` 与 `:latest` 已推送 Docker Hub，digest 同为 `sha256:a47bd6316943fdd5896e36c89d4c30c915a5ca68c409238fd94825671843449a`。
 - 涉及文件：`ledger-db/.../service/IBatchService.java`、`impl/BatchServiceImpl.java`、`impl/factory/FactoryBillServiceImpl.java`、`impl/job/JobWorkOrderServiceImpl.java`、`docker-compose.yml`、`.gitignore`、`ledger-api/Dockerfile`。
