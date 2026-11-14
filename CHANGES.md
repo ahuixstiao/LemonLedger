@@ -608,3 +608,14 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   解码后是「野狼传说成衣厂账单.xlsx」，下载内容 11,552 字节未变；前端解析用同一段响应头实测得到同名。
 - **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.4 ledger-api`；`:2.4` 与 `:latest` 均已推送 Docker Hub，digest 同为 `sha256:86bf90dc113286ee5016cd0c84d7b30250d06f02cddf71ce0b0aaf42e7b106f3`；`docker-compose.yml` 的 image 改为 2.4，容器已切到 2.4。
 - 涉及文件：`ledger-api/src/main/java/com/ledger/api/controller/admin/factory/FactoryBillController.java`、`ledger-view/src/view/Admin/AdminComponent/FactoryBill.vue`、`docker-compose.yml`。
+
+## 18. 编辑账单换款式不再报「已有一张床」、样板图片持久化（2026-11-14）
+
+- **问题一**：编辑成衣厂账单、把计件单价换成另一个款式时，会报「修改床失败：已经有一张「204 / 3301」的床了，请直接用它」，明明只有一床。
+- **根因**：床的唯一键是 (成衣厂, 床号, 款式编号)。`BatchServiceImpl.renameBatch` 发现目标 (床号, 款式) 已经被另一张床占着时直接抛异常，而这其实是同一床号下换了个款式——应该把单据挪过去，而不是改那张旧床的名字。
+- **修复**：`renameBatch` 改成返回「单据最终应该挂的床」：目标床已存在就直接复用（把账单/工单挪过去），否则才真的改床并同步冗余列；调用方（账单、工单）保存返回的 batchId。新增 `deleteIfEmpty`：单据从旧床挪走后，旧床一张单据都不剩就顺手逻辑删除，床列表不会堆积空床。
+- **问题二**：项目部署在 docker 里，样板图片写在容器内 `/lemonLedgerImages`，每次删容器重建就丢。
+- **修复**：先把容器里现有 90 个文件（39.7 MB）`docker cp` 出来到仓库旁 `lemonLedgerImages/`，`docker-compose.yml` 的 lemonledger 服务加卷 `./lemonLedgerImages:/lemonLedgerImages`；`.gitignore` 忽略该目录（真实图片不进仓库）。以后换镜像/删容器图片都还在，备份时连同 `mysql-data` 和 `lemonLedgerImages` 一起拷走即可。
+- **验证**：新建测试账单（李波 / ZZTEST-9 / 3301）→ 编辑换成 3306 的单价 → 返回 200，款式变 3306，旧床自动删除，只剩一张 `ZZTEST-9 / 3306` 的床；测试账单与床已清理（flag=1）。容器重建后 `/lemonLedgerImages` 有 90 个文件，`GET /api/admin/factoryPieceRate/imageView/factoryPieceRate/745/52b4f6bc….png` 返回 200（470,614 字节）。
+- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.5 ledger-api`；`docker-compose.yml` 的 image 改为 2.5 并挂上图片卷，容器已重建为 2.5。
+- 涉及文件：`ledger-db/.../service/IBatchService.java`、`impl/BatchServiceImpl.java`、`impl/factory/FactoryBillServiceImpl.java`、`impl/job/JobWorkOrderServiceImpl.java`、`docker-compose.yml`、`.gitignore`、`ledger-api/Dockerfile`。

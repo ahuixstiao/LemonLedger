@@ -80,22 +80,28 @@ public class BatchServiceImpl extends LedgerServiceImpl<BatchMapper, Batch> impl
 
     /**
      * 改床号/款式，同时刷新工单、账单、工作记录上的冗余列。
+     *
+     * <p>目标 (厂, 床号, 款式) 已经被另一张床占着时，不再报错：直接复用那张床，
+     * 让调用方把单据挪过去。这样「编辑账单/工单时换了个款式」不会被卡住，
+     * 也不会把原来那张床上的其它单据一起改掉。</p>
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void renameBatch(Integer batchId, Integer factoryId, String number, String styleNumber) {
+    public Batch renameBatch(Integer batchId, Integer factoryId, String number, String styleNumber) {
 
         number = trimToEmpty(number);
         styleNumber = trimToEmpty(styleNumber);
 
-        Batch batch = getById(batchId);
-        if (batch == null) {
-            throw new BizException("修改床失败：这张床不存在或已被删除");
+        Batch sameBatch = findBatch(factoryId, number, styleNumber);
+        if (sameBatch != null) {
+            // 已经是自己，或者同号同款的另一张床：两种情况都直接用它
+            return sameBatch;
         }
 
-        Batch sameBatch = findBatch(factoryId, number, styleNumber);
-        if (sameBatch != null && !sameBatch.getId().equals(batchId)) {
-            throw new BizException("修改床失败：已经有一张「" + number + " / " + styleNumber + "」的床了，请直接用它");
+        Batch batch = getById(batchId);
+        if (batch == null) {
+            // 床被删了（历史数据），按目标信息补一张
+            return findOrCreate(factoryId, number, styleNumber);
         }
 
         batch.setFactoryId(factoryId);
@@ -108,6 +114,7 @@ public class BatchServiceImpl extends LedgerServiceImpl<BatchMapper, Batch> impl
         batchMapper.updateJobBatchInfo(batchId, factoryId, number, styleNumber);
         batchMapper.updateWorkOrderBatchInfo(batchId, factoryId, number, styleNumber);
         batchMapper.updateBillBatchInfo(batchId, factoryId, number);
+        return batch;
     }
 
     /**
@@ -152,6 +159,29 @@ public class BatchServiceImpl extends LedgerServiceImpl<BatchMapper, Batch> impl
         }
 
         return Result.ok();
+    }
+
+    /**
+     * 床上一张单据都不剩时，把它一起逻辑删除，避免床列表里堆积空床
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteIfEmpty(Integer batchId) {
+
+        if (batchId == null) {
+            return;
+        }
+
+        long billCount = factoryBillMapper.selectCount(
+                Wrappers.<FactoryBill>lambdaQuery().eq(FactoryBill::getBatchId, batchId));
+        long jobCount = jobMapper.selectCount(
+                Wrappers.<Job>lambdaQuery().eq(Job::getBatchId, batchId));
+        long workOrderCount = jobWorkOrderMapper.selectCount(
+                Wrappers.<JobWorkOrder>lambdaQuery().eq(JobWorkOrder::getBatchId, batchId));
+
+        if (billCount == 0 && jobCount == 0 && workOrderCount == 0) {
+            removeById(batchId);
+        }
     }
 
     /**

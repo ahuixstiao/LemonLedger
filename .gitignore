@@ -55,6 +55,7 @@ log/
 mysql-data/
 deploy/backup/
 *.mysqldump.sql
+lemonLedgerImages/
 
 ### macOS / logs ###
 .DS_Store

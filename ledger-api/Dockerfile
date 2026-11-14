@@ -1,7 +1,9 @@
-﻿# LemonLedger 后端运行镜像
+# LemonLedger 后端运行镜像
 # 构建（在仓库根目录执行，构建上下文就是 ledger-api）：
 #   mvn clean package
-#   docker build -t 794862853/lemonledger:2.2 ./ledger-api
+#   docker build -t 794862853/lemonledger:2.5 ./ledger-api
+# 样板图片在 /lemonLedgerImages，docker-compose 里已挂到宿主机 ./lemonLedgerImages，
+# 删容器/换镜像都不会丢。
 FROM eclipse-temurin:17-jre
 
 LABEL org.opencontainers.image.title="LemonLedger" \

@@ -144,15 +144,22 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
         }
 
         // 床号/款式/厂改了，先改床本身，由它把关联的工单、账单、工作记录一起刷新；
-        // 没挂床的老数据（迁移前的）这里补挂一张
-        Integer batchId = original.getBatchId();
+        // 没挂床的老数据（迁移前的）这里补挂一张。
+        // 目标床号+款式已经有另一张床时，renameBatch 直接返回那张床（把工单挪过去），不会报错
+        Integer oldBatchId = original.getBatchId();
+        Integer batchId = oldBatchId;
         if (batchId == null) {
             Batch batch = batchService.findOrCreate(workOrder.getFactoryId(), workOrder.getNumber(), workOrder.getStyleNumber());
             batchId = batch.getId();
         } else {
-            batchService.renameBatch(batchId, workOrder.getFactoryId(), workOrder.getNumber(), workOrder.getStyleNumber());
+            batchId = batchService.renameBatch(batchId, workOrder.getFactoryId(), workOrder.getNumber(), workOrder.getStyleNumber()).getId();
         }
         workOrder.setBatchId(batchId);
+
+        // 工单从旧床挪走了，旧床若已空就顺手删掉
+        if (oldBatchId != null && !oldBatchId.equals(batchId)) {
+            batchService.deleteIfEmpty(oldBatchId);
+        }
 
         if (!updateById(workOrder)) {
             throw new BizException("修改工单失败：该工单不存在，或已被其他人修改，请刷新后重试");

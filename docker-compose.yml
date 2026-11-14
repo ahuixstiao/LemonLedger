@@ -1,9 +1,12 @@
-﻿services:
+services:
   lemonledger:
-    image: 794862853/lemonledger:2.4
+    image: 794862853/lemonledger:2.5
     container_name: lemonledger_container
     expose:
       - "8080"  # 内部端口
+    volumes:
+      # 样板图片目录：挂到宿主机，删容器/换镜像都不会丢
+      - ./lemonLedgerImages:/lemonLedgerImages
     environment:
       SPRING_PROFILES_ACTIVE: db,common
       # 同一 docker 网络内用服务名 mysql 解析，不再依赖 host.docker.internal

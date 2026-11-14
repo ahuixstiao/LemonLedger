@@ -250,14 +250,21 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
         bill.setBill(MoneyUtil.scale(BigDecimal.valueOf(quantity).multiply(matchedPrice.getPrice())));
 
         // 床号/款式/厂变了，先改床本身（它会同步工单和工作记录上的冗余列）；
-        // 迁移前的老账单没有 batchId，这里补挂
-        Integer batchId = originalBill.getBatchId();
+        // 迁移前的老账单没有 batchId，这里补挂。
+        // 目标床号+款式已经存在另一张床时，renameBatch 会直接返回那张床（把账单挪过去），不会报错
+        Integer oldBatchId = originalBill.getBatchId();
+        Integer batchId = oldBatchId;
         if (batchId == null) {
             batchId = batchService.findOrCreate(factoryId, number, matchedPrice.getStyleNumber()).getId();
         } else {
-            batchService.renameBatch(batchId, factoryId, number, matchedPrice.getStyleNumber());
+            batchId = batchService.renameBatch(batchId, factoryId, number, matchedPrice.getStyleNumber()).getId();
         }
         bill.setBatchId(batchId);
+
+        // 账单从旧床挪走了，旧床若已空就顺手删掉
+        if (oldBatchId != null && !oldBatchId.equals(batchId)) {
+            batchService.deleteIfEmpty(oldBatchId);
+        }
 
         // 修改
         if (!updateById(bill)) {
