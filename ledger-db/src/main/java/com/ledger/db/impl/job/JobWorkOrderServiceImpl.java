@@ -104,6 +104,10 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
         Batch batch = batchService.findOrCreate(workOrder.getFactoryId(), workOrder.getNumber(), workOrder.getStyleNumber());
         workOrder.setBatchId(batch.getId());
 
+        // 计数列只由认领/撤销维护，新增时即使请求里带了也不采纳（落库按默认 0）
+        workOrder.setClaimedEmboss(null);
+        workOrder.setClaimedGlue(null);
+
         if (!save(workOrder)) {
             throw new BizException("新增工单失败，请重试");
         }
@@ -125,7 +129,13 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
             throw new BizException("所选日期当天已存在相同工单数据，不允许重复提交");
         }
 
-        JobWorkOrder original = getById(workOrder.getId());
+        // 锁住工单行：认领那边是靠一条带条件的 UPDATE 扣减计数，这里如果只查不算锁，
+        // 就会出现「读到还没被认领 → 把数量改到比已认领还小」的并发窗口。
+        JobWorkOrder original = lambdaQuery()
+                .eq(JobWorkOrder::getId, workOrder.getId())
+                .eq(JobWorkOrder::getFlag, 0)
+                .last("for update")
+                .one();
         if (original == null) {
             throw new BizException("修改工单失败：该工单不存在或已被删除");
         }
@@ -135,8 +145,9 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
         // 数量就不能小于它，否则那部分认领记录就凭空超出工单了。
         Integer newQuantity = workOrder.getQuantity();
         if (ObjectUtil.isNotNull(newQuantity) && !newQuantity.equals(original.getQuantity())) {
-            Integer maxClaimed = jobMapper.maxClaimedQuantityByMode(workOrder.getId());
-            int claimed = maxClaimed == null ? 0 : maxClaimed;
+            int claimed = Math.max(
+                    ObjectUtil.defaultIfNull(original.getClaimedEmboss(), 0),
+                    ObjectUtil.defaultIfNull(original.getClaimedGlue(), 0));
             if (newQuantity < claimed) {
                 throw new BizException("该工单已被认领 " + claimed + " 件，数量不能小于 " + claimed
                         + "；如需下调，请先撤销多出来的认领记录");
@@ -160,6 +171,10 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
         if (oldBatchId != null && !oldBatchId.equals(batchId)) {
             batchService.deleteIfEmpty(oldBatchId);
         }
+
+        // 计数列只由认领/撤销维护，编辑工单时不能用请求里的值覆盖
+        workOrder.setClaimedEmboss(null);
+        workOrder.setClaimedGlue(null);
 
         if (!updateById(workOrder)) {
             throw new BizException("修改工单失败：该工单不存在，或已被其他人修改，请刷新后重试");
@@ -211,12 +226,26 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
             throw new BizException("工单ID不能为空");
         }
 
-        Long claimedCount = jobMapper.selectCount(
-                Wrappers.<Job>lambdaQuery()
-                        .eq(Job::getWorkOrderId, id)
-                        .eq(Job::getFlag, 0));
-        if (claimedCount != null && claimedCount > 0) {
-            throw new BizException("该工单已有 " + claimedCount + " 条认领记录，不能直接删除；请先撤销认领");
+        // 锁住再判断：不锁的话可能刚查完「没人认领」、下一秒另一笔认领就进来了，
+        // 然后把一张已经有认领的工单删掉
+        JobWorkOrder workOrder = lambdaQuery()
+                .eq(JobWorkOrder::getId, id)
+                .eq(JobWorkOrder::getFlag, 0)
+                .last("for update")
+                .one();
+        if (ObjectUtil.isNull(workOrder)) {
+            throw new BizException("删除工单失败：该工单不存在或已被删除");
+        }
+
+        int claimedEmboss = ObjectUtil.defaultIfNull(workOrder.getClaimedEmboss(), 0);
+        int claimedGlue = ObjectUtil.defaultIfNull(workOrder.getClaimedGlue(), 0);
+        if (claimedEmboss > 0 || claimedGlue > 0) {
+            Long claimedCount = jobMapper.selectCount(
+                    Wrappers.<Job>lambdaQuery()
+                            .eq(Job::getWorkOrderId, id)
+                            .eq(Job::getFlag, 0));
+            throw new BizException("该工单已有 " + ObjectUtil.defaultIfNull(claimedCount, 0L)
+                    + " 条认领记录，不能直接删除；请先撤销认领");
         }
 
         if (!removeById(id)) {
@@ -260,8 +289,11 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
 
         int claimed = 0;
         if (ObjectUtil.isNotNull(queryModeId)) {
-            Integer sum = jobMapper.sumClaimedQuantityByMode(workOrderId, queryModeId);
-            claimed = sum == null ? 0 : sum;
+            // 读工单上的计数列即可，不用再 SUM 一遍明细
+            Integer counter = ObjectUtil.equal(queryModeId, 1)
+                    ? workOrder.getClaimedEmboss()
+                    : workOrder.getClaimedGlue();
+            claimed = ObjectUtil.defaultIfNull(counter, 0);
         }
 
         int total = ObjectUtil.defaultIfNull(workOrder.getQuantity(), 0);

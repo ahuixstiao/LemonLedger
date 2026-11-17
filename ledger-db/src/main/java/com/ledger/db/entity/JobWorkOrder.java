@@ -49,6 +49,18 @@ public class JobWorkOrder extends ParentEntity {
     private Integer quantity;
 
     /**
+     * 已认领数量（压花，mode_id=1）。
+     * 与 job 明细在同一个事务里增减，认领时用「剩余够不够」作为 UPDATE 条件，
+     * 让判断和扣减在同一条 SQL 里完成，避免并发双领。
+     */
+    private Integer claimedEmboss;
+
+    /**
+     * 已认领数量（刮胶，mode_id=2）
+     */
+    private Integer claimedGlue;
+
+    /**
      * 床ID，关联 batch.id（床号 / 成衣厂 / 款式的唯一事实来源）
      */
     private Integer batchId;

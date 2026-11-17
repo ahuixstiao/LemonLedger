@@ -250,6 +250,8 @@ CREATE TABLE `job_work_order` (
   `style_number` varchar(32) NOT NULL COMMENT '款式编号',
   `category_id` int NOT NULL COMMENT '工作类型，例如 小花、大花、裤页',
   `quantity` int NOT NULL COMMENT '数量',
+  `claimed_emboss` int NOT NULL DEFAULT '0' COMMENT '已认领数量（压花，mode_id=1）',
+  `claimed_glue` int NOT NULL DEFAULT '0' COMMENT '已认领数量（刮胶，mode_id=2）',
   `batch_id` int DEFAULT NULL COMMENT '床ID，关联 batch.id',
   `version` int DEFAULT '0' COMMENT '乐观锁',
   `created_date` date NOT NULL COMMENT '创建时间',

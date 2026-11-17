@@ -619,3 +619,32 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **验证**：新建测试账单（李波 / ZZTEST-9 / 3301）→ 编辑换成 3306 的单价 → 返回 200，款式变 3306，旧床自动删除，只剩一张 `ZZTEST-9 / 3306` 的床；测试账单与床已清理（flag=1）。容器重建后 `/lemonLedgerImages` 有 90 个文件，`GET /api/admin/factoryPieceRate/imageView/factoryPieceRate/745/52b4f6bc….png` 返回 200（470,614 字节）。
 - **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.5 ledger-api`；`docker-compose.yml` 的 image 改为 2.5 并挂上图片卷，容器已重建为 2.5。`:2.5` 与 `:latest` 已推送 Docker Hub，digest 同为 `sha256:a47bd6316943fdd5896e36c89d4c30c915a5ca68c409238fd94825671843449a`。
 - 涉及文件：`ledger-db/.../service/IBatchService.java`、`impl/BatchServiceImpl.java`、`impl/factory/FactoryBillServiceImpl.java`、`impl/job/JobWorkOrderServiceImpl.java`、`docker-compose.yml`、`.gitignore`、`ledger-api/Dockerfile`。
+
+## 19. 认领工单并发超领修复（2026-11-17）
+
+- **问题**：同一张工单会被认领超出预设数量。分析下来不是「认领接口本身不锁」——它原本就 `select ... for update` 锁了工单行、拿锁后才 SUM 已认领量再比较，串行请求是对的。真正的口子在四处：
+  1. `POST /emp/job/save` 直接把请求体交给 `saveJobInfo`，而 `saveJobInfo` 见到 `workOrderId` 就跳过判重、也不校验剩余量，等于给了一条绕过认领校验的旁路；
+  2. `updateJobInfo`（改大认领记录数量）先 SUM 再更新，没有锁；
+  3. `updateWorkOrder`（改小工单数量）先读已认领最大值再更新，没有锁；
+  4. `deleteWorkOrder` 先 count 认领再删除，没有锁。
+  另外 `LedgerServiceImpl.updateById` 在调用方没传 version 时会先查最新 version 再更新，`@Version` 乐观锁实际上永远成功。
+- **修复思路**：在 `job_work_order` 上维护 `claimed_emboss` / `claimed_glue` 两列（压花 mode_id=1、刮胶 mode_id=2），认领时用一条带条件的 UPDATE 完成「判断 + 扣减」：
+  ```sql
+  UPDATE job_work_order SET claimed_emboss = claimed_emboss + #{n}
+   WHERE id = #{id} AND flag = 0 AND quantity - claimed_emboss >= #{n}
+  ```
+  并发请求在行锁上排队，放不下的直接影响 0 行 → 抛「超出可认领数量」，不会双领。
+- **配套改动**：
+  - `saveJobInfo` 拒绝带 `workOrderId` 的请求，只保留认领接口能写认领记录；原逻辑抽成私有的 `saveJobRecord` 供两条路共用。
+  - `updateJobInfo` / `deleteJobInfo` 先 `for update` 锁住工作记录，再按新旧差额增减工单计数（换工作方式时旧方式减、新方式加）。
+  - `updateWorkOrder` / `deleteWorkOrder` 先锁工单行再校验数量/认领记录。
+  - 工单列表、认领进度改读计数列，不再每次 SUM 明细。
+  - 编辑/新增工单时忽略请求里的计数列，只有认领链路能改它们。
+- **迁移**：`deploy/migrate-0.0.5.sql` 加两列并从 `job` 明细回填；`ledger.sql` 的建表语句同步。存量里 21 张历史上就超领的工单如实保留（剩余显示为 0），不会被自动改掉。
+- **验证**（真实库 + 容器 2.6）：
+  - 建一张 100 件的测试工单，同时发 10 个「认领 20 件」的请求 → 成功 5、失败 5，计数正好 100，没有超领；
+  - `POST /emp/job/save` 带 workOrderId → 拒绝：「认领工单请使用认领接口」；
+  - 工单数量改小到 50（已认领 100）→ 拒绝；删除有认领的工单 → 拒绝；
+  - 认领记录 20 改 40（剩余 0）→ 拒绝并提示最多 20；改 10 → 成功，工单计数 100→90；删掉这条 → 计数 90→80；四条认领全删后工单可正常删除。
+- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.6 ledger-api`，容器已切到 2.6（未推 Docker Hub）。
+- 涉及文件：`deploy/migrate-0.0.5.sql`（新增）、`ledger.sql`、`ledger-db/.../entity/JobWorkOrder.java`、`mapper/JobWorkOrderMapper.java`、`mapper/JobMapper.java`、`resources/mapper/JobWorkOrderMapper.xml`、`impl/job/JobServiceImpl.java`、`impl/job/JobWorkOrderServiceImpl.java`、`docker-compose.yml`。

@@ -14,13 +14,13 @@
         t.quantity,
         t.created_date,
         t.flag,
-        <!-- 压花、刮胶各自认领了多少，分开给前端看 -->
-        coalesce(m1.claimed, 0) as claimed_emboss,
-        coalesce(m2.claimed, 0) as claimed_glue,
+        <!-- 压花、刮胶各自认领了多少，分开给前端看（两列由认领/撤销时原子增减，不再 SUM 明细） -->
+        t.claimed_emboss,
+        t.claimed_glue,
         <!-- 一床布压花、刮胶两道工序都要各做一遍，一件只有两道都领过才算做完，
              所以「已完成」取两者中较小的那个；直接相加会得到 2 倍数量 -->
-        least(coalesce(m1.claimed, 0), coalesce(m2.claimed, 0)) as claimed_quantity,
-        greatest(t.quantity - least(coalesce(m1.claimed, 0), coalesce(m2.claimed, 0)), 0) as remain_quantity
+        least(t.claimed_emboss, t.claimed_glue) as claimed_quantity,
+        greatest(t.quantity - least(t.claimed_emboss, t.claimed_glue), 0) as remain_quantity
         from (
             select
             jwo.id,
@@ -31,6 +31,8 @@
             jwo.category_id,
             jc.category,
             jwo.quantity,
+            jwo.claimed_emboss,
+            jwo.claimed_glue,
             jwo.created_date,
             jwo.flag
             from job_work_order jwo
@@ -66,19 +68,6 @@
                 </choose>
             </where>
         ) t
-        <!-- 1 = 压花、2 = 刮胶，见 job_mode 表 -->
-        left join (
-            select work_order_id, sum(quantity) as claimed
-            from job
-            where flag = 0 and mode_id = 1
-            group by work_order_id
-        ) m1 on m1.work_order_id = t.id
-        left join (
-            select work_order_id, sum(quantity) as claimed
-            from job
-            where flag = 0 and mode_id = 2
-            group by work_order_id
-        ) m2 on m2.work_order_id = t.id
         order by t.created_date desc, t.factory_name collate utf8mb4_zh_0900_as_cs asc, t.number asc
     </select>
 
