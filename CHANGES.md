@@ -647,5 +647,5 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - `POST /emp/job/save` 带 workOrderId → 拒绝：「认领工单请使用认领接口」；
   - 工单数量改小到 50（已认领 100）→ 拒绝；删除有认领的工单 → 拒绝；
   - 认领记录 20 改 40（剩余 0）→ 拒绝并提示最多 20；改 10 → 成功，工单计数 100→90；删掉这条 → 计数 90→80；四条认领全删后工单可正常删除。
-- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.6 ledger-api`，容器已切到 2.6（未推 Docker Hub）。
+- **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.6 ledger-api`，容器已切到 2.6；已推 Docker Hub，`2.6` 与 `latest` 的 digest 同为 `sha256:227d04835ecbaf9db853bffc4c70b26d14dad2afd366dd0b7c3de4cab64e8141`。
 - 涉及文件：`deploy/migrate-0.0.5.sql`（新增）、`ledger.sql`、`ledger-db/.../entity/JobWorkOrder.java`、`mapper/JobWorkOrderMapper.java`、`mapper/JobMapper.java`、`resources/mapper/JobWorkOrderMapper.xml`、`impl/job/JobServiceImpl.java`、`impl/job/JobWorkOrderServiceImpl.java`、`docker-compose.yml`。
