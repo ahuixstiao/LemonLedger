@@ -640,6 +640,7 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - `updateWorkOrder` / `deleteWorkOrder` 先锁工单行再校验数量/认领记录。
   - 工单列表、认领进度改读计数列，不再每次 SUM 明细。
   - 编辑/新增工单时忽略请求里的计数列，只有认领链路能改它们。
+  - 删除工单后，这张床如果已经没有工单/账单/工作记录，顺手逻辑删除，不在床列表里留空床。
 - **迁移**：`deploy/migrate-0.0.5.sql` 加两列并从 `job` 明细回填；`ledger.sql` 的建表语句同步。存量里 21 张历史上就超领的工单如实保留（剩余显示为 0），不会被自动改掉。
 - **验证**（真实库 + 容器 2.6）：
   - 建一张 100 件的测试工单，同时发 10 个「认领 20 件」的请求 → 成功 5、失败 5，计数正好 100，没有超领；

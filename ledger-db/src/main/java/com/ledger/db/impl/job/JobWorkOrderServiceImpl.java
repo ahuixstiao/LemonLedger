@@ -251,6 +251,11 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
         if (!removeById(id)) {
             throw new BizException("删除工单失败：该工单不存在或已被删除");
         }
+
+        // 这张床如果既没有工单、也没有账单/工作记录，就顺手逻辑删除，别在床列表里留空床
+        if (ObjectUtil.isNotNull(workOrder.getBatchId())) {
+            batchService.deleteIfEmpty(workOrder.getBatchId());
+        }
         return Result.ok();
     }
 
