@@ -649,3 +649,13 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - 认领记录 20 改 40（剩余 0）→ 拒绝并提示最多 20；改 10 → 成功，工单计数 100→90；删掉这条 → 计数 90→80；四条认领全删后工单可正常删除。
 - **镜像**：`docker build -f ledger-api/Dockerfile -t 794862853/lemonledger:2.6 ledger-api`，容器已切到 2.6；已推 Docker Hub，`2.6` 与 `latest` 的 digest 同为 `sha256:227d04835ecbaf9db853bffc4c70b26d14dad2afd366dd0b7c3de4cab64e8141`。
 - 涉及文件：`deploy/migrate-0.0.5.sql`（新增）、`ledger.sql`、`ledger-db/.../entity/JobWorkOrder.java`、`mapper/JobWorkOrderMapper.java`、`mapper/JobMapper.java`、`resources/mapper/JobWorkOrderMapper.xml`、`impl/job/JobServiceImpl.java`、`impl/job/JobWorkOrderServiceImpl.java`、`docker-compose.yml`。
+
+## 20. 账单与认领对账（2026-11-18，镜像 2.7）
+
+成衣厂报上来的账单数量，和员工实际认领的数量，以前要开两个页面自己拿床号去对；现在有一个页面按「床」把它们并排放在一起。
+
+- **接口**：`GET /admin/factoryBill/reconcile?factoryId=&startDate=&endDate=`，返回每张床的账单数量/金额、压花与刮胶的已认领量、实际完成量（两者取较小值）、工资和差额；默认区间「本月 1 号到今天」，按差额绝对值从大到小排序。
+- **页面**：后台「账单与统计」组新增「账单与认领对账」，四张汇总卡（账单数量 / 实际完成 / 差额 / 有差异的床），筛选支持成衣厂、日期区间、只看有差异；表格状态分「未开工 / 未做完 / 做超了 / 已对平」，差额正数橙色、负数红色，备注给一句原因（未认领 / 还差 N / 多做 N / 无账单）。
+- **口径**：账单按 `factory_bill.created_date` 过滤，认领按 `job.created_date` 过滤；款式号取 `batch.style_number`（`factory_bill` 表本身没有款式列）。同一张床可能两边只有一边有记录，`union` 后都能出现。
+- **验证**（真实库）：2026-10-01~11-30 共 823 张床，671 张有差异；能直接看出「做了没记账单」（如 魔鬼鸟 192 床认领 2744 件、账单 0）和「记了账单没人做」。
+- 涉及文件：`ReconcileRowDTO.java`（新增）、`FactoryBillMapper.java` / `FactoryBillMapper.xml`、`IFactoryBillService`、`FactoryBillServiceImpl`、`FactoryBillController`、`Reconcile.vue`（新增）、`Admin.vue`、`router.js`、`network/admin/factoryBill.js`、`docker-compose.yml`。

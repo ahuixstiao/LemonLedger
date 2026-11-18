@@ -218,4 +218,57 @@
         order by gross_profit desc, f.factory_name asc
     </select>
 
+
+    <!-- 账单与认领对账：一张床一行，两边分别按 created_date 落在区间内汇总 -->
+    <!-- 完成量取两道工序的较小值，和认领进度口径一致；差额 = 账单量 - 完成量 -->
+    <select id="selectReconcileByBatch" resultType="reconcileRowDTO">
+        select
+        t.id as batch_id,
+        f.factory_name,
+        t.number,
+        t.style_number,
+        coalesce(b.bill_qty, 0) as bill_qty,
+        coalesce(b.bill_amount, 0) as bill_amount,
+        coalesce(j.emboss_qty, 0) as claimed_emboss,
+        coalesce(j.glue_qty, 0) as claimed_glue,
+        least(coalesce(j.emboss_qty, 0), coalesce(j.glue_qty, 0)) as done_qty,
+        coalesce(j.salary_total, 0) as salary_total,
+        coalesce(b.bill_qty, 0) - least(coalesce(j.emboss_qty, 0), coalesce(j.glue_qty, 0)) as diff_qty
+        from (
+            select batch_id from factory_bill
+            where flag = 0 and batch_id is not null
+            and created_date between #{startDate} and #{endDate}
+            union
+            select batch_id from job
+            where flag = 0 and batch_id is not null
+            and created_date between #{startDate} and #{endDate}
+        ) k
+        left join batch t on t.id = k.batch_id
+        left join factory f on f.id = t.factory_id and f.flag = 0
+        left join (
+            select batch_id, sum(quantity) as bill_qty, sum(bill) as bill_amount
+            from factory_bill
+            where flag = 0 and batch_id is not null
+            and created_date between #{startDate} and #{endDate}
+            group by batch_id
+        ) b on b.batch_id = t.id
+        left join (
+            select batch_id,
+            sum(case when mode_id = 1 then quantity else 0 end) as emboss_qty,
+            sum(case when mode_id = 2 then quantity else 0 end) as glue_qty,
+            sum(salary) as salary_total
+            from job
+            where flag = 0 and batch_id is not null
+            and created_date between #{startDate} and #{endDate}
+            group by batch_id
+        ) j on j.batch_id = t.id
+        <where>
+            <if test="factoryId != null">
+                t.factory_id = #{factoryId}
+            </if>
+        </where>
+        order by abs(coalesce(b.bill_qty, 0) - least(coalesce(j.emboss_qty, 0), coalesce(j.glue_qty, 0))) desc,
+        f.factory_name asc, t.number asc
+    </select>
+
 </mapper>

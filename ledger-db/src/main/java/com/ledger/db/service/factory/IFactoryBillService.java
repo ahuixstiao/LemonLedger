@@ -98,4 +98,14 @@ public interface IFactoryBillService extends IService<FactoryBill> {
      * @return result，data 里是 {@code List<FactoryGrossProfitDTO>}
      */
     Result<Object> queryGrossProfit(String startDate, String endDate);
+
+    /**
+     * 账单与认领对账（按床）
+     *
+     * @param factoryId 成衣厂ID，可为空
+     * @param startDate 起始日期 yyyy-MM-dd，可为空
+     * @param endDate   结束日期 yyyy-MM-dd，可为空
+     * @return result，data 里是 {@code List<ReconcileRowDTO>}
+     */
+    Result<Object> queryReconcile(Integer factoryId, String startDate, String endDate);
 }

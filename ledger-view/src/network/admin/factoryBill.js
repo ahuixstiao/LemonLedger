@@ -96,3 +96,16 @@ export function queryFactoryGrossProfit(startDate, endDate) {
     params: { startDate, endDate }
   })
 }
+
+// 账单与认领对账（按床）
+// 日期都不传时后端按「本月 1 号到今天」
+export function queryBillReconcile(factoryId, startDate, endDate) {
+  return request({
+    url: '/admin/factoryBill/reconcile',
+    method: 'get',
+    params: {
+      factoryId: factoryId || undefined,
+      ...normalizeDateRangeParams(startDate, endDate)
+    }
+  })
+}

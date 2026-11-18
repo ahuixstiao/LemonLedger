@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import com.ledger.db.entity.dto.FactoryGrossProfitDTO;
+import com.ledger.db.entity.dto.ReconcileRowDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -87,4 +88,21 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
             @Param("endDate") String endDate
     );
 
+
+    /**
+     * 账单与认领对账：按床汇总区间内的账单数量/金额与认领数量/工资
+     *
+     * <p>两边都按 created_date 落在区间内统计，所以是「这段时间里」的口径。
+     * 完成量取压花、刮胶的较小值（两道工序都做过才算这床做完）。</p>
+     *
+     * @param factoryId 成衣厂ID，可为空
+     * @param startDate 起始日期 yyyy-MM-dd
+     * @param endDate   结束日期 yyyy-MM-dd
+     * @return list
+     */
+    List<ReconcileRowDTO> selectReconcileByBatch(
+            @Param("factoryId") Integer factoryId,
+            @Param("startDate") String startDate,
+            @Param("endDate") String endDate
+    );
 }

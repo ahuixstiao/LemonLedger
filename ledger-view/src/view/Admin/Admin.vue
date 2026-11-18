@@ -59,6 +59,7 @@ import {
   ArrowRight,
   Back,
   CollectionTag,
+  DataAnalysis,
   Money,
   OfficeBuilding,
   Operation,
@@ -79,7 +80,8 @@ const menuGroups = [
     title: '账单与统计',
     items: [
       { label: '成衣厂账单', path: '/admin/factoryBillList', icon: Tickets },
-      { label: '毛利统计', path: '/admin/grossProfit', icon: TrendCharts }
+      { label: '毛利统计', path: '/admin/grossProfit', icon: TrendCharts },
+      { label: '账单对账', path: '/admin/reconcile', icon: DataAnalysis }
     ]
   },
   {

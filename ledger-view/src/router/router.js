@@ -41,6 +41,14 @@ const routes = [
         }
       },
       {
+        path: 'reconcile',
+        component: () => import('../view/Admin/AdminComponent/Reconcile.vue'),
+        meta: {
+          title: '账单与认领对账',
+          desc: '把成衣厂报的账单数量和员工认领数量放在一起对比；不选日期时默认看本月 1 号到今天。'
+        }
+      },
+      {
         path: 'factoryPieceRateList',
         component: () => import('../view/Admin/AdminComponent/FactoryPieceRate.vue'),
         meta: {

@@ -297,4 +297,20 @@ public class FactoryBillController {
                 .collect(Collectors.toList());
     }
 
+
+    /**
+     * 账单与认领对账：按床列出区间内的账单数量/金额、认领数量/工资与差额。
+     *
+     * @param factoryId 成衣厂ID，可为空
+     * @param startDate 起始日期 yyyy-MM-dd，可为空
+     * @param endDate   结束日期 yyyy-MM-dd，可为空
+     * @return result
+     */
+    @GetMapping("/reconcile")
+    public Result<Object> queryReconcile(
+            @RequestParam(required = false) String factoryId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return factoryBillService.queryReconcile(parseIntegerParam(factoryId), startDate, endDate);
+    }
 }

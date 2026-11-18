@@ -362,4 +362,27 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
             return null;
         }
     }
+
+    /**
+     * 账单与认领对账：按床统计区间内「厂里报了多少」和「员工做了多少」。
+     *
+     * <p>日期不传时按「本月 1 号到今天」，和其它报表的默认区间一致。</p>
+     *
+     * @param factoryId 成衣厂ID，可为空
+     * @param startDate 起始日期 yyyy-MM-dd，可为空
+     * @param endDate   结束日期 yyyy-MM-dd，可为空
+     * @return result
+     */
+    @Override
+    public Result<Object> queryReconcile(Integer factoryId, String startDate, String endDate) {
+        LocalDate today = LocalDate.now();
+        LocalDate start = LocalDate.parse(Objects.requireNonNullElse(
+                normalizeDateParam(startDate), today.withDayOfMonth(1).toString()));
+        LocalDate end = LocalDate.parse(Objects.requireNonNullElse(
+                normalizeDateParam(endDate), today.toString()));
+        if (start.isAfter(end)) {
+            throw new BizException("开始日期不能晚于结束日期");
+        }
+        return Result.ok(factoryBillMapper.selectReconcileByBatch(factoryId, start.toString(), end.toString()));
+    }
 }
