@@ -262,7 +262,11 @@ function statusText(row) {
 /** 一句话说明这行为什么有差：方便直接照着去查 */
 function rowNote(row) {
   const diff = Number(row.diffQty || 0)
-  if (!diff) return '已对平'
+  if (!diff) {
+    // 只做了一道工序（拿了一道工序的钱，但整床还没做完）也算账平，单独说明
+    const salary = Number(row.salaryTotal || 0)
+    return salary > 0 && !Number(row.billQty || 0) ? '只做了一道工序' : '已对平'
+  }
   const bill = Number(row.billQty || 0)
   const done = Number(row.doneQty || 0)
   if (!bill) return `无账单 · 已做 ${formatNumber(done)}`
