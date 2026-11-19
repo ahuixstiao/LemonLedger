@@ -108,4 +108,17 @@ public interface IFactoryBillService extends IService<FactoryBill> {
      * @return result，data 里是 {@code List<ReconcileRowDTO>}
      */
     Result<Object> queryReconcile(Integer factoryId, String startDate, String endDate);
+
+    /**
+     * 毛利趋势：按天返回区间内的账单收入、工资支出与毛利。
+     *
+     * <p>两个日期都不传时按「最近 30 天」；数量多时由前端按月聚合。
+     * 指定成衣厂时只算这一家。</p>
+     *
+     * @param factoryId 成衣厂ID，可为空
+     * @param startDate 起始日期 yyyy-MM-dd，可为空
+     * @param endDate   结束日期 yyyy-MM-dd，可为空
+     * @return result，data 里是 {@code Map}：startDate/endDate/totalBill/totalSalary/totalGross/points
+     */
+    Result<Object> queryGrossTrend(Integer factoryId, String startDate, String endDate);
 }

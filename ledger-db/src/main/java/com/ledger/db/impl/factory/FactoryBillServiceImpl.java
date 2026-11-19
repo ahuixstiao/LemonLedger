@@ -13,6 +13,7 @@ import com.ledger.db.util.BillDuplicateCheckUtil;
 import com.ledger.db.util.FactoryBillExportSortUtil;
 import com.ledger.db.entity.FactoryPieceRate;
 import com.ledger.db.entity.dto.FactoryBillDto;
+import com.ledger.db.entity.dto.GrossTrendPointDTO;
 import com.ledger.db.mapper.FactoryBillMapper;
 import com.ledger.db.service.IBatchService;
 import com.ledger.db.service.factory.IFactoryBillService;
@@ -27,7 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -340,6 +343,40 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
             throw new BizException("开始日期不能晚于结束日期");
         }
         return Result.ok(factoryBillMapper.selectGrossProfitByDate(start.toString(), end.toString()));
+    }
+
+    /**
+     * 毛利趋势：按天汇总账单收入与工资支出。
+     *
+     * <p>日期区间默认最近 30 天；只有一边有数据的日期也会保留（另一边补 0），
+     * 折线不会因为缺天而被拉直。总量在服务端算好，省得前端再遍历一遍。</p>
+     */
+    @Override
+    public Result<Object> queryGrossTrend(Integer factoryId, String startDate, String endDate) {
+        LocalDate today = LocalDate.now();
+        LocalDate start = LocalDate.parse(Objects.requireNonNullElse(
+                normalizeDateParam(startDate), today.minusDays(29).toString()));
+        LocalDate end = LocalDate.parse(Objects.requireNonNullElse(
+                normalizeDateParam(endDate), today.toString()));
+        if (start.isAfter(end)) {
+            throw new BizException("开始日期不能晚于结束日期");
+        }
+        List<GrossTrendPointDTO> points = factoryBillMapper.selectGrossTrendByDate(
+                factoryId, start.toString(), end.toString());
+        BigDecimal totalBill = BigDecimal.ZERO;
+        BigDecimal totalSalary = BigDecimal.ZERO;
+        for (GrossTrendPointDTO point : points) {
+            totalBill = totalBill.add(Objects.requireNonNullElse(point.getBillTotal(), BigDecimal.ZERO));
+            totalSalary = totalSalary.add(Objects.requireNonNullElse(point.getSalaryTotal(), BigDecimal.ZERO));
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("startDate", start.toString());
+        result.put("endDate", end.toString());
+        result.put("totalBill", totalBill);
+        result.put("totalSalary", totalSalary);
+        result.put("totalGross", totalBill.subtract(totalSalary));
+        result.put("points", points);
+        return Result.ok(result);
     }
 
     /**

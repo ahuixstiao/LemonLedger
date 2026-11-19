@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import com.ledger.db.entity.dto.FactoryGrossProfitDTO;
+import com.ledger.db.entity.dto.GrossTrendPointDTO;
 import com.ledger.db.entity.dto.ReconcileRowDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -101,6 +102,23 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
      * @return list
      */
     List<ReconcileRowDTO> selectReconcileByBatch(
+            @Param("factoryId") Integer factoryId,
+            @Param("startDate") String startDate,
+            @Param("endDate") String endDate
+    );
+
+    /**
+     * 毛利趋势：按天汇总区间内的账单收入与工资支出。
+     *
+     * <p>日期取自账单和工资两边的并集，只有一边有数据的日期也会出现，
+     * 前端画折线时不会因为缺一天而把两点直接连起来。</p>
+     *
+     * @param factoryId 成衣厂ID，可为空（为空表示全部厂）
+     * @param startDate 起始日期 yyyy-MM-dd
+     * @param endDate   结束日期 yyyy-MM-dd
+     * @return list
+     */
+    List<GrossTrendPointDTO> selectGrossTrendByDate(
             @Param("factoryId") Integer factoryId,
             @Param("startDate") String startDate,
             @Param("endDate") String endDate

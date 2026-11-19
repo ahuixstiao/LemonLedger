@@ -254,6 +254,25 @@ public class FactoryBillController {
     }
 
     /**
+     * 毛利趋势：按天返回区间内的账单收入、工资支出与毛利。
+     *
+     * <p>不传日期时按最近 30 天；指定成衣厂时只算这一家。
+     * 前端用这些点画折线图，总量也一并返回。</p>
+     *
+     * @param factoryId 成衣厂ID，可为空
+     * @param startDate 起始日期 yyyy-MM-dd，可为空
+     * @param endDate   结束日期 yyyy-MM-dd，可为空
+     * @return result
+     */
+    @GetMapping("/gross/trend")
+    public Result<Object> queryGrossTrend(
+            @RequestParam(required = false) String factoryId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return factoryBillService.queryGrossTrend(parseIntegerParam(factoryId), startDate, endDate);
+    }
+
+    /**
      * 将请求参数解析为 Integer，解析失败时返回 null。
      *
      * @param value 原始参数

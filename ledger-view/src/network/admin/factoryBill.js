@@ -97,6 +97,16 @@ export function queryFactoryGrossProfit(startDate, endDate) {
   })
 }
 
+
+// 毛利趋势：按天汇总账单收入与工资支出，用于折线图
+// 日期都不传时后端按「最近 30 天」
+export function queryGrossTrend(factoryId, startDate, endDate) {
+  return request({
+    url: '/admin/factoryBill/gross/trend',
+    method: 'get',
+    params: { factoryId, ...normalizeDateRangeParams(startDate, endDate) }
+  })
+}
 // 账单与认领对账（按床）
 // 日期都不传时后端按「本月 1 号到今天」
 export function queryBillReconcile(factoryId, startDate, endDate) {

@@ -271,4 +271,35 @@
         f.factory_name asc, t.number asc
     </select>
 
+
+    <!-- 毛利趋势：账单与工单日期取并集，两边各自按天汇总 -->
+    <select id="selectGrossTrendByDate" resultType="grossTrendPointDTO">
+        select
+        t.date,
+        coalesce(b.bill_total, 0) as bill_total,
+        coalesce(j.salary_total, 0) as salary_total,
+        coalesce(b.bill_total, 0) - coalesce(j.salary_total, 0) as gross_profit
+        from (
+        select created_date as date from factory_bill
+        where flag = 0 and created_date between #{startDate} and #{endDate}
+        <if test="factoryId != null"> and factory_id = #{factoryId}</if>
+        union
+        select created_date from job
+        where flag = 0 and created_date between #{startDate} and #{endDate}
+        <if test="factoryId != null"> and factory_id = #{factoryId}</if>
+        ) t
+        left join (
+        select created_date, sum(bill) as bill_total from factory_bill
+        where flag = 0 and created_date between #{startDate} and #{endDate}
+        <if test="factoryId != null"> and factory_id = #{factoryId}</if>
+        group by created_date
+        ) b on b.created_date = t.date
+        left join (
+        select created_date, sum(salary) as salary_total from job
+        where flag = 0 and created_date between #{startDate} and #{endDate}
+        <if test="factoryId != null"> and factory_id = #{factoryId}</if>
+        group by created_date
+        ) j on j.created_date = t.date
+        order by t.date asc
+    </select>
 </mapper>
