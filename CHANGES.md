@@ -728,6 +728,7 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - 前端新增 `src/base/submitKey.js`：打开弹窗时生成 key，成功提交后换新 key，失败时也换新 key。
   - 已接入：添加成衣厂账单（`FactoryBill.vue`）、添加工单与认领工单（`JobWorkOrder.vue`）；
   - key 通过 axios 请求拦截器写入请求头，业务代码只多传一个参数。
+- 镜像：`794862853/lemonledger:2.12`（digest `sha256:a872d32b51dd4cc27cae7cdf3f69a1a4ce938760e819302e90c6923a45d428ca`），`latest` 同步更新。
 - 验证：
   - 账单连发两次同 key：第一次 200、第二次 409，库里只有一条；
   - 先发一条非法请求（同 key）→ 500，再用同 key 发正确请求 → 200（失败会释放 key）；
