@@ -62,3 +62,5 @@ lemonLedgerImages/
 **/.DS_Store
 log/
 *.log
+backups/
+run-backup.cmd

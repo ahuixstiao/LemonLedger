@@ -704,3 +704,15 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - 默认看最近 30 天，可按成衣厂筛选；前端分页。
 - 镜像：`794862853/lemonledger:2.10`（digest `sha256:b464064196458ede00fd910a2d5aa6446dfb0f974b7734098015840929f826b4`），`latest` 同步更新。
 - 验证：2026-10-01~11-19 返回 10 人、合计 818,989 件 / ¥33,373.34，首位梅（刮胶 130,828 件、26 天、¥5,417.36）；近 30 天页面 9 人、307,437 件、¥12,590.40，排行与工序标签正常。
+
+## 25. 数据库自动备份（2026-11-19）
+
+- 新增 `deploy/backup-mysql.sh`：用 `mysql_container` 里的 mysqldump 导出 `ledger` 库，容器内直接 gzip，宿主机只接收字节流。
+  - 导出参数 `--single-transaction --quick --routines --triggers --default-character-set=utf8mb4`，不锁表、不把整表读进内存；
+  - 三道校验：gzip 完整性、文件大于 10KB、dump 里必须有建表语句；
+  - 默认保留最近 14 份，超出按修改时间删旧的；过程写 `backups/backup.log`；
+  - 支持 `--keep N` 调整保留份数、`--restore <文件>` 一键恢复。
+- 新增 `deploy/install-backup-task.ps1`：生成 `run-backup.cmd` 并注册 Windows 计划任务「LemonLedger 数据库备份」，每天 02:30 执行；注册完立刻跑一次自检。
+- 后端新增 `GET /admin/backup/list`：读 `/backups`（compose 只读挂载 `./backups`），返回文件列表、最近一次备份、总占用，以及「超过 36 小时没备份」的 stale 标记。
+- 后台新增「系统 → 数据库备份」页（`/admin/backup`）：最近备份时间、文件数、占用空间、备份内容四张卡；备份文件表格；恢复命令一键复制；stale 时顶部黄条提醒检查计划任务。
+- 验证：首次备份 `ledger-20261119-111528.sql.gz` 423.8 KB、11 张表、12 段 INSERT；计划任务 `LastTaskResult=0`、下次运行 2026-11-20 02:30；接口返回 2 个文件、总计 847.7 KB。

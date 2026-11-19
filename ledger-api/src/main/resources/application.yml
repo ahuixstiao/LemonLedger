@@ -21,5 +21,7 @@ server:
   address: 0.0.0.0
 
 ledger:
+  backup:
+    dir: ${LEDGER_BACKUP_DIR:/backups}
   upload:
     image-base-dir: ${user.dir}/../lemonLedgerImages

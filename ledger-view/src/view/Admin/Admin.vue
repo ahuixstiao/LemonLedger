@@ -59,6 +59,7 @@ import {
   ArrowRight,
   Back,
   CollectionTag,
+  Coin,
   DataAnalysis,
   DataBoard,
   Money,
@@ -85,7 +86,7 @@ const menuGroups = [
       { label: '成衣厂账单', path: '/admin/factoryBillList', icon: Tickets },
       { label: '毛利统计', path: '/admin/grossProfit', icon: TrendCharts },
       { label: '账单对账', path: '/admin/reconcile', icon: DataAnalysis },
-      { label: '员工产能', path: '/admin/employeeRank', icon: Trophy },
+      { label: '员工产能', path: '/admin/employeeRank', icon: Trophy }
     ]
   },
   {
@@ -102,6 +103,12 @@ const menuGroups = [
     items: [
       { label: '成衣厂计件单价', path: '/admin/factoryPieceRateList', icon: PriceTag },
       { label: '员工计件单价', path: '/admin/jobPieceRateList', icon: Money }
+    ]
+  },
+  {
+    title: '系统',
+    items: [
+      { label: '数据库备份', path: '/admin/backup', icon: Coin }
     ]
   }
 ]

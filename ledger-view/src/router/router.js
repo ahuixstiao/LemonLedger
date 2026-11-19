@@ -65,6 +65,14 @@ const routes = [
         }
       },
       {
+        path: 'backup',
+        component: () => import('../view/Admin/AdminComponent/Backup.vue'),
+        meta: {
+          title: '数据库备份',
+          desc: '每天凌晨自动备份，这里能看到备份文件和最近一次的时间。'
+        }
+      },
+      {
         path: 'factoryPieceRateList',
         component: () => import('../view/Admin/AdminComponent/FactoryPieceRate.vue'),
         meta: {
