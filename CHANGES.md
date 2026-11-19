@@ -681,4 +681,5 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - 逐日数据由 `DashboardMapper` 两条聚合查询（账单按 `factory_bill.created_date`，工资按 `job.created_date`）在服务层用 `TreeMap` 补零合并，缺数据的日期也占一格，柱子不会断。
 - 「最该处理的 5 张床」复用对账查询 `selectReconcileByBatch`，按差额绝对值排序取前 5。
 - 后台新增「数据看板」页（`/admin/dashboard`），并把后台默认首页从成衣厂账单改为看板；4 张指标卡 + 每日件数柱状图（悬停看金额与工资）+ 差额 Top5 表格，可一键跳到对账页。
+- 镜像：`794862853/lemonledger:2.8`（digest `sha256:11cb058c0cf6cf9b35d549bf98e651c76698ea26ae24faf00be747860e18c173`），`latest` 同步更新。
 - 验证：2026-10-01~11-19 区间返回账单 75,182 件 / ¥23,570.31、工资 ¥33,373.34、毛利 -¥9,803.03、毛利率 -41.6%、对不上的床 673 张；近 30 天页面渲染正常。
