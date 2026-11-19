@@ -743,6 +743,7 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - 前端下拉改读员工列表（`queryAdminEmployeeList('', 1, 500, 0)`），选项显示员工姓名。
 - 员工档案、成衣厂列表、工作类型、工作方式四个页面的搜索改为模糊匹配（`like concat('%', ?, '%')`），
   以前是完全相等，少打一个字就查不到。
+- 镜像：`794862853/lemonledger:2.13`（digest `sha256:f46ecca6dc133b9eb3f644c5ff19d83373bdca64f3fa08fa1d60af0bd981ee52`），`latest` 同步更新。
 - 验证：
   - 员工档案搜「弟」→ 周弟、高弟；成衣厂搜「鸟」→ 魔鬼鸟；
   - 工作类型搜「花」→ 小花、大花、中花等 15 条；工作方式搜「压」→ 压花；
