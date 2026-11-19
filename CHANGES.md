@@ -715,4 +715,5 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - 新增 `deploy/install-backup-task.ps1`：生成 `run-backup.cmd` 并注册 Windows 计划任务「LemonLedger 数据库备份」，每天 02:30 执行；注册完立刻跑一次自检。
 - 后端新增 `GET /admin/backup/list`：读 `/backups`（compose 只读挂载 `./backups`），返回文件列表、最近一次备份、总占用，以及「超过 36 小时没备份」的 stale 标记。
 - 后台新增「系统 → 数据库备份」页（`/admin/backup`）：最近备份时间、文件数、占用空间、备份内容四张卡；备份文件表格；恢复命令一键复制；stale 时顶部黄条提醒检查计划任务。
+- 镜像：`794862853/lemonledger:2.11`（digest `sha256:1f970371faa52940cad47c90b4979d2a59c18651e7751b82ca7e176eaf796d55`），`latest` 同步更新。
 - 验证：首次备份 `ledger-20261119-111528.sql.gz` 423.8 KB、11 张表、12 段 INSERT；计划任务 `LastTaskResult=0`、下次运行 2026-11-20 02:30；接口返回 2 个文件、总计 847.7 KB。
