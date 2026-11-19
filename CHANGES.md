@@ -658,6 +658,7 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **页面**：后台「账单与统计」组新增「账单与认领对账」，四张汇总卡（账单数量 / 实际完成 / 差额 / 有差异的床），筛选支持成衣厂、日期区间、只看有差异；表格状态分「未开工 / 未做完 / 做超了 / 已对平」，差额正数橙色、负数红色，备注给一句原因（未认领 / 还差 N / 多做 N / 无账单）。
 - **口径**：账单按 `factory_bill.created_date` 过滤，认领按 `job.created_date` 过滤；款式号取 `batch.style_number`（`factory_bill` 表本身没有款式列）。同一张床可能两边只有一边有记录，`union` 后都能出现。
 - **验证**（真实库）：2026-10-01~11-30 共 823 张床，671 张有差异；能直接看出「做了没记账单」（如 魔鬼鸟 192 床认领 2744 件、账单 0）和「记了账单没人做」。
+- **镜像**：`794862853/lemonledger:2.7` 与 `latest` 已推 Docker Hub，digest 同为 `sha256:f0e7a140a130839908fcc12f3f577161c4a2e27801be5362f155962d49ebd2bf`。
 - 涉及文件：`ReconcileRowDTO.java`（新增）、`FactoryBillMapper.java` / `FactoryBillMapper.xml`、`IFactoryBillService`、`FactoryBillServiceImpl`、`FactoryBillController`、`Reconcile.vue`（新增）、`Admin.vue`、`router.js`、`network/admin/factoryBill.js`、`docker-compose.yml`。
 
 ## 21. 快捷键与连续录入（2026-11-19，镜像 2.7 不变）
