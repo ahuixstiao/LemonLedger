@@ -190,6 +190,7 @@ import {
 } from '../Admin/AdminComponent/factoryCrudShared.js'
 import { confirmDelete } from '../Admin/adminShared.js'
 import { useDialogShortcuts } from '../../base/dialogShortcuts.js'
+import { newSubmitKey } from '../../base/submitKey.js'
 import { recentDateRange } from '../../base/dateRange.js'
 
 // 默认看最近 30 天，避免当天没有待认领工单时整页空白

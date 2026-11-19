@@ -725,6 +725,7 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - `IdempotencyInterceptor` 挂在 `/admin/**`、`/emp/**` 的 POST/PUT/DELETE 上；没带头的请求照旧放行，不改变老接口行为；
   - 重复提交直接返回 `{"status":409,"message":"这次提交已经处理过了，不用再点一次"}`，不再调用业务；
   - 业务失败时（全局异常处理器捕获后、或 HTTP 非 2xx）会把 key 释放，用户改完能原样重试。
+- 修复：认领工单页漏了 `newSubmitKey` 的 import，点「添加工单」时报 ReferenceError、弹窗打不开（已补）。
 - 前端新增 `src/base/submitKey.js`：打开弹窗时生成 key，成功提交后换新 key，失败时也换新 key。
   - 已接入：添加成衣厂账单（`FactoryBill.vue`）、添加工单与认领工单（`JobWorkOrder.vue`）；
   - key 通过 axios 请求拦截器写入请求头，业务代码只多传一个参数。
