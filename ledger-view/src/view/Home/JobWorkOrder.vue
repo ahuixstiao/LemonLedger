@@ -10,7 +10,7 @@
         </div>
         <div class="admin-page-head__aside">
           <span class="admin-count-chip"><strong>{{ data.total }}</strong> 条工单</span>
-          <el-button type="primary" @click="openCreateWorkOrderDialog">添加工单</el-button>
+          <el-button type="primary" title="Alt + A" @click="openCreateWorkOrderDialog">添加工单</el-button>
         </div>
       </div>
 
@@ -96,6 +96,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
+          <span class="dialog-hotkey-hint">Ctrl + Enter 提交 · Esc 关闭</span>
           <el-button @click="closeWorkOrderDialog">取消</el-button>
           <el-button type="primary" @click="validateWorkOrderForm(workOrderFormRef)">
             {{ data.workOrderDialogMode === 0 ? '添加' : '更新' }}
@@ -152,6 +153,7 @@
 
       <template #footer>
         <div class="dialog-footer">
+          <span class="dialog-hotkey-hint">Ctrl + Enter 提交 · Esc 关闭</span>
           <el-button @click="closeClaimDialog">取消</el-button>
           <el-button type="primary" @click="submitClaimWorkOrder(claimFormRef)">提交</el-button>
         </div>
@@ -187,6 +189,7 @@ import {
   validateDialogForm
 } from '../Admin/AdminComponent/factoryCrudShared.js'
 import { confirmDelete } from '../Admin/adminShared.js'
+import { useDialogShortcuts } from '../../base/dialogShortcuts.js'
 import { recentDateRange } from '../../base/dateRange.js'
 
 // 默认看最近 30 天，避免当天没有待认领工单时整页空白
@@ -692,6 +695,32 @@ watch(
  */
 onBeforeRouteLeave(() => {
   clearClaimEmployeeCache()
+})
+// 添加工单 / 认领工单两个弹窗共用：Ctrl+Enter 提交，Esc 关闭
+// 列表页 Alt+A 直接开「添加工单」
+const onWorkOrderListHotkey = event => {
+  if (!event.altKey || event.ctrlKey || event.metaKey) return
+  const el = event.target
+  if (el && el.closest && el.closest('input, textarea, [contenteditable="true"]')) return
+  if (event.key === 'a' || event.key === 'A') {
+    event.preventDefault()
+    openCreateWorkOrderDialog()
+  }
+}
+
+onMounted(() => document.addEventListener('keydown', onWorkOrderListHotkey))
+onBeforeUnmount(() => document.removeEventListener('keydown', onWorkOrderListHotkey))
+
+useDialogShortcuts({
+  isOpen: () => data.editWorkOrderDialogVisible,
+  onConfirm: () => validateWorkOrderForm(workOrderFormRef.value),
+  onCancel: closeWorkOrderDialog
+})
+
+useDialogShortcuts({
+  isOpen: () => data.claimDialogVisible,
+  onConfirm: () => submitClaimWorkOrder(claimFormRef.value),
+  onCancel: closeClaimDialog
 })
 </script>
 

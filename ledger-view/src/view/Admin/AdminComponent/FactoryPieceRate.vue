@@ -144,7 +144,7 @@
         </el-form-item>
 
         <el-form-item label="款式编号" prop="styleNumber">
-          <el-input v-model="factoryPieceRateInfoRef.styleNumber" placeholder="输入款式编号" />
+          <el-input ref="styleNumberInputRef" v-model="factoryPieceRateInfoRef.styleNumber" placeholder="输入款式编号" />
         </el-form-item>
 
         <el-form-item label="工作类型" prop="categoryId">
@@ -185,6 +185,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
+        <span class="dialog-hotkey-hint">Ctrl + Enter 提交 · Esc 关闭</span>
         <el-button @click="closePriceDialog">取消</el-button>
         <el-button type="primary" @click="validatePriceForm(priceInfoFormRef)">
           {{ data.editPriceDialogMode === 0 ? '新增' : '保存' }}
@@ -195,11 +196,12 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import AdminPageHeader from '../AdminPageHeader.vue'
 import { confirmDelete, formatDate, formatMoney } from '../adminShared.js'
+import { useDialogShortcuts } from '../../../base/dialogShortcuts.js'
 import { queryFactoryList } from '../../../network/index.js'
 import {
   deleteFactoryPieceRateInfo,
@@ -311,6 +313,8 @@ const createFactoryPieceRate = async () => {
     factoryPieceRateInfoRef.styleNumber = ''
     factoryPieceRateInfoRef.imagePath = ''
     priceInfoFormRef.value?.clearValidate?.()
+    // 焦点回款式编号，接着录下一个款
+    nextTick(() => styleNumberInputRef.value?.focus?.())
     if (priceImageUploadInputRef.value) {
       priceImageUploadInputRef.value.value = ''
     }
@@ -357,6 +361,7 @@ const validatePriceForm = async formEl => {
 }
 
 const priceInfoFormRef = ref()
+const styleNumberInputRef = ref()
 const priceImageUploadInputRef = ref(null)
 
 /**
@@ -523,6 +528,11 @@ const addPriceInfoRules = reactive({
   styleNumber: [{ required: true, message: '请输入款式编号', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择工作类型', trigger: 'blur' }],
   price: [{ required: true, message: '请输入计件单价', trigger: 'blur' }]
+})
+useDialogShortcuts({
+  isOpen: () => data.editPriceDialogVisible,
+  onConfirm: () => validatePriceForm(priceInfoFormRef.value),
+  onCancel: closePriceDialog
 })
 </script>
 

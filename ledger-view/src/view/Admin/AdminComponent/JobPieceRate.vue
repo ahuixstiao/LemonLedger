@@ -93,7 +93,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="工作类型" prop="categoryId">
-          <el-select v-model="formModel.categoryId" placeholder="请选择工作类型">
+          <el-select ref="categorySelectRef" v-model="formModel.categoryId" placeholder="请选择工作类型">
             <el-option v-for="item in data.categoryList" :key="item.id" :label="item.category" :value="item.id" />
           </el-select>
         </el-form-item>
@@ -104,6 +104,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
+        <span class="dialog-hotkey-hint">Ctrl + Enter 提交 · Esc 关闭</span>
         <el-button @click="closeDialog">取消</el-button>
         <el-button type="primary" @click="submit(formRef)">保存</el-button>
       </template>
@@ -112,10 +113,11 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import AdminPageHeader from '../AdminPageHeader.vue'
 import { confirmDelete, formatDate, formatMoney, modeTagType } from '../adminShared.js'
+import { useDialogShortcuts } from '../../../base/dialogShortcuts.js'
 import {
   queryJobPieceRateList,
   saveJobPieceRate,
@@ -140,6 +142,7 @@ const data = reactive({
   dialogMode: 0
 })
 const formRef = ref()
+const categorySelectRef = ref()
 const formInit = { id: '', modeId: '', categoryId: '', price: '' }
 const formModel = reactive({ ...formInit })
 const rules = reactive({
@@ -219,9 +222,14 @@ function submit(formEl) {
     async () => {
       const { data: res } = await saveJobPieceRate(formModel)
       if (res.status === 200) {
-        ElMessage.success(res.message)
-        closeDialog()
+        // 连续录入：工作时间留着，清掉工作类型和单价，焦点回到工作类型
+        ElMessage.success(`${res.message}（工作时间留着，换个工作类型就能继续加）`)
+        formModel.categoryId = ''
+        formModel.price = ''
+        data.dialogMode = 0
+        formRef.value?.clearValidate?.(['categoryId', 'price'])
         await fetchList()
+        nextTick(() => categorySelectRef.value?.focus?.())
       } else ElMessage.error(res.message)
     },
     async () => {
@@ -263,4 +271,9 @@ function resetFilter() {
 function isReadOnlyRow(row) {
   return Number(row?.flag) === 1 || Number(data.flag) === 1
 }
+useDialogShortcuts({
+  isOpen: () => data.dialogVisible,
+  onConfirm: () => submit(formRef.value),
+  onCancel: closeDialog
+})
 </script>

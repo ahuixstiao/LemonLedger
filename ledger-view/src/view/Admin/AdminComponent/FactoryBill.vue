@@ -19,7 +19,7 @@
           <el-icon><TrendCharts /></el-icon>
           账单统计
         </el-button>
-        <el-button type="primary" @click="openCreateBillDialog">
+        <el-button type="primary" title="Alt + A" @click="openCreateBillDialog">
           <el-icon><Plus /></el-icon>
           添加账单
         </el-button>
@@ -214,6 +214,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
+        <span class="dialog-hotkey-hint">Ctrl + Enter 提交 · Esc 关闭</span>
         <el-button @click="closeBillDialog">取消</el-button>
         <el-button type="primary" @click="validateBillForm(billInfoFormRef)">
           {{ data.editBillDialogMode === 0 ? '添加' : '保存' }}
@@ -302,12 +303,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, TrendCharts } from '@element-plus/icons-vue'
 import { useTransition } from '@vueuse/core'
 import AdminPageHeader from '../AdminPageHeader.vue'
 import { confirmDelete, formatDate, formatMoney, formatNumber } from '../adminShared.js'
+import { useDialogShortcuts } from '../../../base/dialogShortcuts.js'
 import { queryFactoryList } from '../../../network/index.js'
 import {
   deleteFactoryBillInfo,
@@ -626,6 +628,7 @@ const resetQueryCondition = () => {
 
 const statisticalBillFormRef = ref()
 const billInfoFormRef = ref()
+const billNumberInputRef = ref()
 
 // 构建统计的账单实体
 const statisticalBillRef = reactive({
@@ -733,6 +736,26 @@ const handleSortFieldsChange = selectedFields => {
     }
   })
 }
+// 录账单是高频动作：Ctrl+Enter 直接提交，Esc 关掉弹窗
+// 列表页上 Alt+A 直接开添加弹窗，单手也能录
+const onBillListHotkey = event => {
+  if (!event.altKey || event.ctrlKey || event.metaKey) return
+  const el = event.target
+  if (el && el.closest && el.closest('input, textarea, [contenteditable="true"]')) return
+  if (event.key === 'a' || event.key === 'A') {
+    event.preventDefault()
+    openCreateBillDialog()
+  }
+}
+
+onMounted(() => document.addEventListener('keydown', onBillListHotkey))
+onBeforeUnmount(() => document.removeEventListener('keydown', onBillListHotkey))
+
+useDialogShortcuts({
+  isOpen: () => data.editBillDialogVisible,
+  onConfirm: () => validateBillForm(billInfoFormRef.value),
+  onCancel: closeBillDialog
+})
 </script>
 
 <style scoped>

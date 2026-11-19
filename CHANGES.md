@@ -659,3 +659,17 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **口径**：账单按 `factory_bill.created_date` 过滤，认领按 `job.created_date` 过滤；款式号取 `batch.style_number`（`factory_bill` 表本身没有款式列）。同一张床可能两边只有一边有记录，`union` 后都能出现。
 - **验证**（真实库）：2026-10-01~11-30 共 823 张床，671 张有差异；能直接看出「做了没记账单」（如 魔鬼鸟 192 床认领 2744 件、账单 0）和「记了账单没人做」。
 - 涉及文件：`ReconcileRowDTO.java`（新增）、`FactoryBillMapper.java` / `FactoryBillMapper.xml`、`IFactoryBillService`、`FactoryBillServiceImpl`、`FactoryBillController`、`Reconcile.vue`（新增）、`Admin.vue`、`router.js`、`network/admin/factoryBill.js`、`docker-compose.yml`。
+
+## 21. 快捷键与连续录入（2026-11-19，镜像 2.7 不变）
+
+录账单、录工单、录单价都是坐着连打的活，这次把键盘这一层补上。
+
+- **快捷键**：弹窗里 `Ctrl + Enter`（Mac 上 `Cmd + Enter`）直接提交，`Esc` 关掉；列表页 `Alt + A` 打开「添加」。弹窗底部左侧有淡灰提示，添加按钮的 `title` 也写了 Alt + A。
+- **不抢确认框**：页面上有 `ElMessageBox`（删除确认、重复账单确认）时快捷键自动让位，避免回车误点。
+- **连续录入**：
+  - 成衣厂账单：添加成功后不关弹窗、不清成衣厂和日期，只清床号与数量，焦点回到床号，接着就能录下一床。
+  - 员工计件单价：添加成功后不关弹窗，保留工作方式，只清工作类型与单价，焦点回到工作类型。
+  - 成衣厂计件单价（上一轮已做）：保留厂/工作类型/单价，只清款式编号，焦点回到款式编号。
+- **实现**：新增 `src/base/dialogShortcuts.js`，`useDialogShortcuts({ isOpen, onConfirm, onCancel })` 统一用 document 级 keydown 捕获注册，组件卸载时解绑。
+- **踩坑**：`onConfirm` 里传 ref 对象（不带 `.value`）会静默失败——模板里 ref 自动解包，脚本里不会；已全部改成 `.value`。
+- 涉及文件：`src/base/dialogShortcuts.js`（新增）、`FactoryBill.vue`、`FactoryPieceRate.vue`、`JobPieceRate.vue`、`JobWorkOrder.vue`、`src/style.css`。
