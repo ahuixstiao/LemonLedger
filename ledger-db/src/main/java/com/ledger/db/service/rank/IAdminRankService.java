@@ -15,5 +15,5 @@ public interface IAdminRankService {
      * @param endDate   结束日期 yyyy-MM-dd，可为空
      * @return result，data 里是 {@code Map}：startDate/endDate/totalQuantity/totalSalary/people/rows
      */
-    Result<Object> queryEmployeeRank(Integer factoryId, String startDate, String endDate);
+    Result<Object> queryEmployeeRank(Integer employeeId, String startDate, String endDate);
 }

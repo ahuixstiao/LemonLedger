@@ -30,17 +30,17 @@ public class AdminRankController {
      *
      * <p>不传日期时按最近 30 天；指定成衣厂时只统计这家厂的活。</p>
      *
-     * @param factoryId 成衣厂ID，可为空
+     * @param employeeId 员工ID，可为空
      * @param startDate 起始日期 yyyy-MM-dd，可为空
      * @param endDate   结束日期 yyyy-MM-dd，可为空
      * @return result
      */
     @GetMapping("/employees")
     public Result<Object> queryEmployeeRank(
-            @RequestParam(required = false) String factoryId,
+            @RequestParam(required = false) String employeeId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        return adminRankService.queryEmployeeRank(parseIntegerParam(factoryId), startDate, endDate);
+        return adminRankService.queryEmployeeRank(parseIntegerParam(employeeId), startDate, endDate);
     }
 
     /**

@@ -10,7 +10,7 @@
         flag
         from job_mode
         where flag = #{flag}
-          and (#{mode} is null or #{mode} = '' or mode = #{mode})
+          and (#{mode} is null or #{mode} = '' or mode like concat('%', #{mode}, '%'))
         order by id desc
     </select>
 

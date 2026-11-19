@@ -37,7 +37,7 @@ public class AdminRankServiceImpl implements IAdminRankService {
     private final JobMapper jobMapper;
 
     @Override
-    public Result<Object> queryEmployeeRank(Integer factoryId, String startDate, String endDate) {
+    public Result<Object> queryEmployeeRank(Integer employeeId, String startDate, String endDate) {
         LocalDate today = LocalDate.now();
         LocalDate start = LocalDate.parse(Objects.requireNonNullElse(
                 normalizeDateParam(startDate), today.minusDays(29).toString()));
@@ -47,7 +47,7 @@ public class AdminRankServiceImpl implements IAdminRankService {
             throw new BizException("开始日期不能晚于结束日期");
         }
 
-        List<EmployeeRankDTO> rows = jobMapper.selectEmployeeRank(factoryId, start.toString(), end.toString());
+        List<EmployeeRankDTO> rows = jobMapper.selectEmployeeRank(employeeId, start.toString(), end.toString());
 
         BigDecimal totalSalary = BigDecimal.ZERO;
         long totalQuantity = 0;

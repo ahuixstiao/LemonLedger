@@ -10,8 +10,8 @@
     <div class="filter-card">
       <div class="filter-bar">
         <el-select
-          v-model="data.factoryId"
-          placeholder="全部成衣厂"
+          v-model="data.employeeId"
+          placeholder="全部员工"
           clearable
           filterable
           class="filter-wide"
@@ -19,9 +19,9 @@
           @clear="handleQuery"
         >
           <el-option
-            v-for="item in data.factoryOptions"
+            v-for="item in data.employeeOptions"
             :key="item.id"
-            :label="item.factoryName"
+            :label="item.name"
             :value="item.id"
           />
         </el-select>
@@ -148,14 +148,14 @@ import { ElMessage } from 'element-plus'
 import AdminPageHeader from '../AdminPageHeader.vue'
 import { formatMoney, formatNumber } from '../adminShared.js'
 import { recentDateRange } from '../../../base/dateRange.js'
-import { queryAdminFactoryList } from '../../../network/admin/index.js'
+import { queryAdminEmployeeList } from '../../../network/admin/index.js'
 import { queryEmployeeRank } from '../../../network/admin/rank.js'
 
 const defaultRange = recentDateRange(30)
 
 const data = reactive({
-  factoryId: '',
-  factoryOptions: [],
+  employeeId: '',
+  employeeOptions: [],
   startDate: defaultRange.startDate,
   endDate: defaultRange.endDate,
   rows: [],
@@ -188,20 +188,20 @@ const maxQuantity = computed(() =>
 )
 
 onMounted(() => {
-  loadFactoryOptions()
+  loadEmployeeOptions()
   fetchRank()
 })
 
-async function loadFactoryOptions() {
-  const { data: res } = await queryAdminFactoryList('', 1, 500, 0)
+async function loadEmployeeOptions() {
+  const { data: res } = await queryAdminEmployeeList('', 1, 500, 0)
   if (res.status !== 200) return
   const payload = res.data || {}
-  data.factoryOptions = payload.records || payload || []
+  data.employeeOptions = payload.records || payload || []
 }
 
 async function fetchRank() {
   const { data: res } = await queryEmployeeRank(
-    data.factoryId || undefined,
+    data.employeeId || undefined,
     data.startDate || undefined,
     data.endDate || undefined
   )
@@ -220,7 +220,7 @@ function handleQuery() {
 }
 
 function resetFilter() {
-  data.factoryId = ''
+  data.employeeId = ''
   data.startDate = defaultRange.startDate
   data.endDate = defaultRange.endDate
   handleQuery()

@@ -15,7 +15,7 @@
         where
         jc.flag = #{flag}
         <if test="category != null and category != '' ">
-            and jc.category = #{category}
+            and jc.category like concat('%', #{category}, '%')
         </if>
         order by jc.created_date desc, jc.id desc
     </select>

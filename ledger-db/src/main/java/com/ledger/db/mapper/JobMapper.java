@@ -63,13 +63,13 @@ public interface JobMapper extends BaseMapper<Job> {
     /**
      * 员工产能排行：区间内按员工汇总件数、工资、出勤天数与两道工序的件数。
      *
-     * @param factoryId 成衣厂ID，可为空
+     * @param employeeId 员工ID，可为空
      * @param startDate 起始日期 yyyy-MM-dd
      * @param endDate   结束日期 yyyy-MM-dd
      * @return list，按件数倒序
      */
     List<EmployeeRankDTO> selectEmployeeRank(
-            @Param("factoryId") Integer factoryId,
+            @Param("employeeId") Integer employeeId,
             @Param("startDate") String startDate,
             @Param("endDate") String endDate
     );

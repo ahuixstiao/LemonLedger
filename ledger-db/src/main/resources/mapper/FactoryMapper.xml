@@ -6,7 +6,7 @@
         select id, factory_name, version, created_date, flag, remark
         from factory
         where flag = #{flag}
-          and (#{factoryName} is null or #{factoryName} = '' or factory_name = #{factoryName})
+          and (#{factoryName} is null or #{factoryName} = '' or factory_name like concat('%', #{factoryName}, '%'))
         order by id desc
     </select>
 

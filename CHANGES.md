@@ -735,3 +735,15 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - 先发一条非法请求（同 key）→ 500，再用同 key 发正确请求 → 200（失败会释放 key）；
   - 认领接口同 key 连发两次：第一次 200、第二次 409，`job_work_order.claimed_emboss` 只加了一次（10）；
   - 清理测试数据后校验：测试账单 0 条、测试认领 0 条、计数器回到 0。
+
+## 27. 员工产能筛选改为员工、四个基础档案改模糊搜索（2026-11-19）
+
+- 员工产能排行：筛选条件由「成衣厂」改为「员工」。
+  - 后端 `selectEmployeeRank` 的参数由 `factoryId` 改为 `employeeId`，接口 `GET /admin/rank/employees?employeeId=`；
+  - 前端下拉改读员工列表（`queryAdminEmployeeList('', 1, 500, 0)`），选项显示员工姓名。
+- 员工档案、成衣厂列表、工作类型、工作方式四个页面的搜索改为模糊匹配（`like concat('%', ?, '%')`），
+  以前是完全相等，少打一个字就查不到。
+- 验证：
+  - 员工档案搜「弟」→ 周弟、高弟；成衣厂搜「鸟」→ 魔鬼鸟；
+  - 工作类型搜「花」→ 小花、大花、中花等 15 条；工作方式搜「压」→ 压花；
+  - 排行选「周弟」→ 只剩 1 行（19,819 件 / ¥804.24 / 6 天）。

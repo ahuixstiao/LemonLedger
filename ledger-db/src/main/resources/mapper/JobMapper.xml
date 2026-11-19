@@ -125,7 +125,7 @@
         from job j
         left join employee e on e.id = j.employee_id
         where j.flag = 0 and j.created_date between #{startDate} and #{endDate}
-        <if test="factoryId != null"> and j.factory_id = #{factoryId}</if>
+        <if test="employeeId != null"> and j.employee_id = #{employeeId}</if>
         group by j.employee_id, e.name
         order by quantity desc, salary desc
     </select>

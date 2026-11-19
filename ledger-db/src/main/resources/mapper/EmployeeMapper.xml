@@ -6,7 +6,7 @@
         select id, name, mode_id, version, created_date, flag, remark
         from employee
         where flag = #{flag}
-          and (#{name} is null or #{name} = '' or name = #{name})
+          and (#{name} is null or #{name} = '' or name like concat('%', #{name}, '%'))
         order by id desc
     </select>
 
