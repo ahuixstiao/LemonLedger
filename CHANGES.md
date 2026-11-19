@@ -674,3 +674,11 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **实现**：新增 `src/base/dialogShortcuts.js`，`useDialogShortcuts({ isOpen, onConfirm, onCancel })` 统一用 document 级 keydown 捕获注册，组件卸载时解绑。
 - **踩坑**：`onConfirm` 里传 ref 对象（不带 `.value`）会静默失败——模板里 ref 自动解包，脚本里不会；已全部改成 `.value`。
 - 涉及文件：`src/base/dialogShortcuts.js`（新增）、`FactoryBill.vue`、`FactoryPieceRate.vue`、`JobPieceRate.vue`、`JobWorkOrder.vue`、`src/style.css`。
+
+## 22. 后台首页数据看板（2026-11-19）
+
+- 新增 `GET /admin/dashboard/summary`：一次返回区间内的账单件数/金额、工资支出、毛利与毛利率、已认领件数、对不上的床数、逐日数据、差额最大的 5 张床。
+- 逐日数据由 `DashboardMapper` 两条聚合查询（账单按 `factory_bill.created_date`，工资按 `job.created_date`）在服务层用 `TreeMap` 补零合并，缺数据的日期也占一格，柱子不会断。
+- 「最该处理的 5 张床」复用对账查询 `selectReconcileByBatch`，按差额绝对值排序取前 5。
+- 后台新增「数据看板」页（`/admin/dashboard`），并把后台默认首页从成衣厂账单改为看板；4 张指标卡 + 每日件数柱状图（悬停看金额与工资）+ 差额 Top5 表格，可一键跳到对账页。
+- 验证：2026-10-01~11-19 区间返回账单 75,182 件 / ¥23,570.31、工资 ¥33,373.34、毛利 -¥9,803.03、毛利率 -41.6%、对不上的床 673 张；近 30 天页面渲染正常。

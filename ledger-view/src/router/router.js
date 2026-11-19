@@ -6,8 +6,16 @@ const routes = [
   {
     path: '/admin',
     component: () => import('../view/Admin/Admin.vue'),
-    redirect: '/admin/factoryBillList',
+    redirect: '/admin/dashboard',
     children: [
+      {
+        path: 'dashboard',
+        component: () => import('../view/Admin/AdminComponent/Dashboard.vue'),
+        meta: {
+          title: '数据看板',
+          desc: '账单、工资、毛利和对账差额一屏看完，先看这里再决定去处理什么。'
+        }
+      },
       {
         path: 'jobList',
         component: () => import('../view/Admin/AdminComponent/Employee.vue'),

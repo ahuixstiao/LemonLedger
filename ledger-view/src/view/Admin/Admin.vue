@@ -60,6 +60,7 @@ import {
   Back,
   CollectionTag,
   DataAnalysis,
+  DataBoard,
   Money,
   OfficeBuilding,
   Operation,
@@ -79,6 +80,7 @@ const menuGroups = [
   {
     title: '账单与统计',
     items: [
+      { label: '数据看板', path: '/admin/dashboard', icon: DataBoard },
       { label: '成衣厂账单', path: '/admin/factoryBillList', icon: Tickets },
       { label: '毛利统计', path: '/admin/grossProfit', icon: TrendCharts },
       { label: '账单对账', path: '/admin/reconcile', icon: DataAnalysis }
