@@ -57,6 +57,14 @@ const routes = [
         }
       },
       {
+        path: 'employeeRank',
+        component: () => import('../view/Admin/AdminComponent/EmployeeRank.vue'),
+        meta: {
+          title: '员工产能',
+          desc: '谁做得多、谁做得值钱，按员工看这段时间的产出。'
+        }
+      },
+      {
         path: 'factoryPieceRateList',
         component: () => import('../view/Admin/AdminComponent/FactoryPieceRate.vue'),
         meta: {

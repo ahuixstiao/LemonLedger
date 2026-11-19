@@ -3,10 +3,13 @@ package com.ledger.db.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.db.entity.Job;
+import com.ledger.db.entity.dto.EmployeeRankDTO;
 import com.ledger.db.entity.dto.JobDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 /**
  * <p>
@@ -56,4 +59,18 @@ public interface JobMapper extends BaseMapper<Job> {
             @Param("endDate") String endDate,
             @Param("flag") Integer flag);
 
+
+    /**
+     * 员工产能排行：区间内按员工汇总件数、工资、出勤天数与两道工序的件数。
+     *
+     * @param factoryId 成衣厂ID，可为空
+     * @param startDate 起始日期 yyyy-MM-dd
+     * @param endDate   结束日期 yyyy-MM-dd
+     * @return list，按件数倒序
+     */
+    List<EmployeeRankDTO> selectEmployeeRank(
+            @Param("factoryId") Integer factoryId,
+            @Param("startDate") String startDate,
+            @Param("endDate") String endDate
+    );
 }

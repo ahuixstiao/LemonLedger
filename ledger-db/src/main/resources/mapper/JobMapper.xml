@@ -111,4 +111,22 @@
         group by job.employee_id, emp.name
     </select>
 
+
+    <!-- 员工产能排行：区间内按员工汇总，件数倒序 -->
+    <select id="selectEmployeeRank" resultType="employeeRankDTO">
+        select
+        j.employee_id as employee_id,
+        e.name as employee_name,
+        coalesce(sum(j.quantity), 0) as quantity,
+        coalesce(sum(j.salary), 0) as salary,
+        count(distinct j.created_date) as days,
+        coalesce(sum(case when j.mode_id = 1 then j.quantity else 0 end), 0) as emboss_qty,
+        coalesce(sum(case when j.mode_id = 2 then j.quantity else 0 end), 0) as glue_qty
+        from job j
+        left join employee e on e.id = j.employee_id
+        where j.flag = 0 and j.created_date between #{startDate} and #{endDate}
+        <if test="factoryId != null"> and j.factory_id = #{factoryId}</if>
+        group by j.employee_id, e.name
+        order by quantity desc, salary desc
+    </select>
 </mapper>
