@@ -1,8 +1,13 @@
 package com.ledger.api.handler;
 
+import com.ledger.api.idempotent.IdempotencyGuard;
 import com.ledger.common.exception.BizException;
 import com.ledger.common.result.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -33,11 +38,35 @@ import javax.validation.ConstraintViolationException;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    private final IdempotencyGuard idempotencyGuard;
+
+    @Autowired
+    public GlobalExceptionHandler(IdempotencyGuard idempotencyGuard) {
+        this.idempotencyGuard = idempotencyGuard;
+    }
+
+    /**
+     * 请求失败时把幂等 key 还回去，让用户改完能原样重试；
+     * 不还的话 10 分钟内同一个按钮都会提示「已经处理过了」。
+     */
+    private void releaseIdempotencyKey() {
+        ServletRequestAttributes attributes =
+            (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return;
+        }
+        Object key = attributes.getRequest().getAttribute("idempotencyKey");
+        if (key instanceof String) {
+            idempotencyGuard.release((String) key);
+        }
+    }
+
     /**
      * 业务异常：消息可以直接给用户看。
      */
     @ExceptionHandler(BizException.class)
     public Result<Object> handleBizException(BizException exception) {
+        releaseIdempotencyKey();
         log.warn("业务处理失败: {}", exception.getMessage());
         return Result.fail(exception.getMessage());
     }
@@ -47,6 +76,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
+        releaseIdempotencyKey();
         FieldError fieldError = exception.getBindingResult().getFieldError();
         String message = fieldError == null ? "请求参数不合法" : fieldError.getField() + " " + fieldError.getDefaultMessage();
         return Result.fail(message);
@@ -57,6 +87,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BindException.class)
     public Result<Object> handleBindException(BindException exception) {
+        releaseIdempotencyKey();
         FieldError fieldError = exception.getBindingResult().getFieldError();
         String message = fieldError == null ? "请求参数不合法" : fieldError.getField() + " " + fieldError.getDefaultMessage();
         return Result.fail(message);
@@ -67,6 +98,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public Result<Object> handleConstraintViolation(ConstraintViolationException exception) {
+        releaseIdempotencyKey();
         String message = exception.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
                 .findFirst()
@@ -79,6 +111,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Result<Object> handleMissingParameter(MissingServletRequestParameterException exception) {
+        releaseIdempotencyKey();
         return Result.fail("缺少必需的参数: " + exception.getParameterName());
     }
 
@@ -87,6 +120,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public Result<Object> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        releaseIdempotencyKey();
         return Result.fail("参数 " + exception.getName() + " 的格式不正确");
     }
 
@@ -95,6 +129,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Result<Object> handleMessageNotReadable(HttpMessageNotReadableException exception) {
+        releaseIdempotencyKey();
         log.warn("请求体解析失败: {}", exception.getMessage());
         return Result.fail("请求内容格式不正确，请检查提交的数据");
     }
@@ -105,6 +140,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DuplicateKeyException.class)
     public Result<Object> handleDuplicateKey(DuplicateKeyException exception) {
+        releaseIdempotencyKey();
         log.warn("唯一约束冲突: {}", exception.getMessage());
         return Result.fail("已存在同名记录（员工姓名或成衣厂名称不能重复），请修改名称后重试");
     }
@@ -114,6 +150,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public Result<Object> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+        releaseIdempotencyKey();
         log.error("数据不符合数据库约束", exception);
         return Result.fail("数据不符合数据库约束（可能是名称过长或必填项为空），请检查后重试");
     }
@@ -123,6 +160,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public Result<Object> handleException(Exception exception) {
+        releaseIdempotencyKey();
         log.error("接口处理异常", exception);
         return Result.fail("服务器处理失败，请稍后重试（详细原因见服务端日志）");
     }

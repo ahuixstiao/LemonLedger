@@ -310,6 +310,7 @@ import { useTransition } from '@vueuse/core'
 import AdminPageHeader from '../AdminPageHeader.vue'
 import { confirmDelete, formatDate, formatMoney, formatNumber } from '../adminShared.js'
 import { useDialogShortcuts } from '../../../base/dialogShortcuts.js'
+import { newSubmitKey } from '../../../base/submitKey.js'
 import { queryFactoryList } from '../../../network/index.js'
 import {
   deleteFactoryBillInfo,
@@ -529,8 +530,10 @@ const clearBillInputsAfterCreate = () => {
 }
 
 const createFactoryBill = async () => {
-  const { data: res } = await saveFactoryBillInfo(factoryBillInfoRef)
+  const { data: res } = await saveFactoryBillInfo(factoryBillInfoRef, false, billSubmitKey.value)
   if (res.status === 200) {
+    // 这一条已经落库，下次提交算新的动作，换一个幂等 key
+    billSubmitKey.value = newSubmitKey()
     ElMessage.success(res.message)
     clearBillInputsAfterCreate()
     await fetchFactoryBillList()
@@ -547,6 +550,8 @@ const createFactoryBill = async () => {
     }
     return
   }
+  // 提交被拒：换一个 key，用户改完可以直接重试
+  billSubmitKey.value = newSubmitKey()
   ElMessage.error(res.message)
 }
 
@@ -629,6 +634,8 @@ const resetQueryCondition = () => {
 const statisticalBillFormRef = ref()
 const billInfoFormRef = ref()
 const billNumberInputRef = ref()
+/** 本次「添加账单」的幂等 key：打开弹窗时生成，提交成功后换新的 */
+const billSubmitKey = ref('')
 
 // 构建统计的账单实体
 const statisticalBillRef = reactive({
@@ -658,6 +665,7 @@ const openEditBillDialog = async bill => {
 
 const openCreateBillDialog = () => {
   openCreateDialog(factoryBillInfoRef, factoryBillInfoInit, data, 'editBillDialogMode', 'editBillDialogVisible')
+  billSubmitKey.value = newSubmitKey()
   data.styleNumberList = []
 }
 

@@ -12,11 +12,12 @@ export function saveJobInfo(job) {
 
 // 员工认领工单
 // modeId 可以不传：员工档案里有默认工作方式时后端直接用员工的
-export function claimWorkOrder(workOrderId, employeeId, quantity, modeId) {
+export function claimWorkOrder(workOrderId, employeeId, quantity, modeId, idempotencyKey = '') {
   return request({
     url: '/emp/job/claim',
     method: 'post',
-    data: { workOrderId, employeeId, quantity, modeId }
+    data: { workOrderId, employeeId, quantity, modeId },
+    idempotencyKey
   })
 }
 

@@ -400,12 +400,15 @@ const createWorkOrder = async () => {
     quantity,
     createdDate: workOrderFormModel.createdDate
   }
-  const { data: res } = await saveWorkOrder(payload)
+  const { data: res } = await saveWorkOrder(payload, workOrderSubmitKey.value)
   if (res.status === 200) {
+    workOrderSubmitKey.value = newSubmitKey()
     ElMessage.success(doubleQuantity.value ? `${res.message}（已按 ×2 记为 ${quantity} 件）` : res.message)
     //closeWorkOrderDialog()
     await fetchWorkOrderList()
   } else {
+    // 提交被拒：换 key，改完可以直接重试
+    workOrderSubmitKey.value = newSubmitKey()
     ElMessage.error(res.message)
   }
 }
@@ -463,6 +466,9 @@ const onWorkOrderFilterReset = () => {
 const workOrderFormRef = ref()
 // 添加工单时勾选，提交的数量按输入值 ×2
 const doubleQuantity = ref(false)
+/** 提交幂等 key：打开弹窗时生成，成功后换新 */
+const workOrderSubmitKey = ref('')
+const claimSubmitKey = ref('')
 const workOrderFormInit = {
   id: '',
   factoryId: '',
@@ -479,6 +485,7 @@ const workOrderFormModel = reactive({ ...workOrderFormInit })
  */
 const openCreateWorkOrderDialog = () => {
   doubleQuantity.value = false
+  workOrderSubmitKey.value = newSubmitKey()
   openCreateDialog(
     workOrderFormModel,
     workOrderFormInit,
@@ -580,6 +587,7 @@ const openClaimDialog = workOrder => {
   data.claimProgress = null
   syncClaimModeState()
   data.claimDialogVisible = true
+  claimSubmitKey.value = newSubmitKey()
   loadClaimProgress()
 }
 
@@ -604,10 +612,12 @@ const submitClaimWorkOrder = async formEl => {
         claimFormModel.workOrderId,
         claimFormModel.employeeId,
         Number(claimFormModel.quantity),
-        claimFormModel.modeId || undefined
+        claimFormModel.modeId || undefined,
+        claimSubmitKey.value
       )
 
       if (res.status === 200) {
+        claimSubmitKey.value = newSubmitKey()
         ElMessage.success('认领成功')
         closeClaimDialog()
         await fetchWorkOrderList()

@@ -32,12 +32,13 @@ export function queryFactoryBillList(
 
 // 保存成衣厂账单
 // confirmDuplicate：已经确认「这一床确实是返工/补做，就是要再记一次」时传 true，跳过重复校验
-export function saveFactoryBillInfo(bill, confirmDuplicate = false) {
+export function saveFactoryBillInfo(bill, confirmDuplicate = false, idempotencyKey = '') {
   return request({
     url: '/admin/factoryBill',
     method: 'post',
     data: bill,
-    params: { confirmDuplicate }
+    params: { confirmDuplicate },
+    idempotencyKey
   })
 }
 

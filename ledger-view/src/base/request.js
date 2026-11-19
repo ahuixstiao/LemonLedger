@@ -23,6 +23,11 @@ http.interceptors.request.use(
       })
       config.params = cleanedParams
     }
+    // 提交幂等：调用方传了 idempotencyKey 就带上去重头，重复提交后端只处理一次
+    if (config.idempotencyKey) {
+      config.headers = { ...(config.headers || {}), 'X-Idempotency-Key': config.idempotencyKey }
+      delete config.idempotencyKey
+    }
     return config
   },
   error => {

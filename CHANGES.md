@@ -717,3 +717,19 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - 后台新增「系统 → 数据库备份」页（`/admin/backup`）：最近备份时间、文件数、占用空间、备份内容四张卡；备份文件表格；恢复命令一键复制；stale 时顶部黄条提醒检查计划任务。
 - 镜像：`794862853/lemonledger:2.11`（digest `sha256:1f970371faa52940cad47c90b4979d2a59c18651e7751b82ca7e176eaf796d55`），`latest` 同步更新。
 - 验证：首次备份 `ledger-20261119-111528.sql.gz` 423.8 KB、11 张表、12 段 INSERT；计划任务 `LastTaskResult=0`、下次运行 2026-11-20 02:30；接口返回 2 个文件、总计 847.7 KB。
+
+## 26. 提交幂等（2026-11-19）
+
+- 背景：手抖点两下「添加账单」、Ctrl+Enter 连按、网络超时后重试，都可能把同一笔提交发两次；认领工单重复提交则会重复扣减剩余量。
+- 后端新增 `IdempotencyGuard`（内存表 + 10 分钟 TTL）：同一个 `X-Idempotency-Key` 在 10 分钟内只放行一次。
+  - `IdempotencyInterceptor` 挂在 `/admin/**`、`/emp/**` 的 POST/PUT/DELETE 上；没带头的请求照旧放行，不改变老接口行为；
+  - 重复提交直接返回 `{"status":409,"message":"这次提交已经处理过了，不用再点一次"}`，不再调用业务；
+  - 业务失败时（全局异常处理器捕获后、或 HTTP 非 2xx）会把 key 释放，用户改完能原样重试。
+- 前端新增 `src/base/submitKey.js`：打开弹窗时生成 key，成功提交后换新 key，失败时也换新 key。
+  - 已接入：添加成衣厂账单（`FactoryBill.vue`）、添加工单与认领工单（`JobWorkOrder.vue`）；
+  - key 通过 axios 请求拦截器写入请求头，业务代码只多传一个参数。
+- 验证：
+  - 账单连发两次同 key：第一次 200、第二次 409，库里只有一条；
+  - 先发一条非法请求（同 key）→ 500，再用同 key 发正确请求 → 200（失败会释放 key）；
+  - 认领接口同 key 连发两次：第一次 200、第二次 409，`job_work_order.claimed_emboss` 只加了一次（10）；
+  - 清理测试数据后校验：测试账单 0 条、测试认领 0 条、计数器回到 0。

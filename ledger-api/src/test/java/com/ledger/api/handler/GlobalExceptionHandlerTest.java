@@ -1,5 +1,6 @@
 package com.ledger.api.handler;
 
+import com.ledger.api.idempotent.IdempotencyGuard;
 import com.ledger.common.exception.BizException;
 import com.ledger.common.result.Result;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 class GlobalExceptionHandlerTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler(new IdempotencyGuard());
 
     @Test
     @DisplayName("业务异常：消息原样带给前端，状态码是 500")

@@ -30,11 +30,12 @@ export function queryWorkOrderList(
 }
 
 // 新增工单
-export function saveWorkOrder(workOrder) {
+export function saveWorkOrder(workOrder, idempotencyKey = '') {
   return request({
     url: '/emp/workOrder',
     method: 'post',
-    data: workOrder
+    data: workOrder,
+    idempotencyKey
   })
 }
 
