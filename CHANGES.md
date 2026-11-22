@@ -816,3 +816,29 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 ### 29.5 镜像
 
 - `794862853/lemonledger:2.14` 与 `latest` 已推 Docker Hub，digest `sha256:60a3ac22123de1c491601be6176e1a018b99c069e8a88193e811ad68882eaa0c`；本机只保留 2.14 与 latest。
+
+## 30. 导出账单文件名带上日期区间（2026-11-22）
+
+### 30.1 规则
+
+- 起始只到月、截止到日：`李波成衣厂-2026年02月-10月15日.xlsx`。
+- 截止日期正好是当月月末时，截止也只到月：`李波成衣厂-2026年02月-10月.xlsx`（2 月 27 日～10 月 31 日）。
+- 跨年时截止日期带上年份：`成衣厂-2026年12月-2027年01月05日.xlsx`。
+- 没选日期时仍是 `厂名成衣厂账单.xlsx`；结算单「重导」在区间名后追加结算单 ID，避免和普通导出重名。
+
+### 30.2 实现
+
+- 新增 `ledger-common/src/main/java/com/ledger/common/util/BillFileNameUtil.java`，`build(factoryName, start, end)` 统一拼名；厂名本身以「成衣厂」结尾时不再重复拼接（兜底名不会再变成「成衣厂成衣厂」）。
+- `FactoryBillController` 的 `fileName` 改用它；`AdminSettlementController` 的按快照重导也用它。
+- 中文名仍只放进 RFC 5987 的 `filename*`，`filename=` 保持纯 ASCII（`factory-bill-{id}.xlsx` / `factory-bill-settlement-{id}.xlsx`），避免 Tomcat 丢掉整个 `Content-Disposition`。
+
+### 30.3 验证（真实接口）
+
+- 2026-02-27～2026-10-15 → `李波成衣厂-2026年02月-10月15日.xlsx`
+- 2026-02-27～2026-10-31 → `李波成衣厂-2026年02月-10月.xlsx`
+- 2026-12-20～2027-01-05 → `成衣厂-2026年12月-2027年01月05日.xlsx`（该区间没有账单，厂名回退）
+- 结算单 13 重导 → `成衣厂-2026年12月-2027年01月05日-13.xlsx`
+
+### 30.4 镜像
+
+- `794862853/lemonledger:2.15` 与 `latest` 已推 Docker Hub，digest `sha256:b1cac4079c3f8e3230d7536f215f8b1b3a3e2ab7eaaea0c065327bf751d8fd5e`；本机只保留 2.15 与 latest。

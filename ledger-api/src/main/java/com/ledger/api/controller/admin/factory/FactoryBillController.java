@@ -7,6 +7,7 @@ import cn.idev.excel.write.style.HorizontalCellStyleStrategy;
 
 import com.ledger.common.exception.BizException;
 import com.ledger.common.result.Result;
+import com.ledger.common.util.BillFileNameUtil;
 import com.ledger.common.util.MoneyUtil;
 import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.dto.FactoryBillDto;
@@ -161,7 +162,7 @@ public class FactoryBillController {
                 .filter(name -> hasText(name))
                 .findFirst()
                 .orElse("成衣厂");
-        String fileName = factoryName + "成衣厂账单.xlsx";
+        String fileName = BillFileNameUtil.build(factoryName, parseOptionalDate(startDate), parseOptionalDate(endDate));
 
         // 获取总计：BigDecimal 相加，不能用 double（二进制浮点会让总计出现 1234.5599999999999 这种尾巴）
         BigDecimal totalAmount = MoneyUtil.sumBy(list, FactoryBillDto::getBill);

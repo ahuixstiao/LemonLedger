@@ -6,6 +6,7 @@ import cn.idev.excel.write.metadata.style.WriteCellStyle;
 import cn.idev.excel.write.metadata.style.WriteFont;
 import com.ledger.common.exception.BizException;
 import com.ledger.common.result.Result;
+import com.ledger.common.util.BillFileNameUtil;
 import com.ledger.db.entity.FactoryBillSettlement;
 import com.ledger.db.entity.FactoryBillSettlementItem;
 import com.ledger.db.entity.dto.FactoryBillDto;
@@ -139,7 +140,10 @@ public class AdminSettlementController {
 
         String factoryName = settlement.getFactoryName() == null || settlement.getFactoryName().isBlank()
                 ? "成衣厂" : settlement.getFactoryName();
-        String fileName = factoryName + "成衣厂账单-" + settlement.getId() + ".xlsx";
+        String rangeName = BillFileNameUtil.build(factoryName, settlement.getStartDate(), settlement.getEndDate());
+        String fileName = rangeName.endsWith("账单.xlsx")
+                ? factoryName + "成衣厂账单-" + settlement.getId() + ".xlsx"
+                : rangeName.replace(".xlsx", "-" + settlement.getId() + ".xlsx");
         String asciiFileName = "factory-bill-settlement-" + settlement.getId() + ".xlsx";
         String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
 
