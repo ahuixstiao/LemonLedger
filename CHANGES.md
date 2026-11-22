@@ -748,3 +748,31 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - 员工档案搜「弟」→ 周弟、高弟；成衣厂搜「鸟」→ 魔鬼鸟；
   - 工作类型搜「花」→ 小花、大花、中花等 15 条；工作方式搜「压」→ 压花；
   - 排行选「周弟」→ 只剩 1 行（19,819 件 / ¥804.24 / 6 天）。
+
+---
+
+## 28. 打包时前端构建在 Windows / IDEA 上跑不起来（2026-11-22）
+
+只改构建配置，不碰业务代码。
+
+### 28.1 两个真问题
+
+| 现象 | 真因 | 修法 |
+| --- | --- | --- |
+| `Cannot run program "npm" ... CreateProcess error=2` | `ledger-api/pom.xml` 里写死了 `<executable>npm</executable>`，而 Windows 上只有 `npm.cmd`；Maven 用 ProcessBuilder 直接执行，不会按 PATHEXT 补扩展名 | 新增属性 `npm.executable`（默认 `npm`），根 pom 里加 `npm-windows` profile（`<os><family>windows</family></os>` 自动激活）改成 `npm.cmd`；`ledger-api/pom.xml` 引用 `${npm.executable}` |
+| `[vite:esbuild-transpile] remove ...\Temp\esbuild-xxx: Access is denied` | esbuild 把自解压的临时 exe 放在系统 TEMP，用完删不掉（杀软/Defender 锁文件） | 新增属性 `npm.tmpdir`（仓库内 `.npm-tmp/`），通过 exec 插件的 `<environmentVariables>` 把 `TEMP`/`TMP` 指过去；`.npm-tmp/.gitkeep` 随仓库存在，`.gitignore` 忽略目录内容 |
+
+### 28.2 验证
+
+- `mvn clean install`（JDK 17 + Maven 3.10.0 + 本地仓库 `D:\maven-repository`）→ **BUILD SUCCESS**，四个模块全过，前端 `✓ built in 3.95s`，产出 `ledger-api/target/LemonLedger.jar`。
+- 不再需要 `-Dexec.skip=true`，也不用先手动跑 `npm run build`。
+
+### 28.3 IDEA 侧相关的三个设置（与本仓库无关，但影响构建）
+
+1. `设置 → 构建、执行、部署 → 构建工具 → Maven`：主路径、用户设置文件、本地仓库都不要放在含中文的路径下（本机是 `D:` 盘），否则 IDEA 传参时代码页会把中文路径解坏，Maven 直接不启动。
+2. `文件 → 项目结构 → 项目`：SDK 必须是 **17**，语言级别 17。项目 SDK 是 11 时会报 `invalid target release: 17`。
+3. `Maven → 运行程序(Runner)`：JRE 选 17，或保持「使用项目 JDK」。
+
+### 28.4 涉及文件
+
+`pom.xml`（`npm.executable`、`npm.tmpdir`、`npm-windows` profile）、`ledger-api/pom.xml`（`${npm.executable}`、`environmentVariables`）、`.gitignore`、`.npm-tmp/.gitkeep`。

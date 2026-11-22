@@ -68,11 +68,18 @@
                         </goals>
                         <configuration>
                             <workingDirectory>../ledger-view</workingDirectory> <!-- ⚠️ 前端路径 -->
-                            <executable>npm</executable>
+                            <!-- 用属性而不是写死 "npm"：Windows 上 Maven 直接 exec 找不到不带扩展名的 npm -->
+                            <executable>${npm.executable}</executable>
                             <arguments>
                                 <argument>run</argument>
                                 <argument>build</argument>
                             </arguments>
+                            <!-- 把 esbuild 的临时目录指到仓库内的 .npm-tmp（已随仓库创建），
+                                 绕开系统 TEMP 被杀软锁住 exe 导致的 Access is denied -->
+                            <environmentVariables>
+                                <TEMP>${npm.tmpdir}</TEMP>
+                                <TMP>${npm.tmpdir}</TMP>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                 </executions>

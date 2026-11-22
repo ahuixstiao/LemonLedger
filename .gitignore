@@ -64,3 +64,7 @@ log/
 *.log
 backups/
 run-backup.cmd
+
+# 前端构建（esbuild）的临时目录：不放系统 TEMP，避免被杀软锁住临时 exe 导致 Access is denied
+.npm-tmp/*
+!.npm-tmp/.gitkeep
