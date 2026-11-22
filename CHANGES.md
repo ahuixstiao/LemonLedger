@@ -813,3 +813,6 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 
 `deploy/migrate-0.0.6.sql`、`ledger-db/.../entity/FactoryBillSettlement.java`、`FactoryBillSettlementItem.java`、`mapper/FactoryBillSettlementMapper.java`、`mapper/FactoryBillSettlementItemMapper.java`、`service/settlement/IFactoryBillSettlementService.java`、`impl/settlement/FactoryBillSettlementServiceImpl.java`、`AdminSettlementController.java`、`FactoryBillController.java`、`ledger-view/src/network/admin/settlement.js`、`view/Admin/AdminComponent/Settlement.vue`、`router/router.js`、`view/Admin/Admin.vue`、`src/style.css`（状态胶囊不换行）、`docker-compose.yml`（2.14）。
 
+### 29.5 镜像
+
+- `794862853/lemonledger:2.14` 与 `latest` 已推 Docker Hub，digest `sha256:60a3ac22123de1c491601be6176e1a018b99c069e8a88193e811ad68882eaa0c`；本机只保留 2.14 与 latest。
