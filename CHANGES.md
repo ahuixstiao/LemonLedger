@@ -755,16 +755,19 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 
 只改构建配置，不碰业务代码。
 
-### 28.1 两个真问题
+### 28.1 三个真问题
 
 | 现象 | 真因 | 修法 |
 | --- | --- | --- |
 | `Cannot run program "npm" ... CreateProcess error=2` | `ledger-api/pom.xml` 里写死了 `<executable>npm</executable>`，而 Windows 上只有 `npm.cmd`；Maven 用 ProcessBuilder 直接执行，不会按 PATHEXT 补扩展名 | 新增属性 `npm.executable`（默认 `npm`），根 pom 里加 `npm-windows` profile（`<os><family>windows</family></os>` 自动激活）改成 `npm.cmd`；`ledger-api/pom.xml` 引用 `${npm.executable}` |
 | `[vite:esbuild-transpile] remove ...\Temp\esbuild-xxx: Access is denied` | esbuild 把自解压的临时 exe 放在系统 TEMP，用完删不掉（杀软/Defender 锁文件） | 新增属性 `npm.tmpdir`（仓库内 `.npm-tmp/`），通过 exec 插件的 `<environmentVariables>` 把 `TEMP`/`TMP` 指过去；`.npm-tmp/.gitkeep` 随仓库存在，`.gitignore` 忽略目录内容 |
+| `[vite:build-html] ... fileName ... received "../../../../../../阿辉/.dsh/..."` | 工程是从目录联接 `C:\Users\ahui`（指向 `C:\Users\阿辉`）打开的：进程 cwd 是**联接路径**，而 vite/rollup 解析模块走**真实路径**，两边一相对化就成了 `../../../../../../阿辉/...`，rollup 拒绝这种相对文件名 | 新增 `ledger-view/build.mjs`：先 `process.chdir(fs.realpathSync(process.cwd()))` 切到真实路径，再调 vite 的 build API；`package.json` 的 build 脚本改成 `node build.mjs` |
 
 ### 28.2 验证
 
-- `mvn clean install`（JDK 17 + Maven 3.10.0 + 本地仓库 `D:\maven-repository`）→ **BUILD SUCCESS**，四个模块全过，前端 `✓ built in 3.95s`，产出 `ledger-api/target/LemonLedger.jar`。
+- 从真实路径 `C:\Users\阿辉\…\LemonLedger` 跑 `mvn clean install`（JDK 17 + Maven 3.10 + 本地仓库 `D:\tools\maven-repository`）→ **BUILD SUCCESS**，四个模块全过，前端 `✓ built in 4.6s`，产出 `ledger-api/target/LemonLedger.jar`。
+- 从目录联接路径 `C:\Users\ahui\…\LemonLedger`（就是 IDEA 用的那个）再跑一次 `clean install` → 同样 **BUILD SUCCESS**。
+- 单独 `npm run build` 在联接路径下也通过（`✓ built in 4.63s`）。
 - 不再需要 `-Dexec.skip=true`，也不用先手动跑 `npm run build`。
 
 ### 28.3 IDEA 侧相关的三个设置（与本仓库无关，但影响构建）
@@ -775,4 +778,4 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 
 ### 28.4 涉及文件
 
-`pom.xml`（`npm.executable`、`npm.tmpdir`、`npm-windows` profile）、`ledger-api/pom.xml`（`${npm.executable}`、`environmentVariables`）、`.gitignore`、`.npm-tmp/.gitkeep`。
+`pom.xml`（`npm.executable`、`npm.tmpdir`、`npm-windows` profile）、`ledger-api/pom.xml`（`${npm.executable}`、`environmentVariables`）、`ledger-view/build.mjs`、`ledger-view/package.json`（`build` 脚本）、`.gitignore`、`.npm-tmp/.gitkeep`。
