@@ -159,12 +159,12 @@
           <span class="money settle-amount">{{ formatMoney(data.settleForm.totalAmount) }}</span>
         </el-form-item>
         <el-form-item label="已付金额">
-          <el-input v-model="data.settleForm.paidAmount" placeholder="填这次累计已付了多少">
-            <template #prefix>¥</template>
-            <template #append>
-              <el-button class="full-btn" :disabled="!Number(data.settleForm.totalAmount)" @click="fillFullAmount">全部结清</el-button>
-            </template>
-          </el-input>
+          <div class="paid-row">
+            <el-input v-model="data.settleForm.paidAmount" placeholder="填这次累计已付了多少">
+              <template #prefix>¥</template>
+            </el-input>
+            <el-button class="full-btn" :disabled="!Number(data.settleForm.totalAmount)" @click="fillFullAmount">全部结清</el-button>
+          </div>
         </el-form-item>
         <el-form-item label="付款日期">
           <el-date-picker
@@ -449,13 +449,22 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.full-btn {
-  padding: 0 10px;
-  font-size: 12px;
+.paid-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
-:deep(.el-input-group__append) {
-  padding: 0;
+.paid-row .el-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.full-btn {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 14px;
 }
 .items-summary {
   display: flex;

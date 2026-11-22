@@ -859,3 +859,9 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - 明细按 settlement_id 一起恢复；李波那两张的明细在 binlog 里有两代（同一区间导过两次），改为按区间从 `factory_bill` 重建，条数与金额和快照总额一致。
   - 与我验证时造的数据同区间的（李波 10-01~10-03、11-01~11-10、跨年空单）没有恢复。
 - 教训：以后清测试数据只能按自己生成的主键删（`WHERE id IN (...)`），不能整表清；这次也暴露了备份只到前一天，恢复只能靠 binlog。
+
+## 32. 结算作废修复、看板加床日期、结清按钮样式（2026-11-22）
+
+- **作废无效**：`voidSettlement` 原来 `setFlag(1)` + `updateById`，而 `flag` 是 `@TableLogic` 字段，MyBatis-Plus 不会把它写进 UPDATE 的 SET，所以接口返回成功但数据没变。改为 `deleteById`（逻辑删除）并把明细一起逻辑删除。
+- **看板加床的创建日期**：`ReconcileRowDTO` 加 `batchCreatedDate`，`selectReconcileByBatch` 增加 `t.created_date as batch_created_date`；看板「最该处理的 5 张床」新增该列（`Dashboard.vue` 要 import `formatDate`，否则单元格静默渲染空白）。
+- **全部结清按钮**：从 `el-input` 的 `#append` 改成 `.paid-row` 里的独立按钮，避免按钮被输入框挤压导致文字溢出。

@@ -90,7 +90,7 @@
         <span class="panel-sub">差额 = 账单数量 - 实际完成数量，按绝对差额排序</span>
       </div>
       <el-table :data="data.summary.topDiff" class="front-table" empty-text="这段时间对得上，没有差异">
-        <el-table-column prop="factoryName" label="成衣厂" min-width="160" align="center">
+        <el-table-column prop="factoryName" label="成衣厂" min-width="150" align="center">
           <template #default="{ row }">
             <div class="entity-cell">
               <span class="entity-avatar">{{ (row.factoryName || '?').slice(0, 1) }}</span>
@@ -99,7 +99,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="number" label="床号" min-width="100" align="center" />
-        <el-table-column prop="styleNumber" label="款式编号" min-width="120" align="center" />
+        <el-table-column prop="styleNumber" label="款式编号" min-width="110" align="center" />
+        <el-table-column label="床的创建日期" min-width="120" align="center">
+          <template #default="{ row }"><span class="date-cell">{{ formatDate(row.batchCreatedDate) }}</span></template>
+        </el-table-column>
         <el-table-column label="账单数量" min-width="100" align="center">
           <template #default="{ row }"><span class="num">{{ formatNumber(row.billQty) }}</span></template>
         </el-table-column>
@@ -130,7 +133,7 @@ import { computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AdminPageHeader from '../AdminPageHeader.vue'
-import { formatMoney, formatNumber } from '../adminShared.js'
+import { formatDate, formatMoney, formatNumber } from '../adminShared.js'
 import { queryDashboardSummary } from '../../../network/admin/index.js'
 import { recentDateRange } from '../../../base/dateRange.js'
 

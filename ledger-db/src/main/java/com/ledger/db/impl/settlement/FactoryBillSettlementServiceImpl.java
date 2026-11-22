@@ -179,8 +179,10 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
         if (settlement == null || Objects.equals(settlement.getFlag(), 1)) {
             throw new BizException("结算单不存在或已作废");
         }
-        settlement.setFlag(1);
-        settlementMapper.updateById(settlement);
+        // @TableLogic 的逻辑删除字段不会被 updateById 写进 SET，必须走 deleteById 才会真正置 flag=1
+        settlementMapper.deleteById(id);
+        itemMapper.delete(new LambdaQueryWrapper<FactoryBillSettlementItem>()
+                .eq(FactoryBillSettlementItem::getSettlementId, id.longValue()));
         return Result.ok(null);
     }
 

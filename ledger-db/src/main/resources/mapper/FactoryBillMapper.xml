@@ -227,6 +227,7 @@
         f.factory_name,
         t.number,
         t.style_number,
+        t.created_date as batch_created_date,
         coalesce(b.bill_qty, 0) as bill_qty,
         coalesce(b.bill_amount, 0) as bill_amount,
         coalesce(j.emboss_qty, 0) as claimed_emboss,

@@ -42,6 +42,9 @@ public class ReconcileRowDTO implements Serializable {
      */
     private String styleNumber;
 
+    /** 床的创建日期，用于回看是哪一天做的 */
+    private String batchCreatedDate;
+
     /**
      * 账单数量合计（区间内）
      */
