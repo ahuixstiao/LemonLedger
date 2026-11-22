@@ -86,7 +86,8 @@ const menuGroups = [
       { label: '成衣厂账单', path: '/admin/factoryBillList', icon: Tickets },
       { label: '毛利统计', path: '/admin/grossProfit', icon: TrendCharts },
       { label: '账单对账', path: '/admin/reconcile', icon: DataAnalysis },
-      { label: '员工产能', path: '/admin/employeeRank', icon: Trophy }
+      { label: '员工产能', path: '/admin/employeeRank', icon: Trophy },
+      { label: '账单结算', path: '/admin/settlement', icon: Money }
     ]
   },
   {

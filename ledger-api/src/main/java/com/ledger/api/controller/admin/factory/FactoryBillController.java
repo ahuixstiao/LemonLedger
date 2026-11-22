@@ -11,6 +11,7 @@ import com.ledger.common.util.MoneyUtil;
 import com.ledger.db.entity.FactoryBill;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import com.ledger.db.service.factory.IFactoryBillService;
+import com.ledger.db.service.settlement.IFactoryBillSettlementService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -47,6 +49,8 @@ import static org.springframework.util.StringUtils.hasText;
 public class FactoryBillController {
 
     private final IFactoryBillService factoryBillService;
+
+    private final IFactoryBillSettlementService factoryBillSettlementService;
 
     /**
      * 按条件查询成衣厂账单列表  如果不传递参数则默认查询全部成衣厂账单列表
@@ -134,6 +138,19 @@ public class FactoryBillController {
                 parsedSortFields,
                 parsedSortOrders
         );
+
+        // 导出即落一条结算单快照：以后要知道这一批结没结清，看结算单列表就行
+        try {
+            factoryBillSettlementService.snapshotOnExport(
+                    parsedFactoryId,
+                    queryResult.stream().map(FactoryBillDto::getFactoryName).filter(name -> hasText(name)).findFirst().orElse("成衣厂"),
+                    parseOptionalDate(startDate),
+                    parseOptionalDate(endDate),
+                    new ArrayList<>(queryResult));
+        } catch (Exception exception) {
+            // 快照失败不该让导出也失败，记日志继续导出
+            log.error("生成账单结算单快照失败，工厂ID: {}", parsedFactoryId, exception);
+        }
 
         // 查询结果可能是只读列表，复制一份再追加"空行 + 总计行"
         List<FactoryBillDto> list = new ArrayList<>(queryResult);
@@ -278,6 +295,17 @@ public class FactoryBillController {
      * @param value 原始参数
      * @return 解析后的整数
      */
+    private LocalDate parseOptionalDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private Integer parseIntegerParam(String value) {
         return parseIntegerParam(value, null);
     }

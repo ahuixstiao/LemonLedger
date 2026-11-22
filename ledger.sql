@@ -280,3 +280,48 @@ CREATE TABLE `job_work_order` (
 
 -- Dump completed
 
+
+-- ------------------------------------------------------------
+-- 29. 成衣厂账单结算单（导出快照 + 结清记录）
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `factory_bill_settlement` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `factory_id` int NOT NULL COMMENT '成衣厂ID',
+  `factory_name` varchar(64) DEFAULT NULL COMMENT '成衣厂名称（导出时快照）',
+  `start_date` date DEFAULT NULL COMMENT '导出的起始日期',
+  `end_date` date DEFAULT NULL COMMENT '导出的截止日期',
+  `bill_count` int NOT NULL DEFAULT '0' COMMENT '本单账单笔数',
+  `total_quantity` int NOT NULL DEFAULT '0' COMMENT '本单总件数',
+  `total_amount` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT '本单总金额',
+  `paid_amount` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT '已结金额',
+  `paid_date` date DEFAULT NULL COMMENT '最近一次付款日期',
+  `status` tinyint NOT NULL DEFAULT '0' COMMENT '0未结清 1部分结清 2已结清',
+  `version` int DEFAULT '0' COMMENT '乐观锁',
+  `created_date` date DEFAULT NULL COMMENT '创建日期',
+  `updated_date` date DEFAULT NULL COMMENT '最后修改日期',
+  `flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '删除状态 0否 1是',
+  `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`id`),
+  KEY `idx_settlement_factory` (`factory_id`, `created_date`),
+  KEY `idx_settlement_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂账单结算单';
+
+CREATE TABLE IF NOT EXISTS `factory_bill_settlement_item` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `settlement_id` bigint NOT NULL COMMENT '结算单ID',
+  `bill_id` bigint DEFAULT NULL COMMENT '账单ID（导出那一刻）',
+  `number` varchar(32) DEFAULT NULL COMMENT '床号',
+  `style_number` varchar(64) DEFAULT NULL COMMENT '款式编号',
+  `category` varchar(64) DEFAULT NULL COMMENT '工作类型',
+  `quantity` int NOT NULL DEFAULT '0' COMMENT '数量',
+  `price` decimal(10,4) DEFAULT NULL COMMENT '单价',
+  `amount` decimal(12,2) DEFAULT NULL COMMENT '本床金额',
+  `created_date` date DEFAULT NULL COMMENT '创建日期',
+  `updated_date` date DEFAULT NULL COMMENT '最后修改日期',
+  `flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '删除状态 0否 1是',
+  `version` int DEFAULT '0' COMMENT '乐观锁',
+  `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`id`),
+  KEY `idx_settlement_item` (`settlement_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成衣厂账单结算单明细';
+

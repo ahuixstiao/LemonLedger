@@ -57,6 +57,14 @@ const routes = [
         }
       },
       {
+        path: 'settlement',
+        component: () => import('../view/Admin/AdminComponent/Settlement.vue'),
+        meta: {
+          title: '账单结算',
+          desc: '导出账单时自动留快照，在这里登记已付金额与结清状态。'
+        }
+      },
+      {
         path: 'employeeRank',
         component: () => import('../view/Admin/AdminComponent/EmployeeRank.vue'),
         meta: {

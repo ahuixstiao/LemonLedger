@@ -779,3 +779,37 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 ### 28.4 涉及文件
 
 `pom.xml`（`npm.executable`、`npm.tmpdir`、`npm-windows` profile）、`ledger-api/pom.xml`（`${npm.executable}`、`environmentVariables`）、`ledger-view/build.mjs`、`ledger-view/package.json`（`build` 脚本）、`.gitignore`、`.npm-tmp/.gitkeep`。
+
+## 29. 成衣厂账单结算单（导出快照 + 结清记录）（2026-11-22）
+
+### 29.1 问题
+
+导出 Excel 之后就没人知道这一批到底结没结清：结清与否只在脑子里，翻旧账要重新导一遍，也查不到「上次导出的是哪几床」。
+
+### 29.2 做法
+
+- 新增两张表（`deploy/migrate-0.0.6.sql`）：
+  - `factory_bill_settlement`：成衣厂、导出区间、笔数、件数、总金额、已付金额、付款日期、状态（0 未结清 / 1 部分结清 / 2 已结清）。
+  - `factory_bill_settlement_item`：结算单明细，存导出那一刻每床的床号、款式、工作类型、数量、单价、金额。
+- 导出即快照：`FactoryBillController.exportFactoryBillExcelByCondition` 在查询之后、拼总计行之前调用 `IFactoryBillSettlementService.snapshotOnExport`。快照失败只记日志，不影响导出本身。
+- 同一成衣厂、同一区间如果还有**没结清**的结算单，重复导出只刷新它的金额与明细，不会一导就多一条；已结清的另开一条，避免改掉结算凭证。
+- 接口（`AdminSettlementController`）：
+  - `GET /admin/settlement` 分页列表，可按成衣厂/状态/导出日期筛。
+  - `GET /admin/settlement/{id}/items` 明细。
+  - `PUT /admin/settlement/{id}/settle` 登记已付金额与付款日期，状态按金额自动算（0 → 未结清，等于总额 → 已结清，之间 → 部分结清）。
+  - `DELETE /admin/settlement/{id}` 作废（逻辑删除）。
+  - `GET /admin/settlement/{id}/excel` 按快照重新导出，导出的是当时那几床。
+- 前端新增「账单结算」页（`Settlement.vue`），菜单挂在「账单与统计」下；列表能看到导出日期、区间、笔数/件数、金额、已付、还欠、状态，操作有明细 / 登记结清 / 重导 / 作废。
+
+### 29.3 验证
+
+- 导出 李波 2026-10-01~10-03 → 列表出现 1 条：1 笔、630 件、¥226.80、未结清；同区间再导一次仍是 1 条（不重复）。
+- 登记已付 ¥300（区间 2026-11-01~11-10，总额 ¥627.12）→ 状态变「部分结清」，还欠 ¥327.12；再登记到 ¥627.12 → 「已结清」。
+- 提交超过总额的已付金额 → 拒绝「已付金额不能超过账单总额」。
+- `GET /admin/settlement/{id}/excel` 返回 xlsx（3945 字节），文件名 `李波成衣厂账单-1.xlsx`。
+- 明细接口返回每床记录（床号 176、款式 8802、工作类型 前袋+后袋、数量 630 …）。
+
+### 29.4 涉及文件
+
+`deploy/migrate-0.0.6.sql`、`ledger-db/.../entity/FactoryBillSettlement.java`、`FactoryBillSettlementItem.java`、`mapper/FactoryBillSettlementMapper.java`、`mapper/FactoryBillSettlementItemMapper.java`、`service/settlement/IFactoryBillSettlementService.java`、`impl/settlement/FactoryBillSettlementServiceImpl.java`、`AdminSettlementController.java`、`FactoryBillController.java`、`ledger-view/src/network/admin/settlement.js`、`view/Admin/AdminComponent/Settlement.vue`、`router/router.js`、`view/Admin/Admin.vue`、`src/style.css`（状态胶囊不换行）、`docker-compose.yml`（2.14）。
+

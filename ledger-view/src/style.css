@@ -525,6 +525,8 @@ ul {
 /* 状态标签：正常/删除统一成带圆点的胶囊 */
 .status-pill {
   display: inline-flex;
+  white-space: nowrap;
+  flex: 0 0 auto;
   align-items: center;
   gap: 6px;
   padding: 2px 10px;
