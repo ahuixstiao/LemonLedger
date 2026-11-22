@@ -842,3 +842,20 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 ### 30.4 镜像
 
 - `794862853/lemonledger:2.15` 与 `latest` 已推 Docker Hub，digest `sha256:b1cac4079c3f8e3230d7536f215f8b1b3a3e2ab7eaaea0c065327bf751d8fd5e`；本机只保留 2.15 与 latest。
+
+## 31. 登记结清加「全部结清」按钮；账单结算数据误删与恢复（2026-11-22）
+
+### 31.1 新增「全部结清」
+
+- `Settlement.vue` 的「登记结清」弹窗里，「已付金额」输入框右侧加「全部结清」按钮，点一下把已付金额填成本次账单金额，再点保存即标记结清，不用手抄数字。
+- 金额为 0 时按钮禁用；按钮只填值，不直接提交，避免误点。
+- 表格列宽同时微调（导出日期 104、账单区间 140、已付 96、还欠 104、状态 118、操作 190），保证「部分结清」和上万金额都不折行、不被固定列遮住。
+
+### 31.2 事故：结算单数据被整表清空
+
+- 原因：我在验证导出文件名时，用 `DELETE FROM factory_bill_settlement; DELETE FROM factory_bill_settlement_item;` 清测试数据，清的是整张表，不是按我造的测试 id 删，把你在这段时间导出的真实结算单一起删掉了。
+- 恢复：MySQL 开了 binlog（`binlog_format=ROW`），用 `percona/percona-server:8.0` 里的 `mysqlbinlog --base64-output=DECODE-ROWS -v` 解码 `binlog.000010`，解析删除事件的前镜像，重新 INSERT 回去。
+  - 恢复 6 张：尚雅斯 02-26~10-31、易老板 02-26~10-31、李春 02-26~10-31（已结清 ¥19,016.10，含付款状态）、魔鬼鸟 02-26~09-30、李波 02-27~10-15、李波 02-27~10-31。
+  - 明细按 settlement_id 一起恢复；李波那两张的明细在 binlog 里有两代（同一区间导过两次），改为按区间从 `factory_bill` 重建，条数与金额和快照总额一致。
+  - 与我验证时造的数据同区间的（李波 10-01~10-03、11-01~11-10、跨年空单）没有恢复。
+- 教训：以后清测试数据只能按自己生成的主键删（`WHERE id IN (...)`），不能整表清；这次也暴露了备份只到前一天，恢复只能靠 binlog。

@@ -45,7 +45,7 @@
 
     <div class="table-card is-fill">
       <el-table v-loading="data.loading" :data="data.tableData" height="100%" border stripe>
-        <el-table-column label="导出日期" width="96" align="center">
+        <el-table-column label="导出日期" width="104" align="center">
           <template #default="scope">
             <span class="date-cell">{{ formatDate(scope.row.createdDate) }}</span>
           </template>
@@ -58,7 +58,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="账单区间" min-width="146" align="center">
+        <el-table-column label="账单区间" min-width="140" align="center">
           <template #default="scope">
             <span class="date-cell">{{ rangeText(scope.row) }}</span>
           </template>
@@ -76,12 +76,12 @@
             <span class="money">{{ formatMoney(scope.row.totalAmount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="已付" width="92" align="center">
+        <el-table-column label="已付" width="96" align="center">
           <template #default="scope">
             <span class="money">{{ formatMoney(scope.row.paidAmount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="还欠" width="92" align="center">
+        <el-table-column label="还欠" width="104" align="center">
           <template #default="scope">
             <span class="money" :class="{ 'is-pending': unpaid(scope.row) > 0 }">{{ formatMoney(unpaid(scope.row)) }}</span>
           </template>
@@ -91,7 +91,7 @@
             <span class="status-pill" :class="statusClass(scope.row.status)">{{ statusText(scope.row.status) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="208" align="center" fixed="right">
+        <el-table-column label="操作" width="190" align="center" fixed="right">
           <template #default="scope">
             <div class="action-links">
             <el-button link type="primary" @click="openItems(scope.row)">明细</el-button>
@@ -161,6 +161,9 @@
         <el-form-item label="已付金额">
           <el-input v-model="data.settleForm.paidAmount" placeholder="填这次累计已付了多少">
             <template #prefix>¥</template>
+            <template #append>
+              <el-button class="full-btn" :disabled="!Number(data.settleForm.totalAmount)" @click="fillFullAmount">全部结清</el-button>
+            </template>
           </el-input>
         </el-form-item>
         <el-form-item label="付款日期">
@@ -367,6 +370,15 @@ function openSettle(row) {
   data.settleVisible = true
 }
 
+function fillFullAmount() {
+  const total = Number(data.settleForm.totalAmount) || 0
+  if (!total) {
+    ElMessage.warning('这张结算单没有金额')
+    return
+  }
+  data.settleForm.paidAmount = String(total)
+}
+
 async function submitSettle() {
   const paid = Number(data.settleForm.paidAmount)
   if (data.settleForm.paidAmount === '' || Number.isNaN(paid)) {
@@ -437,6 +449,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.full-btn {
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+:deep(.el-input-group__append) {
+  padding: 0;
+}
 .items-summary {
   display: flex;
   flex-wrap: wrap;
