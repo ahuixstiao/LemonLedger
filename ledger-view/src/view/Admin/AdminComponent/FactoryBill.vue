@@ -309,6 +309,7 @@ import { Plus, Search, TrendCharts } from '@element-plus/icons-vue'
 import { useTransition } from '@vueuse/core'
 import AdminPageHeader from '../AdminPageHeader.vue'
 import { confirmDelete, formatDate, formatMoney, formatNumber } from '../adminShared.js'
+import { recentDateRange } from '../../../base/dateRange.js'
 import { useDialogShortcuts } from '../../../base/dialogShortcuts.js'
 import { newSubmitKey } from '../../../base/submitKey.js'
 import { queryFactoryList } from '../../../network/index.js'
@@ -330,6 +331,10 @@ import {
   validateDialogForm
 } from './factoryCrudShared.js'
 
+// 账单页以前默认查「当天」，当天下过单才看得见数据，容易被误判成筛选失效；
+// 这里统一成跟其他看数页面一致的最近 30 天，重置也回到这个区间。
+const defaultDateRange = recentDateRange(30)
+
 const data = reactive({
   billVisible: false,
   tableData: [],
@@ -337,8 +342,8 @@ const data = reactive({
   styleNumberList: [],
   factoryId: '',
   number: '',
-  startDate: '',
-  endDate: '',
+  startDate: defaultDateRange.startDate,
+  endDate: defaultDateRange.endDate,
   styleNumber: '',
   category: '',
   jobCategoryList: [],
@@ -625,8 +630,8 @@ const resetQueryCondition = () => {
   data.styleNumber = ''
   data.category = ''
   data.flag = 0
-  data.startDate = ''
-  data.endDate = ''
+  data.startDate = defaultDateRange.startDate
+  data.endDate = defaultDateRange.endDate
   data.currentPage = 1
   fetchFactoryBillList()
 }

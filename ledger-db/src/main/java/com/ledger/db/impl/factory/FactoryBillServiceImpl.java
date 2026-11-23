@@ -74,7 +74,7 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
      */
     @Override
     @Transactional(readOnly = true)
-    public Result<Object> queryFactoryBillListByCondition(Integer factoryId, String number, String styleNumber, Integer flag, String startDate, String endDate, Integer currentPage, Integer pageSize) {
+    public Result<Object> queryFactoryBillListByCondition(Integer factoryId, String number, String styleNumber, String category, Integer flag, String startDate, String endDate, Integer currentPage, Integer pageSize) {
 
         // 规整日期参数：过滤空串/"0"/非法日期，避免传入 SQL 导致 Incorrect DATE value
         startDate = normalizeDateParam(startDate);
@@ -85,7 +85,7 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
 
         page = factoryBillMapper.selectFactoryBillList(
                 page,
-                factoryId, number, styleNumber, flag,
+                factoryId, number, styleNumber, category, flag,
                 startDate, endDate);
 
         // 空结果返回空分页，而不是 fail。

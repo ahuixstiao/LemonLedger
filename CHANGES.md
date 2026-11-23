@@ -874,3 +874,12 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - 前端：`ledger-view/src/view/Admin/AdminComponent/FactoryPieceRate.vue` 的修改弹窗新增「受影响的账单日期范围」（默认今年 1 月 1 日 → 今天，仅修改模式显示），保存前若单价变了而区间没选会拦下；提示里写明「已导出的结算快照不会变」。
 - 验证：`piece_rate_id=532`（李波 8801，单价 0.35）2026 年 10 月共 10 张账单 5,444 件，改成 0.32 后总额 1,905.40 → 1,742.08，改回 0.35 又回到 1,905.40；不带区间改价返回「改单价时要先选择受影响的账单日期范围」；只改款式不动价不需要区间；UI 实测 PUT 带 `startDate=2026-01-01&endDate=2026-11-23`，提示「单价已更新，同步重算 0 张账单」（该行账单在区间外），测完已把价格还原为 0.35。
 - 镜像：`794862853/lemonledger:2.18`，digest `sha256:42ca3601d94dbfd9b63b4e2807a68f26b4624e5036cc7f7233fb3b22d4479bb2`。
+## 34. 成衣厂账单的工作类型筛选生效，默认区间改为最近 30 天（2026-11-23）
+
+- 现象：成衣厂账单页选了「工作类型」查询，结果没变化。
+- 根因：前端一直在传 `category`（工作类型名称），但后端从控制器到 Mapper 都没有接这个参数，SQL 里也没有对应条件 —— 参数被静默丢掉。
+- 修复：`FactoryBillController.queryFactoryBillListByCondition` 增加 `@RequestParam(required = false) String category`；`IFactoryBillService` / `FactoryBillServiceImpl` / `FactoryBillMapper.selectFactoryBillList` 同步加参；`FactoryBillMapper.xml` 增加 `<if test="category != null and category != ''">and fjc.category = #{category}</if>`（按 job_category 名称精确匹配，前端下拉传的就是名称）。
+- 顺带：账单页原来默认查「当天」，当天没单就整页空白，容易被误判成筛选失效；默认起止日期改成最近 30 天，重置也回到这个区间（与工单总览、毛利统计一致）。
+- 验证：接口 `/admin/factoryBill?...&category=前袋+后袋` 返回 50 条且全部是该类型；`category=后袋` 73 条、`category=小花` 21 条，互不相同；UI 实测选「前袋+后袋」后请求带上 `category=前袋+后袋&startDate=2026-10-25&endDate=2026-11-23`，表格 24 条且工作类型列全是该类。
+- 修的过程中发现并修回一个自伤：给账单页加默认日期时，替换 import 行把 `formatNumber` 漏掉了，导致页面渲染中断（标题区和按钮都不显示）——已补回并复查标题、计数 chip、账单统计/添加账单按钮都正常。
+- 镜像：`794862853/lemonledger:2.19`。

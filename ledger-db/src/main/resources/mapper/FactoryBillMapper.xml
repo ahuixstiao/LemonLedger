@@ -35,6 +35,10 @@
             <if test="styleNumber != null and styleNumber != '' ">
                 and fq.style_number like CONCAT('%', #{styleNumber}, '%')
             </if>
+            <!-- 如果传入工作类型则按报价表关联的工作类型名称精确匹配 -->
+            <if test="category != null and category != '' ">
+                and fjc.category = #{category}
+            </if>
             <choose>
                 <!-- 如果指定了起止日期 则按起止日期查找-->
                 <when test="startDate != null and startDate != '' and endDate != null and endDate != '' ">

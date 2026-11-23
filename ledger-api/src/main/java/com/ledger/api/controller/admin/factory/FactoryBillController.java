@@ -67,6 +67,7 @@ public class FactoryBillController {
             @RequestParam(required = false) Integer factoryId,
             @RequestParam(required = false) String number,
             @RequestParam(required = false) String styleNumber,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false, defaultValue = "0") Integer flag,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
@@ -75,7 +76,7 @@ public class FactoryBillController {
 
     ) {
         return factoryBillService.queryFactoryBillListByCondition(
-                factoryId, number, styleNumber, flag,
+                factoryId, number, styleNumber, category, flag,
                 startDate, endDate, currentPage, pageSize);
     }
 

@@ -57,6 +57,7 @@ public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
             Page<FactoryBillDto> page,
             @Param("factoryId") Integer factoryId, @Param("number") String number,
             @Param("styleNumber") String styleNumber,
+            @Param("category") String category,
             @Param("flag") Integer flag,
             @Param("startDate") String startDate, @Param("endDate") String endDate);
 

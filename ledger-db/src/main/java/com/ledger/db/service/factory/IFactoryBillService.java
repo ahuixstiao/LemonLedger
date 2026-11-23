@@ -32,7 +32,7 @@ public interface IFactoryBillService extends IService<FactoryBill> {
      */
     Result<Object> queryFactoryBillListByCondition(
             Integer factoryId, String number,
-            String styleNumber, Integer flag,
+            String styleNumber, String category, Integer flag,
             String startDate, String endDate,
             Integer currentPage, Integer pageSize);
 
