@@ -159,6 +159,27 @@
           </el-input>
         </el-form-item>
 
+        <el-form-item v-if="data.editPriceDialogMode === 1" label="受影响的账单日期范围">
+          <div class="sync-range">
+            <el-date-picker
+              v-model="syncDateRange.startDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="开始日期"
+            />
+            <span class="sync-arrow">→</span>
+            <el-date-picker
+              v-model="syncDateRange.endDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="结束日期"
+            />
+          </div>
+          <div class="sync-hint">
+            只重算这个区间里用到这条单价的账单金额（数量 × 新单价），已导出的结算快照不会变。
+          </div>
+        </el-form-item>
+
         <el-form-item v-if="data.editPriceDialogMode === 1" label="样板图片">
           <div class="sample-upload-row">
             <el-button :disabled="!factoryPieceRateInfoRef.id" @click="triggerPriceImageUpload(factoryPieceRateInfoRef.id)">
@@ -220,6 +241,10 @@ import {
   resetReactiveForm,
   validateDialogForm
 } from './factoryCrudShared.js'
+
+// 改单价时用户要指定受影响的账单区间，默认给「今年 1 月 1 日 → 今天」，覆盖最常见的补账场景
+const syncDateRange = reactive({ startDate: '', endDate: '' })
+const originalPrice = ref('')
 
 const data = reactive({
   tableData: [],
@@ -325,7 +350,21 @@ const createFactoryPieceRate = async () => {
 }
 
 const updateFactoryPieceRate = async () => {
-  const { data: res } = await updateFactoryPieceRateInfo(factoryPieceRateInfoRef)
+  const nextPrice = Number(factoryPieceRateInfoRef.price)
+  const previousPrice = originalPrice.value === '' ? Number.NaN : Number(originalPrice.value)
+  const priceChanged = Number.isFinite(nextPrice) && nextPrice !== previousPrice
+
+  // 只有单价变了才要求选区间；只改款式/工种不需要重算账单
+  if (priceChanged && (!syncDateRange.startDate || !syncDateRange.endDate)) {
+    ElMessage.error('单价改了，请先选择受影响的账单日期范围')
+    return
+  }
+
+  const { data: res } = await updateFactoryPieceRateInfo(
+    factoryPieceRateInfoRef,
+    priceChanged ? syncDateRange.startDate : '',
+    priceChanged ? syncDateRange.endDate : ''
+  )
   if (res.status === 200) {
     ElMessage.success(res.message)
     data.editPriceDialogVisible = false
@@ -512,6 +551,10 @@ const openEditPriceDialog = priceInfo => {
     'editPriceDialogMode',
     'editPriceDialogVisible'
   )
+  originalPrice.value = priceInfo?.price ?? ''
+  const today = new Date()
+  syncDateRange.startDate = `${today.getFullYear()}-01-01`
+  syncDateRange.endDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 }
 
 const resetPriceForm = () => {
@@ -520,6 +563,9 @@ const resetPriceForm = () => {
 
 const closePriceDialog = () => {
   resetPriceForm()
+  syncDateRange.startDate = ''
+  syncDateRange.endDate = ''
+  originalPrice.value = ''
   data.editPriceDialogVisible = false
 }
 
@@ -549,6 +595,28 @@ useDialogShortcuts({
   cursor: zoom-in;
 }
 
+.sync-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.sync-range :deep(.el-date-editor) {
+  flex: 1 1 0;
+  width: auto;
+}
+
+.sync-arrow {
+  color: var(--admin-text-muted, #98a4bb);
+}
+
+.sync-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--admin-text-muted, #98a4bb);
+}
 .sample-upload-row {
   display: flex;
   align-items: center;

@@ -8,6 +8,7 @@ import com.ledger.common.result.Result;
 import com.ledger.db.entity.FactoryPieceRate;
 import com.ledger.db.entity.dto.FactoryPieceRateDto;
 import com.ledger.db.impl.LedgerServiceImpl;
+import com.ledger.db.mapper.FactoryBillMapper;
 import com.ledger.db.mapper.FactoryPieceRateMapper;
 import com.ledger.db.service.factory.IFactoryPieceRateService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.Map;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -41,6 +45,8 @@ public class FactoryPieceRateServiceImpl extends LedgerServiceImpl<FactoryPieceR
     private static final long MAX_IMAGE_SIZE = 100L * 1024 * 1024;
 
     private final FactoryPieceRateMapper factoryPieceRateMapper;
+
+    private final FactoryBillMapper factoryBillMapper;
 
     @Value("${ledger.upload.image-base-dir:../lemonLedgerImages}")
     private String imageBaseDir;
@@ -128,20 +134,70 @@ public class FactoryPieceRateServiceImpl extends LedgerServiceImpl<FactoryPieceR
     }
 
     /**
-     * 更新成衣厂计件单价信息
+     * 更新成衣厂计件单价信息；单价有变化时按新单价重算指定日期区间内的账单金额。
      *
      * @param factoryPieceRate 成衣厂计件单价实体
-     * @return result
+     * @param startDate        受影响账单的开始日期（改单价时必填）
+     * @param endDate          受影响账单的结束日期（改单价时必填）
+     * @return result，data 里带同步的账单条数
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Result<Object> updateFactoryPieceRateInfo(FactoryPieceRate factoryPieceRate) {
+    public Result<Object> updateFactoryPieceRateInfo(FactoryPieceRate factoryPieceRate, String startDate, String endDate) {
+
+        FactoryPieceRate original = ObjectUtil.isEmpty(factoryPieceRate.getId())
+                ? null
+                : getById(factoryPieceRate.getId());
+        if (ObjectUtil.isEmpty(original)) {
+            throw new BizException("修改计件单价失败：该计件单价不存在，请刷新后重试");
+        }
+
+        // 只有单价真的变了才需要重算账单；改款式/工种不触发
+        boolean priceChanged = ObjectUtil.isNotEmpty(factoryPieceRate.getPrice())
+                && (ObjectUtil.isEmpty(original.getPrice())
+                || original.getPrice().compareTo(factoryPieceRate.getPrice()) != 0);
+
+        int affectedBills = 0;
+        if (priceChanged) {
+            if (StrUtil.isBlank(startDate) || StrUtil.isBlank(endDate)) {
+                throw new BizException("改单价时要先选择受影响的账单日期范围");
+            }
+            LocalDate syncStart = parseSyncDate(startDate, "受影响账单开始日期");
+            LocalDate syncEnd = parseSyncDate(endDate, "受影响账单结束日期");
+            if (syncStart.isAfter(syncEnd)) {
+                throw new BizException("受影响账单的开始日期不能晚于结束日期");
+            }
+            affectedBills = factoryBillMapper.updateBillAmountByPieceRate(
+                    factoryPieceRate.getId(),
+                    factoryPieceRate.getPrice(),
+                    syncStart.toString(),
+                    syncEnd.toString());
+        }
 
         if (!updateById(factoryPieceRate)) {
             throw new BizException("修改计件单价失败：该计件单价不存在，或已被其他人修改，请刷新后重试");
         }
 
+        if (priceChanged) {
+            return Result.ok("单价已更新，同步重算 " + affectedBills + " 张账单",
+                    Map.of("affectedBills", affectedBills));
+        }
         return Result.ok();
+    }
+
+    /**
+     * 解析同步账单用的日期，格式不对时给出明确提示。
+     *
+     * @param value 日期文本
+     * @param label 字段名，用于拼错误提示
+     * @return 解析后的日期
+     */
+    private LocalDate parseSyncDate(String value, String label) {
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException exception) {
+            throw new BizException(label + "格式不对，应为 yyyy-MM-dd");
+        }
     }
 
     /**

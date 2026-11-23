@@ -865,3 +865,12 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - **作废无效**：`voidSettlement` 原来 `setFlag(1)` + `updateById`，而 `flag` 是 `@TableLogic` 字段，MyBatis-Plus 不会把它写进 UPDATE 的 SET，所以接口返回成功但数据没变。改为 `deleteById`（逻辑删除）并把明细一起逻辑删除。
 - **看板加床的创建日期**：`ReconcileRowDTO` 加 `batchCreatedDate`，`selectReconcileByBatch` 增加 `t.created_date as batch_created_date`；看板「最该处理的 5 张床」新增该列（`Dashboard.vue` 要 import `formatDate`，否则单元格静默渲染空白）。
 - **全部结清按钮**：从 `el-input` 的 `#append` 改成 `.paid-row` 里的独立按钮，避免按钮被输入框挤压导致文字溢出。
+
+## 33. 改计件单价时按日期区间同步重算账单（2026-11-23）
+
+- 需求：改「成衣厂计件单价」时，把用到这条单价的账单金额按新单价重算（数量 × 新单价）；新增单价不弹日期范围。
+- 后端：新增 `FactoryBillMapper.updateBillAmountByPieceRate`（`UPDATE factory_bill SET bill = ROUND(quantity * #{price}, 2) WHERE piece_rate_id = #{pieceRateId} AND flag = 0 AND created_date BETWEEN #{startDate} AND #{endDate}`）；`FactoryPieceRateServiceImpl.updateFactoryPieceRateInfo(rate, startDate, endDate)` 先取原单价，只有单价真的变了才要求日期区间并重算，日期缺失、格式错、起止倒置都会被拒；只改款式或工种不需要区间。
+- 接口：`PUT /admin/factoryPieceRate/{id}?startDate=&endDate=`，成功时返回「单价已更新，同步重算 N 张账单」和 `{"affectedBills": N}`。
+- 前端：`ledger-view/src/view/Admin/AdminComponent/FactoryPieceRate.vue` 的修改弹窗新增「受影响的账单日期范围」（默认今年 1 月 1 日 → 今天，仅修改模式显示），保存前若单价变了而区间没选会拦下；提示里写明「已导出的结算快照不会变」。
+- 验证：`piece_rate_id=532`（李波 8801，单价 0.35）2026 年 10 月共 10 张账单 5,444 件，改成 0.32 后总额 1,905.40 → 1,742.08，改回 0.35 又回到 1,905.40；不带区间改价返回「改单价时要先选择受影响的账单日期范围」；只改款式不动价不需要区间；UI 实测 PUT 带 `startDate=2026-01-01&endDate=2026-11-23`，提示「单价已更新，同步重算 0 张账单」（该行账单在区间外），测完已把价格还原为 0.35。
+- 镜像：`794862853/lemonledger:2.18`，digest `sha256:42ca3601d94dbfd9b63b4e2807a68f26b4624e5036cc7f7233fb3b22d4479bb2`。

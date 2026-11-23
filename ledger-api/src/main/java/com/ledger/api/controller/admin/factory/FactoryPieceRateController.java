@@ -104,15 +104,21 @@ public class FactoryPieceRateController {
 
 
     /**
-     * 更新成衣厂计件单价信息
+     * 更新成衣厂计件单价信息；单价有变化时按新单价重算指定日期区间内的账单金额
      *
+     * @param id               计件单价ID
      * @param factoryPieceRate 计件单价表实体
+     * @param startDate        受影响账单的开始日期（改单价时必填）
+     * @param endDate          受影响账单的结束日期（改单价时必填）
      * @return result
      */
     @PutMapping("/{id}")
-    public Result<Object> updateFactoryPieceRateInfo(@PathVariable Integer id, @RequestBody FactoryPieceRate factoryPieceRate) {
+    public Result<Object> updateFactoryPieceRateInfo(@PathVariable Integer id,
+                                                    @RequestBody FactoryPieceRate factoryPieceRate,
+                                                    @RequestParam(required = false) String startDate,
+                                                    @RequestParam(required = false) String endDate) {
         factoryPieceRate.setId(id);
-        return factoryPieceRateService.updateFactoryPieceRateInfo(factoryPieceRate);
+        return factoryPieceRateService.updateFactoryPieceRateInfo(factoryPieceRate, startDate, endDate);
     }
 
 

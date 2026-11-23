@@ -37,12 +37,13 @@ export function saveFactoryPieceRateInfo(price) {
   })
 }
 
-// 修改成衣厂计件单价信息
-export function updateFactoryPieceRateInfo(price) {
+// 修改成衣厂计件单价信息；改单价时带上受影响账单的日期区间，后端会按新单价重算
+export function updateFactoryPieceRateInfo(price, startDate = '', endDate = '') {
   return request({
     url: '/admin/factoryPieceRate/' + price.id,
     method: 'put',
-    data: price
+    data: price,
+    params: { startDate, endDate }
   })
 }
 

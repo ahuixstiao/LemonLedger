@@ -9,7 +9,9 @@ import com.ledger.db.entity.dto.GrossTrendPointDTO;
 import com.ledger.db.entity.dto.ReconcileRowDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -23,6 +25,22 @@ import java.util.List;
 @Mapper
 public interface FactoryBillMapper extends BaseMapper<FactoryBill> {
 
+    /**
+     * 按计件单价与日期区间重算账单金额（数量 × 新单价）。
+     *
+     * @param pieceRateId 计件单价ID
+     * @param price       新单价
+     * @param startDate   账单开始日期
+     * @param endDate     账单结束日期
+     * @return 受影响账单条数
+     */
+    @Update("UPDATE factory_bill SET bill = ROUND(quantity * #{price}, 2) "
+            + "WHERE piece_rate_id = #{pieceRateId} AND flag = 0 "
+            + "AND created_date BETWEEN #{startDate} AND #{endDate}")
+    int updateBillAmountByPieceRate(@Param("pieceRateId") Integer pieceRateId,
+                                    @Param("price") BigDecimal price,
+                                    @Param("startDate") String startDate,
+                                    @Param("endDate") String endDate);
 
     /**
      * 按条件查询成衣厂账单列表（款式来源于计件单价表）

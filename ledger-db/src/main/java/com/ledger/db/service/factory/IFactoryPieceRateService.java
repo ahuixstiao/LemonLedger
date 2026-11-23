@@ -57,12 +57,14 @@ public interface IFactoryPieceRateService extends IService<FactoryPieceRate> {
     Result<Object> saveFactoryPieceRateInfo(FactoryPieceRate factoryPieceRate);
 
     /**
-     * 更新成衣厂计件单价信息
+     * 更新成衣厂计件单价信息；单价有变化时按新单价重算指定日期区间内的账单金额
      *
      * @param factoryPieceRate 成衣厂计件单价实体
-     * @return result
+     * @param startDate        受影响账单的开始日期（改单价时必填）
+     * @param endDate          受影响账单的结束日期（改单价时必填）
+     * @return result，data 里带同步的账单条数
      */
-    Result<Object> updateFactoryPieceRateInfo(FactoryPieceRate factoryPieceRate);
+    Result<Object> updateFactoryPieceRateInfo(FactoryPieceRate factoryPieceRate, String startDate, String endDate);
 
     /**
      * 上传成衣厂计件单价图片到本地外部目录。
