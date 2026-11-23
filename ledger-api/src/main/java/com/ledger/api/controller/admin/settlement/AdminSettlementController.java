@@ -50,7 +50,7 @@ public class AdminSettlementController {
                                @RequestParam(defaultValue = "10") Integer pageSize) {
         return settlementService.querySettlementList(
                 parseIntegerParam(factoryId),
-                parseIntegerParam(status),
+                parseStatusParam(status),
                 startDate,
                 endDate,
                 currentPage,
@@ -176,6 +176,23 @@ public class AdminSettlementController {
         }
         try {
             return Integer.valueOf(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 解析状态筛选：0（未结清）是有效值，不能像 id 那样当空值丢掉。
+     *
+     * @param value 前端传的状态文本
+     * @return 状态值；空或非数字返回 null
+     */
+    private Integer parseStatusParam(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(value.trim());
         } catch (NumberFormatException e) {
             return null;
         }

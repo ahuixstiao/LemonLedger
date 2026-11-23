@@ -883,3 +883,24 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - 验证：接口 `/admin/factoryBill?...&category=前袋+后袋` 返回 50 条且全部是该类型；`category=后袋` 73 条、`category=小花` 21 条，互不相同；UI 实测选「前袋+后袋」后请求带上 `category=前袋+后袋&startDate=2026-10-25&endDate=2026-11-23`，表格 24 条且工作类型列全是该类。
 - 修的过程中发现并修回一个自伤：给账单页加默认日期时，替换 import 行把 `formatNumber` 漏掉了，导致页面渲染中断（标题区和按钮都不显示）——已补回并复查标题、计数 chip、账单统计/添加账单按钮都正常。
 - 镜像：`794862853/lemonledger:2.19`。
+
+## 35. 修复账单结算页状态筛选（2026-11-23）
+
+### 问题
+选「未结清」时列表里混进已结清的单。
+
+### 根因
+`AdminSettlementController.list` 用 `parseIntegerParam(status)` 解析状态，而这个方法是给 id 用的：它把字符串 `0` 当成空值返回 null，于是状态 0（未结清）被丢掉，Service 里 `.eq(status != null, ...)` 不生效，接口返回全部状态。
+
+### 修复
+新增 `parseStatusParam`：空值返回 null，其余按整数解析并保留 0。`list()` 改用 `parseStatusParam(status)`。
+
+### 验证
+- `GET /api/admin/settlement` 不带 status → 7 条（4 未结清 + 3 已结清）
+- 带 `status=0` → 4 条，全部未结清
+- 带 `status=1` → 0 条
+- 带 `status=2` → 3 条，全部已结清
+- 页面选「未结清」后表格 4 行、状态列全为「未结清」
+
+### 镜像
+`794862853/lemonledger:2.20`，digest `sha256:63471d1f46ed64f8b89c04570b8a4f63157236a43de43cef5f95fd3dfb61792e`。
