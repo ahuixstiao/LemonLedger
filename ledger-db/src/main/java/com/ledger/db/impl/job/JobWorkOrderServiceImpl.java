@@ -209,12 +209,6 @@ public class JobWorkOrderServiceImpl extends LedgerServiceImpl<JobWorkOrderMappe
     /**
      * 删除工单。
      *
-     * @param id 工单主键ID
-     * @return 删除结果
-     */
-    /**
-     * 删除工单。
-     *
      * <p>已经有人认领的工单不允许直接删：认领记录仍然指向它，删掉之后
      * 「这床活是从哪张工单派下来的」就断了，工资也再核对不了。
      * 要删就先撤销认领（删掉对应的工作记录）。</p>

@@ -36,6 +36,7 @@ public class AdminRankServiceImpl implements IAdminRankService {
 
     private final JobMapper jobMapper;
 
+    /** 按日期范围统计员工产能排行，汇总件数与工资并计算平均单价和总计。 */
     @Override
     public Result<Object> queryEmployeeRank(Integer employeeId, String startDate, String endDate) {
         LocalDate today = LocalDate.now();

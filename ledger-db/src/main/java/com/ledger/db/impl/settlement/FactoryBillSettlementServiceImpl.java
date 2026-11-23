@@ -34,6 +34,7 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
     private final FactoryBillSettlementMapper settlementMapper;
     private final FactoryBillSettlementItemMapper itemMapper;
 
+    /** 导出账单时生成结算单快照：汇总金额件数，已有未结清单则刷新并重建明细。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FactoryBillSettlement snapshotOnExport(Integer factoryId,
@@ -109,6 +110,7 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
         return settlement;
     }
 
+    /** 按工厂、结算状态和创建日期范围分页查询结算单。 */
     @Override
     public Result<Object> querySettlementList(Integer factoryId, Integer status, String startDate, String endDate,
                                               Integer currentPage, Integer pageSize) {
@@ -127,6 +129,7 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
         return Result.ok(settlementMapper.selectPage(page, wrapper));
     }
 
+    /** 查询某张结算单下的明细：床号、款式、工种、数量与金额。 */
     @Override
     public Result<Object> querySettlementItems(Integer id) {
         if (id == null) {
@@ -139,6 +142,7 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
         return Result.ok(items);
     }
 
+    /** 登记结算单的已付金额与付款日期，并按付款比例回写未付/部分/已结清状态。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result<Object> settle(Integer id, BigDecimal paidAmount, LocalDate paidDate, String remark) {
@@ -173,6 +177,7 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
         return Result.ok(settlement);
     }
 
+    /** 作废结算单，结算单与明细一起逻辑删除。 */
     @Override
     public Result<Object> voidSettlement(Integer id) {
         FactoryBillSettlement settlement = settlementMapper.selectById(id);
@@ -186,6 +191,7 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
         return Result.ok(null);
     }
 
+    /** 按ID取未作废的结算单，不存在或已作废时返回 null。 */
     @Override
     public FactoryBillSettlement getSettlement(Integer id) {
         FactoryBillSettlement settlement = settlementMapper.selectById(id);
@@ -195,6 +201,7 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
         return settlement;
     }
 
+    /** 按结算单ID取未删除的明细列表。 */
     @Override
     public List<FactoryBillSettlementItem> getSettlementItems(Integer id) {
         return itemMapper.selectList(new LambdaQueryWrapper<FactoryBillSettlementItem>()
@@ -203,6 +210,7 @@ public class FactoryBillSettlementServiceImpl implements IFactoryBillSettlementS
                 .orderByAsc(FactoryBillSettlementItem::getId));
     }
 
+    /** 判断字符串去掉首尾空白后是否还有内容。 */
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
     }

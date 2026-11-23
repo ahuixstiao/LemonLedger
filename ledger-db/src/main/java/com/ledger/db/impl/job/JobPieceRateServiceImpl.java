@@ -27,9 +27,7 @@ public class JobPieceRateServiceImpl extends LedgerServiceImpl<JobPieceRateMappe
 
     private final JobPieceRateMapper jobPieceRateMapper;
 
-    /**
-     * 按条件分页查询员工计件单价列表。
-     */
+    /** 按工作方式和工作类型筛选员工计件单价，分页返回。 */
     @Override
     @Transactional(readOnly = true)
     public Result<Object> queryJobPieceRateListByCondition(
@@ -44,9 +42,7 @@ public class JobPieceRateServiceImpl extends LedgerServiceImpl<JobPieceRateMappe
         return Result.ok(page);
     }
 
-    /**
-     * 保存员工计件单价。
-     */
+    /** 新增员工计件单价，写入失败时抛业务异常并回滚。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result<Object> saveJobPieceRateInfo(JobPieceRate jobPieceRate) {
@@ -56,9 +52,7 @@ public class JobPieceRateServiceImpl extends LedgerServiceImpl<JobPieceRateMappe
         return Result.ok();
     }
 
-    /**
-     * 修改员工计件单价。
-     */
+    /** 按 ID 更新员工计件单价，记录不存在或已被他人改动时提示刷新重试。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result<Object> updateJobPieceRateInfo(JobPieceRate jobPieceRate) {
@@ -68,9 +62,7 @@ public class JobPieceRateServiceImpl extends LedgerServiceImpl<JobPieceRateMappe
         return Result.ok();
     }
 
-    /**
-     * 删除员工计件单价。
-     */
+    /** 按 ID 删除员工计件单价，记录不存在或已删除时报错。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result<Object> removeJobPieceRateInfo(Integer id) {

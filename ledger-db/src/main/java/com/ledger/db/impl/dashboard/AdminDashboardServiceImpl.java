@@ -41,6 +41,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
     private final DashboardMapper dashboardMapper;
     private final FactoryBillMapper factoryBillMapper;
 
+    /** 按日期区间汇总账单、工资与毛利，并统计对账差异床数，供首页看板展示。 */
     @Override
     public Result<Object> querySummary(String startDate, String endDate) {
         LocalDate today = LocalDate.now();
@@ -120,6 +121,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
         return Result.ok(data);
     }
 
+    /** 把按天汇总的账单数量与金额填进日期骨架表，缺失日期保持为 0。 */
     private void fillBill(List<DashboardDailyDTO> rows, Map<String, DashboardDailyDTO> merged) {
         for (DashboardDailyDTO row : rows) {
             DashboardDailyDTO target = merged.get(row.getDate());
@@ -131,6 +133,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
         }
     }
 
+    /** 把按天汇总的工资支出填进日期骨架表，缺失日期保持为 0。 */
     private void fillSalary(List<DashboardDailyDTO> rows, Map<String, DashboardDailyDTO> merged) {
         for (DashboardDailyDTO row : rows) {
             DashboardDailyDTO target = merged.get(row.getDate());
@@ -141,10 +144,12 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
         }
     }
 
+    /** 空金额统一按 0 处理，避免汇总时出现空指针。 */
     private BigDecimal nullSafe(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
     }
 
+    /** 解析 yyyy-MM-dd 日期，为空时用默认值，格式不对则抛业务异常。 */
     private LocalDate parseDateOrDefault(String value, LocalDate fallback) {
         if (!hasText(value)) {
             return fallback;

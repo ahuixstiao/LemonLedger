@@ -361,6 +361,7 @@ public class JobServiceImpl extends LedgerServiceImpl<JobMapper, Job> implements
         return total - claimedQuantity;
     }
 
+    /** 修改工作记录：同步工单上的已认领计数，并按新数量重算工资。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result<Object> updateJobInfo(Job job) {

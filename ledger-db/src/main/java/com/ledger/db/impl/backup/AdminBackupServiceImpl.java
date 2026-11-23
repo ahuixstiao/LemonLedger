@@ -39,6 +39,7 @@ public class AdminBackupServiceImpl implements IAdminBackupService {
     @Value("${ledger.backup.dir:/backups}")
     private String backupDir;
 
+    /** 扫描备份目录，汇总备份文件列表、总体积以及最近一次备份是否已过期。 */
     @Override
     public Result<Object> queryBackupList() {
         File dir = new File(backupDir);
@@ -72,6 +73,7 @@ public class AdminBackupServiceImpl implements IAdminBackupService {
         return Result.ok(data);
     }
 
+    /** 把备份文件转成页面展示对象，附带大小文本、创建时间和距今小时数。 */
     private BackupFileDTO toDTO(File file) {
         BackupFileDTO dto = new BackupFileDTO();
         dto.setFileName(file.getName());
@@ -84,6 +86,7 @@ public class AdminBackupServiceImpl implements IAdminBackupService {
         return dto;
     }
 
+    /** 把字节数格式化成 B、KB 或 MB 的易读文本。 */
     private String readableSize(long bytes) {
         if (bytes < 1024) {
             return bytes + " B";
