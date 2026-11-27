@@ -50,6 +50,11 @@ public class FactoryStyleDto implements Serializable {
     private Integer rateCount;
 
     /**
+     * 已配价工种的摘要，形如「后袋 ¥0.18 / 裤页 ¥0.35」
+     */
+    private String rateSummary;
+
+    /**
      * 创建日期
      */
     private String createdDate;

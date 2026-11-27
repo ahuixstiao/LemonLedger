@@ -45,9 +45,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="styleNumber" label="款式编号" min-width="180" align="center" />
-        <el-table-column label="单价条数" width="110" align="center">
+        <el-table-column label="已配价工种" width="130" align="center">
           <template #default="scope">
-            <span class="num">{{ formatNumber(scope.row.rateCount) }}</span>
+            <el-tooltip
+              :content="scope.row.rateSummary || '还没有给这个款式配价'"
+              placement="top"
+            >
+              <span :class="['num', { 'is-muted': !scope.row.rateCount }]">{{ formatNumber(scope.row.rateCount) }}</span>
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column label="样板图片" width="120" align="center">
@@ -423,6 +428,11 @@ const removeStyleImage = async row => {
 <style scoped>
 .hidden-upload-input {
   display: none;
+}
+
+.num.is-muted {
+  color: var(--admin-text-muted, #98a4bb);
+  text-decoration: underline dotted;
 }
 
 .style-thumb {

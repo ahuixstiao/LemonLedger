@@ -13,6 +13,9 @@
         fs.created_date,
         fs.flag,
         (select count(*) from factory_piece_rate fp where fp.style_id = fs.id and fp.flag = 0) as rate_count
+        ,(select group_concat(concat(ifnull(jc.category, '未命名工种'), ' ¥', format(fp.price, 2)) order by jc.category separator ' / ')
+          from factory_piece_rate fp left join job_category jc on jc.id = fp.category_id and jc.flag = 0
+          where fp.style_id = fs.id and fp.flag = 0) as rate_summary
         from factory_style fs
         left join factory on fs.factory_id = factory.id and factory.flag = 0
         where fs.flag = #{flag}

@@ -947,3 +947,15 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 ### 镜像
 
 - `794862853/lemonledger:2.21`，digest `sha256:405ea3238d62a147aadb9d920260ff313ecb6e15ac81110d540b0326fc3fe0ee`（与 `latest` 一致）。
+
+## 37. 款式页「单价条数」改为「已配价工种」并显示明细（2026-11-27）
+
+「单价条数」这个名字容易被误解，改成更直白的口径：一个款式下面已经配了几个工种的单价。
+
+- 后端：`FactoryStyleDto` 增加 `rateSummary`；`FactoryStyleMapper.xml` 的列表查询多算一列 `rate_summary`（`group_concat(工作类型 ¥单价 ... separator ' / ')`，只统计 `flag = 0` 的单价）。
+- 前端：款式列表列名改为「已配价工种」，鼠标悬停显示 `后袋 ¥0.18 / 裤页 ¥0.35` 这样的明细；数字为 0 时虚线加下划线、悬浮提示「还没有给这个款式配价」。
+- 验证：接口返回 `rateCount: 1`、`rateSummary: "后袋 ¥0.30"`；页面表头为「成衣厂 | 款式编号 | 已配价工种 | 样板图片 | 创建日期 | 状态 | 操作」，悬停显示「后袋 ¥0.18」。
+
+### 镜像
+
+- `794862853/lemonledger:2.22`，digest `sha256:645e3261dacb2c7713e0dd8095924fd731a6c97e68fd208b028003b8cca61a22`（与 `latest` 一致）。
