@@ -19,6 +19,7 @@
           <el-select
             v-model="data.factoryId"
             clearable
+            filterable
             placeholder="全部成衣厂"
             class="filter-wide"
             @change="onFilterChange"
@@ -33,15 +34,14 @@
           <el-input
             v-model="data.styleNumber"
             clearable
-            placeholder="搜索款式编号"
-            @keyup.enter="onFilterChange"
+            class="filter-wide"
+            placeholder="输入款式编号，自动查询"
           >
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
           <div class="filter-actions">
-            <el-button type="primary" @click="onFilterChange">查询</el-button>
             <el-button @click="onReset">重置</el-button>
           </div>
         </div>
@@ -58,7 +58,7 @@
               preview-teleported
             >
               <template #error>
-                <div class="sample-image-empty">图片丢失</div>
+                <div class="sample-image-empty">暂无图片</div>
               </template>
             </el-image>
             <div class="sample-style-number">{{ item.styleNumber }}</div>
@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-import { reactive, onMounted, onBeforeUnmount } from 'vue'
+import { reactive, watch, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import FrontShell from './HomeComponent/FrontShell.vue'
@@ -147,12 +147,30 @@ const fetchFactoryList = async () => {
 }
 
 /**
- * 条件变化或点查询时回到第一页再查。
+ * 条件变化（选择成衣厂、输入款式编号）时回到第一页再查。
  */
 const onFilterChange = () => {
   data.currentPage = 1
   fetchSampleList()
 }
+
+/** 输入款式编号时的防抖定时器 */
+let styleNumberTimer = null
+
+/**
+ * 款式编号输入后 300ms 自动查询，避免每敲一个字母就请求一次。
+ */
+watch(
+  () => data.styleNumber,
+  () => {
+    if (styleNumberTimer) {
+      clearTimeout(styleNumberTimer)
+    }
+    styleNumberTimer = setTimeout(() => {
+      onFilterChange()
+    }, 300)
+  }
+)
 
 /**
  * 重置筛选条件。
@@ -199,6 +217,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateNarrowState)
+  if (styleNumberTimer) {
+    clearTimeout(styleNumberTimer)
+  }
 })
 </script>
 

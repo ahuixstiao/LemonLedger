@@ -989,4 +989,5 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - `FrontShell.vue` 导航在「认领工单」后加「压花图片」（`/samples`）；`router/router.js` 增加 `{ path: '/samples', component: StyleSamples.vue }`。
   - 图片地址沿用款式接口：`/lemonLedgerImages/...` → `/admin/factoryStyle/imageView/...`（与 Home/JobWorkOrder 一致）。
 - 验证：`/emp/factoryStyle/sampleList?currentPage=1&pageSize=50` → total 139（与库里「有图片的款式数」一致）；`factoryId=12&styleNumber=1054` → 1 条；`factoryId=16`（该厂款式都没图）→ 0 条，页面显示空态；图片接口 200 / image/png / 470,614 字节；桌面 1440 与手机 390 截图正常。
+- 后续调整（同日）：成衣厂下拉改成可输入搜索（`filterable`）；款式编号改成输入即查（300ms 防抖），去掉「查询」按钮只留「重置」；图片加载失败时提示改成「暂无图片」。
 - 部署镜像 2.23（compose 同步），前端 dist 重建由 nginx 直接生效。
