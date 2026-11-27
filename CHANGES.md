@@ -918,6 +918,7 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   - `factory_piece_rate` 加 `style_id` 并回填，`unmapped_rows` 必须为 0；
   - 删掉 `style_number`、`image_path` 两列，`style_id` 收紧为 NOT NULL 并加索引。
 - 另有 `deploy/migrate-0.0.7-backfill-deleted.sql`：只为「已软删除的单价」里出现的（厂, 款式）补 `flag=1` 的款式，再回填一次，避免删了图就丢了款式。
+- 迁移验证通过后（备份表 745 行、`style_id` 无空值、无孤儿引用），已按用户要求删除备份表 `factory_piece_rate_backup_007`；迁移脚本里的建表语句保留，作为历史记录。
 - 执行结果：款式 710 条、单价 745 条（其中 flag=0 714 条）、被引用的款式 731 条（含软删除单价）。
 
 ### 后端
