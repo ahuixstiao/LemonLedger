@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ledger.db.mapper.FactoryStyleMapper">
+
+    <!-- 按条件分页查询成衣厂款式，带成衣厂名称与已配置的单价条数 -->
+    <select id="selectFactoryStyleListByCondition" resultType="factoryStyleDto">
+        select
+        fs.id,
+        fs.factory_id,
+        factory.factory_name,
+        fs.style_number,
+        fs.image_path,
+        fs.created_date,
+        fs.flag,
+        (select count(*) from factory_piece_rate fp where fp.style_id = fs.id and fp.flag = 0) as rate_count
+        from factory_style fs
+        left join factory on fs.factory_id = factory.id and factory.flag = 0
+        where fs.flag = #{flag}
+        <if test="factoryId != null and factoryId != ''">
+            and fs.factory_id = #{factoryId}
+        </if>
+        <if test="styleNumber != null and styleNumber != ''">
+            and fs.style_number like CONCAT('%', #{styleNumber}, '%')
+        </if>
+        order by factory.factory_name desc, fs.style_number asc
+    </select>
+
+    <!-- 某个成衣厂下的款式下拉列表（有单价的排前面，其余按编号） -->
+    <select id="selectStyleListByFactoryId" resultType="factoryStyleDto">
+        select
+        fs.id,
+        fs.factory_id,
+        fs.style_number,
+        fs.image_path,
+        fs.created_date
+        from factory_style fs
+        where fs.flag = #{flag}
+        <if test="factoryId != null and factoryId != ''">
+            and fs.factory_id = #{factoryId}
+        </if>
+        order by fs.style_number asc
+    </select>
+
+    <!-- 员工端：按款式编号模糊查询样板图片 -->
+    <select id="selectSampleListByStyleNumber" resultType="factoryPieceRateDto">
+        select
+        fs.style_number,
+        fs.image_path
+        from factory_style fs
+        where fs.flag = #{flag}
+        and fs.image_path is not null
+        and fs.image_path != ''
+        <if test="styleNumber != null and styleNumber != ''">
+            and fs.style_number like CONCAT('%', #{styleNumber}, '%')
+        </if>
+        order by fs.updated_date desc, fs.id desc
+    </select>
+
+</mapper>

@@ -1,7 +1,7 @@
 package com.ledger.api.controller.employee.factory;
 
 import com.ledger.common.result.Result;
-import com.ledger.db.service.factory.IFactoryPieceRateService;
+import com.ledger.db.service.factory.IFactoryStyleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -20,10 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/emp/factoryPieceRate")
 public class EmpFactoryPieceRateController {
 
-    private final IFactoryPieceRateService factoryPieceRateService;
+    private final IFactoryStyleService factoryStyleService;
 
     /**
      * 员工端：按款式编号查询样板图片列表，仅返回款式编号和图片路径。
+     * 款式与图片现在统一存在 factory_style，所以这里直接查款式服务。
      *
      * @param styleNumber 款式编号（可为空，支持模糊匹配）
      * @param flag        删除状态，默认0（仅正常数据）
@@ -36,7 +37,7 @@ public class EmpFactoryPieceRateController {
 
         Integer parsedFlag = parseIntegerParam(flag, 0);
         String normalizedStyleNumber = StringUtils.hasText(styleNumber) ? styleNumber.trim() : null;
-        return factoryPieceRateService.querySampleListByStyleNumber(normalizedStyleNumber, parsedFlag);
+        return factoryStyleService.querySampleListByStyleNumber(normalizedStyleNumber, parsedFlag);
     }
 
     /**

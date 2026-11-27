@@ -24,7 +24,7 @@ public interface FactoryPieceRateMapper extends BaseMapper<FactoryPieceRate> {
      * 按条件查询成衣厂计件单价表列表，默认查全部
      *
      * @param factoryId   成衣厂ID
-     * @param styleNumber 款式编号
+     * @param styleNumber 款式编号（经 factory_style 关联匹配）
      * @param categoryId  工作类型ID
      * @param flag        删除状态 0否 1是
      * @return page
@@ -36,28 +36,15 @@ public interface FactoryPieceRateMapper extends BaseMapper<FactoryPieceRate> {
             @Param("categoryId") Integer categoryId,
             @Param("flag") Integer flag);
 
-
     /**
-     * 按工厂ID查询对应工厂的计件单价单款式编号列表
+     * 账单用：某成衣厂的计件单价下拉项
      *
-     * @param factoryId 工厂ID
+     * @param factoryId 成衣厂ID
      * @param flag      删除状态 0否 1是
      * @return list
      */
-    List<FactoryPieceRateDto> selectStyleNumberListByFactoryId(
+    List<FactoryPieceRateDto> selectPieceRateOptionsByFactoryId(
             @Param("factoryId") Integer factoryId,
             @Param("flag") Integer flag);
 
-    /**
-     * 按款式编号模糊查询样板图片列表（员工端）。
-     *
-     * @param styleNumber 款式编号（可为空）
-     * @param flag        删除状态 0否 1是
-     * @return list
-     */
-    List<FactoryPieceRateDto> selectSampleListByStyleNumber(
-            @Param("styleNumber") String styleNumber,
-            @Param("flag") Integer flag);
-
 }
-

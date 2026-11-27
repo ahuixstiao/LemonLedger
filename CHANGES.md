@@ -904,3 +904,46 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 
 ### 镜像
 `794862853/lemonledger:2.20`，digest `sha256:63471d1f46ed64f8b89c04570b8a4f63157236a43de43cef5f95fd3dfb61792e`。
+
+## 36. 款式编号与样板图片抽成「成衣厂款式」表（2026-11-27）
+
+成衣厂计件单价里原来每个「成衣厂 + 款式编号 + 工作类型」都各自存一份款式编号和样板图片，同一个款式加两个工种就要传两次图。这次把它拆成独立的款式表，计件单价只引用款式。
+
+### 数据库
+
+- 新增 `deploy/migrate-0.0.7.sql`：
+  - 先把旧表整表备份成 `factory_piece_rate_backup_007`；
+  - 建 `factory_style`（`factory_id` / `style_number` / `image_path` / `flag` / 审计字段），唯一键 `uk_factory_style(factory_id, style_number, flag)`；
+  - 按（成衣厂, 款式）取最新一张图片灌进款式表；
+  - `factory_piece_rate` 加 `style_id` 并回填，`unmapped_rows` 必须为 0；
+  - 删掉 `style_number`、`image_path` 两列，`style_id` 收紧为 NOT NULL 并加索引。
+- 另有 `deploy/migrate-0.0.7-backfill-deleted.sql`：只为「已软删除的单价」里出现的（厂, 款式）补 `flag=1` 的款式，再回填一次，避免删了图就丢了款式。
+- 执行结果：款式 710 条、单价 745 条（其中 flag=0 714 条）、被引用的款式 731 条（含软删除单价）。
+
+### 后端
+
+- 新增款式模块：`FactoryStyle`、`FactoryStyleDto`、`FactoryStyleMapper(.xml)`、`IFactoryStyleService` / `FactoryStyleServiceImpl`、`AdminFactoryStyleController`（列表、按厂下拉、增改删、上传/删除图片、图片读取）。
+- 新增 `ImageStorage`：统一负责图片落盘与删除，访问路径形如 `/lemonLedgerImages/factoryStyle/{id}/{uuid}.png`。
+- `FactoryPieceRate` 去掉 `styleNumber` / `imagePath`，改为 `styleId`；Mapper 查询 join `factory_style` 输出款式编号与图片；新增 `selectPieceRateOptionsByFactoryId` 供账单下拉。
+- 计件单价服务：保存时校验 `styleId` + 工作类型 + 单价并按「款式 + 工作类型」判重，成衣厂从款式带出；改单价仍要求日期区间并同步重算账单。
+- 款式删除有引用保护：下面还有计件单价时拒绝删除（提示先删单价）。
+- 员工端样板查询、账单的单价下拉都改为读款式表。
+
+### 前端
+
+- 新增「成衣厂款式」页（计件单价分组里，`/admin/factoryStyleList`）：成衣厂、款式编号、单价条数、样板图片、创建日期、状态；行内可传图/换图/删图、编辑、删除；筛选成衣厂 + 款式编号模糊搜索。
+- 成衣厂计件单价页：款式编号改为下拉（先选成衣厂再选款式），样板图片在弹窗里只读展示，图片维护入口统一到款式页。
+- 台账/工单里的图片地址改走 `/admin/factoryStyle/imageView/**`。
+
+### 验证
+
+- 款式列表 710 条，图片可正常显示与预览。
+- 新建款式 → 建单价（`styleId` 正确带出）→ 同款式同工种再建被拒（「同一款式 + 同一工作类型只能有一条计件单价」）。
+- 删有单价引用的款式被拒；删掉单价后款式可删。
+- 改单价不带日期区间被拒，带区间成功并返回重算条数。
+- 上传图片 → 访问 `imageView` 返回 200 / image/png / 470,614 字节；删除图片成功。
+- 首页、账单页、员工端样板弹窗均正常。
+
+### 镜像
+
+- `794862853/lemonledger:2.21`，digest `sha256:405ea3238d62a147aadb9d920260ff313ecb6e15ac81110d540b0326fc3fe0ee`（与 `latest` 一致）。

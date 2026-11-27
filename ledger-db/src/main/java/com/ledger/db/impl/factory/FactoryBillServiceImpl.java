@@ -12,12 +12,14 @@ import com.ledger.db.impl.LedgerServiceImpl;
 import com.ledger.db.util.BillDuplicateCheckUtil;
 import com.ledger.db.util.FactoryBillExportSortUtil;
 import com.ledger.db.entity.FactoryPieceRate;
+import com.ledger.db.entity.FactoryStyle;
 import com.ledger.db.entity.dto.FactoryBillDto;
 import com.ledger.db.entity.dto.GrossTrendPointDTO;
 import com.ledger.db.mapper.FactoryBillMapper;
 import com.ledger.db.service.IBatchService;
 import com.ledger.db.service.factory.IFactoryBillService;
 import com.ledger.db.service.factory.IFactoryPieceRateService;
+import com.ledger.db.service.factory.IFactoryStyleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +53,8 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
     private final IFactoryPieceRateService factoryPieceRateService;
 
     private final IBatchService batchService;
+
+    private final IFactoryStyleService factoryStyleService;
 
     /**
      * 账单查重的日期窗口（天），来自配置 ledger.bill.duplicate-window-days。
@@ -174,7 +178,8 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
 
         // 保存账单信息
         // 床 = (厂, 床号, 款式)，款式从计件单价上取；账单只挂 batchId
-        Batch batch = batchService.findOrCreate(bill.getFactoryId(), bill.getNumber(), matchedPrice.getStyleNumber());
+        String styleNumber = resolveStyleNumber(matchedPrice);
+        Batch batch = batchService.findOrCreate(bill.getFactoryId(), bill.getNumber(), styleNumber);
         bill.setBatchId(batch.getId());
 
         if (!save(bill)) {
@@ -182,6 +187,23 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
         }
 
         return Result.ok();
+    }
+
+    /**
+     * 取计件单价对应的款式编号：款式编号已迁到 factory_style，按 styleId 查。
+     *
+     * @param pieceRate 计件单价
+     * @return 款式编号
+     */
+    private String resolveStyleNumber(FactoryPieceRate pieceRate) {
+        if (ObjectUtil.isEmpty(pieceRate.getStyleId())) {
+            throw new BizException("该计件单价没有绑定款式，无法确定床号对应的款式");
+        }
+        FactoryStyle style = factoryStyleService.getById(pieceRate.getStyleId());
+        if (ObjectUtil.isEmpty(style) || StrUtil.isBlank(style.getStyleNumber())) {
+            throw new BizException("该计件单价绑定的款式不存在，请到「成衣厂款式」检查");
+        }
+        return style.getStyleNumber();
     }
 
     /**
@@ -257,10 +279,11 @@ public class FactoryBillServiceImpl extends LedgerServiceImpl<FactoryBillMapper,
         // 目标床号+款式已经存在另一张床时，renameBatch 会直接返回那张床（把账单挪过去），不会报错
         Integer oldBatchId = originalBill.getBatchId();
         Integer batchId = oldBatchId;
+        String styleNumber = resolveStyleNumber(matchedPrice);
         if (batchId == null) {
-            batchId = batchService.findOrCreate(factoryId, number, matchedPrice.getStyleNumber()).getId();
+            batchId = batchService.findOrCreate(factoryId, number, styleNumber).getId();
         } else {
-            batchId = batchService.renameBatch(batchId, factoryId, number, matchedPrice.getStyleNumber()).getId();
+            batchId = batchService.renameBatch(batchId, factoryId, number, styleNumber).getId();
         }
         bill.setBatchId(batchId);
 

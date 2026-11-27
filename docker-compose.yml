@@ -1,6 +1,6 @@
 services:
   lemonledger:
-    image: 794862853/lemonledger:2.20
+    image: 794862853/lemonledger:2.21
     container_name: lemonledger_container
     expose:
       - "8080"  # 内部端口

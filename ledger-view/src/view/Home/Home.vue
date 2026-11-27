@@ -416,7 +416,7 @@ const resolveImageUrl = imagePath => {
 
   if (normalizedPath.startsWith(imagePrefix)) {
     const relativePath = normalizedPath.slice(imagePrefix.length)
-    return `${baseUrl}/admin/factoryPieceRate/imageView/${relativePath}?v=${data.imageVersion}`
+    return `${baseUrl}/admin/factoryStyle/imageView/${relativePath}?v=${data.imageVersion}`
   }
 
   return `${baseUrl}${normalizedPath}?v=${data.imageVersion}`

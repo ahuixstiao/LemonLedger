@@ -81,6 +81,14 @@ const routes = [
         }
       },
       {
+        path: 'factoryStyleList',
+        component: () => import('../view/Admin/AdminComponent/FactoryStyle.vue'),
+        meta: {
+          title: '成衣厂款式',
+          desc: '款式编号和样板图片统一在这里维护，计件单价只引用款式。'
+        }
+      },
+      {
         path: 'factoryPieceRateList',
         component: () => import('../view/Admin/AdminComponent/FactoryPieceRate.vue'),
         meta: {

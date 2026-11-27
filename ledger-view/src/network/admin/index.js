@@ -1,5 +1,6 @@
 export * from './factoryBill.js'
 export * from './factoryPieceRate.js'
+export * from './factoryStyle.js'
 export * from './factory.js'
 export * from './employee.js'
 export * from './jobCategory.js'

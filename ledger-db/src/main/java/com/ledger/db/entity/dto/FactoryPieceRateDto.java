@@ -30,6 +30,11 @@ public class FactoryPieceRateDto implements Serializable {
     private String factoryName;
 
     /**
+     * 款式ID（指向 factory_style）
+     */
+    private Integer styleId;
+
+    /**
      * 款式编号
      */
     private String styleNumber;

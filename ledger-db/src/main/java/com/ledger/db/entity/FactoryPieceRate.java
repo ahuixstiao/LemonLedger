@@ -30,9 +30,9 @@ public class FactoryPieceRate extends ParentEntity {
     private Integer factoryId;
 
     /**
-     * 款式编号
+     * 成衣厂款式ID（款式编号与样板图片由 factory_style 维护）
      */
-    private String styleNumber;
+    private Integer styleId;
 
     /**
      * 工作类型 1小花、2大花、3裤页
@@ -44,8 +44,4 @@ public class FactoryPieceRate extends ParentEntity {
      */
     private BigDecimal price;
 
-    /**
-     * 计件单价图片访问路径
-     */
-    private String imagePath;
 }

@@ -105,13 +105,6 @@
       </el-table>
     </div>
 
-    <input
-      ref="priceImageUploadInputRef"
-      type="file"
-      accept="image/*"
-      class="hidden-upload-input"
-      @change="handlePriceImageUpload"
-    />
 
     <div class="pager-row">
       <el-pagination
@@ -138,13 +131,29 @@
         label-position="top"
       >
         <el-form-item label="成衣厂" prop="factoryId">
-          <el-select filterable v-model="factoryPieceRateInfoRef.factoryId" placeholder="选择成衣厂">
+          <el-select filterable v-model="factoryPieceRateInfoRef.factoryId" placeholder="选择成衣厂" @change="onFactoryChange">
             <el-option v-for="item in data.factoryList" :key="item.id" :label="item.factoryName" :value="item.id" />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="款式编号" prop="styleNumber">
-          <el-input ref="styleNumberInputRef" v-model="factoryPieceRateInfoRef.styleNumber" placeholder="输入款式编号" />
+        <el-form-item label="款式编号" prop="styleId">
+          <el-select
+            ref="styleSelectRef"
+            v-model="factoryPieceRateInfoRef.styleId"
+            filterable
+            placeholder="先选成衣厂，再选款式"
+            :disabled="!factoryPieceRateInfoRef.factoryId"
+          >
+            <el-option
+              v-for="item in data.styleList"
+              :key="item.id"
+              :label="item.styleNumber"
+              :value="item.id"
+            />
+          </el-select>
+          <div v-if="!data.styleList.length && factoryPieceRateInfoRef.factoryId" class="sync-hint">
+            这个成衣厂还没有款式，先去「成衣厂款式」里添加。
+          </div>
         </el-form-item>
 
         <el-form-item label="工作类型" prop="categoryId">
@@ -180,28 +189,17 @@
           </div>
         </el-form-item>
 
-        <el-form-item v-if="data.editPriceDialogMode === 1" label="样板图片">
+        <el-form-item label="样板图片（在「成衣厂款式」里维护）">
           <div class="sample-upload-row">
-            <el-button :disabled="!factoryPieceRateInfoRef.id" @click="triggerPriceImageUpload(factoryPieceRateInfoRef.id)">
-              上传图片
-            </el-button>
-            <el-button
-              type="danger"
-              plain
-              :disabled="!factoryPieceRateInfoRef.id || !factoryPieceRateInfoRef.imagePath"
-              @click="removePriceImageByDialog"
-            >
-              删除图片
-            </el-button>
             <el-image
-              v-if="factoryPieceRateInfoRef.imagePath"
-              :src="resolveImageUrl(factoryPieceRateInfoRef.imagePath)"
-              :preview-src-list="[resolveImageUrl(factoryPieceRateInfoRef.imagePath)]"
+              v-if="dialogStyleImage"
+              :src="resolveImageUrl(dialogStyleImage)"
+              :preview-src-list="[resolveImageUrl(dialogStyleImage)]"
               fit="cover"
               class="sample-image"
               preview-teleported
             />
-            <span v-else class="muted">暂无图片</span>
+            <span v-else class="muted">这个款式还没有图片</span>
           </div>
         </el-form-item>
       </el-form>
@@ -217,7 +215,7 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import AdminPageHeader from '../AdminPageHeader.vue'
@@ -226,13 +224,12 @@ import { useDialogShortcuts } from '../../../base/dialogShortcuts.js'
 import { queryFactoryList } from '../../../network/index.js'
 import {
   deleteFactoryPieceRateInfo,
-  deleteFactoryPieceRateImage,
   queryFactoryPieceRateList,
   queryJobCategoryList,
   saveFactoryPieceRateInfo,
-  updateFactoryPieceRateInfo,
-  uploadFactoryPieceRateImage
+  updateFactoryPieceRateInfo
 } from '../../../network/admin/index.js'
+import { queryStyleListByFactoryId } from '../../../network/admin/index.js'
 import {
   loadFactoryOptions,
   loadFactoryCategoryOptions,
@@ -257,7 +254,7 @@ const data = reactive({
   currentPage: 1,
   pageSize: 10,
   total: 0,
-  uploadingPieceRateId: '',
+  styleList: [],
   editPriceDialogVisible: false,
   editPriceDialogMode: 0,
   imageVersion: 0
@@ -272,6 +269,38 @@ onMounted(() => {
 const loadFactoryList = async () => {
   await loadFactoryOptions(data, queryFactoryList)
 }
+
+/**
+ * 按成衣厂加载款式下拉选项。
+ *
+ * @param {number|string} factoryId 成衣厂ID
+ */
+const loadStyleOptions = async factoryId => {
+  if (!factoryId) {
+    data.styleList = []
+    return
+  }
+  const { data: res } = await queryStyleListByFactoryId(factoryId, 0)
+  data.styleList = res.status === 200 ? (res.data || []) : []
+}
+
+/**
+ * 弹窗里当前选中款式的图片地址（只读展示）。
+ */
+const dialogStyleImage = computed(() => {
+  const style = data.styleList.find(item => String(item.id) === String(factoryPieceRateInfoRef.styleId))
+  return style?.imagePath || ''
+})
+
+/**
+ * 成衣厂切换后重新加载款式，并清掉已经选中的款式。
+ */
+const onFactoryChange = async () => {
+  factoryPieceRateInfoRef.styleId = ''
+  await loadStyleOptions(factoryPieceRateInfoRef.factoryId)
+}
+
+const styleSelectRef = ref()
 
 const loadCategoryList = async () => {
   await loadFactoryCategoryOptions(data, queryJobCategoryList)
@@ -335,14 +364,10 @@ const createFactoryPieceRate = async () => {
     // 因为同一批单价往往就是同厂同工种同价、只换款式。
     data.editPriceDialogMode = 0
     factoryPieceRateInfoRef.id = ''
-    factoryPieceRateInfoRef.styleNumber = ''
-    factoryPieceRateInfoRef.imagePath = ''
+    factoryPieceRateInfoRef.styleId = ''
     priceInfoFormRef.value?.clearValidate?.()
     // 焦点回款式编号，接着录下一个款
-    nextTick(() => styleNumberInputRef.value?.focus?.())
-    if (priceImageUploadInputRef.value) {
-      priceImageUploadInputRef.value.value = ''
-    }
+    nextTick(() => styleSelectRef.value?.focus?.())
     await fetchFactoryPieceRateList()
   } else {
     ElMessage.error(res.message)
@@ -400,76 +425,6 @@ const validatePriceForm = async formEl => {
 }
 
 const priceInfoFormRef = ref()
-const styleNumberInputRef = ref()
-const priceImageUploadInputRef = ref(null)
-
-/**
- * 触发隐藏文件选择框，并记录当前待上传的计件单价单ID。
- *
- * @param {number|string} pieceRateId 计件单价单ID
- */
-const triggerPriceImageUpload = pieceRateId => {
-  data.uploadingPieceRateId = pieceRateId
-  if (priceImageUploadInputRef.value) {
-    priceImageUploadInputRef.value.value = ''
-    priceImageUploadInputRef.value.click()
-  }
-}
-
-/**
- * 校验并上传计件单价单图片。
- *
- * @param {Event} event 文件选择事件
- */
-const handlePriceImageUpload = async event => {
-  const target = event?.target
-  const file = target?.files?.[0]
-
-  if (!file) {
-    return
-  }
-
-  if (!data.uploadingPieceRateId) {
-    ElMessage.error('未识别到对应计件单价单，请重试')
-    target.value = ''
-    return
-  }
-
-  if (!file.type.startsWith('image/')) {
-    ElMessage.error('仅支持上传图片文件')
-    target.value = ''
-    return
-  }
-
-  const maxFileSize = 100 * 1024 * 1024
-  if (file.size > maxFileSize) {
-    ElMessage.error('图片大小不能超过 100MB')
-    target.value = ''
-    return
-  }
-
-  try {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const { data: res } = await uploadFactoryPieceRateImage(data.uploadingPieceRateId, formData)
-    if (res.status === 200) {
-      ElMessage.success(res.message || '上传成功')
-      if (String(factoryPieceRateInfoRef.id) === String(data.uploadingPieceRateId)) {
-        factoryPieceRateInfoRef.imagePath = res.data || factoryPieceRateInfoRef.imagePath
-      }
-      data.imageVersion += 1
-      await fetchFactoryPieceRateList()
-    } else {
-      ElMessage.error(res.message || '上传失败')
-    }
-  } catch (error) {
-    ElMessage.error('上传失败，请稍后重试')
-  } finally {
-    data.uploadingPieceRateId = ''
-    target.value = ''
-  }
-}
 
 /**
  * 将相对图片路径转换为可访问的完整URL。
@@ -492,7 +447,7 @@ const resolveImageUrl = imagePath => {
 
   if (normalizedPath.startsWith(imagePrefix)) {
     const relativePath = normalizedPath.slice(imagePrefix.length)
-    return `${baseUrl}/admin/factoryPieceRate/imageView/${relativePath}?v=${data.imageVersion}`
+    return `${baseUrl}/admin/factoryStyle/imageView/${relativePath}?v=${data.imageVersion}`
   }
 
   return `${baseUrl}${normalizedPath}?v=${data.imageVersion}`
@@ -501,39 +456,18 @@ const resolveImageUrl = imagePath => {
 /**
  * 在弹窗中删除当前单价单图片。
  */
-const removePriceImageByDialog = async () => {
-  if (!factoryPieceRateInfoRef.id) {
-    ElMessage.error('请先保存计件单价单，再删除图片')
-    return
-  }
-
-  const confirmed = await confirmDelete('确定删除这张样板图片吗？')
-  if (!confirmed) return
-
-  const { data: res } = await deleteFactoryPieceRateImage(factoryPieceRateInfoRef.id)
-  if (res.status === 200) {
-    ElMessage.success(res.message || '删除图片成功')
-    factoryPieceRateInfoRef.imagePath = res.data
-    data.imageVersion += 1
-    await fetchFactoryPieceRateList()
-  } else {
-    ElMessage.error(res.message || '删除图片失败')
-  }
-}
-
 // 成衣厂计件单价实体初始化
 const factoryPieceRateInfoInit = {
   id: '',
   factoryId: '',
-  styleNumber: '',
+  styleId: '',
   categoryId: '',
-  price: '',
-  imagePath: ''
+  price: ''
 }
 
 const factoryPieceRateInfoRef = reactive({ ...factoryPieceRateInfoInit })
 
-const openCreatePriceDialog = () => {
+const openCreatePriceDialog = async () => {
   openCreateDialog(
     factoryPieceRateInfoRef,
     factoryPieceRateInfoInit,
@@ -541,9 +475,11 @@ const openCreatePriceDialog = () => {
     'editPriceDialogMode',
     'editPriceDialogVisible'
   )
+  await loadStyleOptions(factoryPieceRateInfoRef.factoryId)
+  nextTick(() => styleSelectRef.value?.focus?.())
 }
 
-const openEditPriceDialog = priceInfo => {
+const openEditPriceDialog = async priceInfo => {
   openEditDialog(
     factoryPieceRateInfoRef,
     priceInfo,
@@ -551,6 +487,7 @@ const openEditPriceDialog = priceInfo => {
     'editPriceDialogMode',
     'editPriceDialogVisible'
   )
+  await loadStyleOptions(factoryPieceRateInfoRef.factoryId)
   originalPrice.value = priceInfo?.price ?? ''
   const today = new Date()
   syncDateRange.startDate = `${today.getFullYear()}-01-01`
@@ -571,7 +508,7 @@ const closePriceDialog = () => {
 
 const addPriceInfoRules = reactive({
   factoryId: [{ required: true, message: '请选择成衣厂', trigger: 'blur' }],
-  styleNumber: [{ required: true, message: '请输入款式编号', trigger: 'blur' }],
+  styleId: [{ required: true, message: '请选择款式编号', trigger: 'change' }],
   categoryId: [{ required: true, message: '请选择工作类型', trigger: 'blur' }],
   price: [{ required: true, message: '请输入计件单价', trigger: 'blur' }]
 })

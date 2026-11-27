@@ -58,6 +58,7 @@ import { useRoute } from 'vue-router'
 import {
   ArrowRight,
   Back,
+  Collection,
   CollectionTag,
   Coin,
   DataAnalysis,
@@ -102,6 +103,7 @@ const menuGroups = [
   {
     title: '计件单价',
     items: [
+      { label: '成衣厂款式', path: '/admin/factoryStyleList', icon: Collection },
       { label: '成衣厂计件单价', path: '/admin/factoryPieceRateList', icon: PriceTag },
       { label: '员工计件单价', path: '/admin/jobPieceRateList', icon: Money }
     ]
