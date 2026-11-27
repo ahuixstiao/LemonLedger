@@ -975,3 +975,18 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
   1. 用 `mysql --default-character-set=utf8mb4` 重发 42 条 `ALTER TABLE … MODIFY COLUMN … COMMENT '…'` 与 3 条 `ALTER TABLE … COMMENT='…'`，把注释写回正确的中文（列类型、默认值、索引都没动）；
   2. 给 `deploy/migrate-0.0.2 ~ 0.0.7`（含 backfill 脚本）统一在开头加 `SET NAMES utf8mb4;`，以后无论用什么客户端执行都不会再出现这个问题。
 - 验证：重新 `SHOW CREATE TABLE` 三张表，注释均为正常中文；首页与款式/单价/结算接口 200。
+
+## 40. 前台新增「压花图片」页（2026-11-27）
+
+- 需求：在「认领工单」后面加一个样板图片查看页，按成衣厂 + 款式编号筛选，数据来自后台的成衣厂款式表。
+- 后端：
+  - `FactoryStyleMapper.selectFactoryStyleListByCondition` 增加 `onlyWithImage` 参数，XML 加 `<if test="onlyWithImage"> and fs.image_path is not null and fs.image_path != '' </if>`，原有管理端调用显式传 `false`。
+  - `IFactoryStyleService` / `FactoryStyleServiceImpl` 增加 `querySampleStyleList(factoryId, styleNumber, currentPage, pageSize)`：固定 `flag=0`、`onlyWithImage=true`，默认每页 12 条。
+  - 新增 `ledger-api/src/main/java/com/ledger/api/controller/employee/factory/EmpFactoryStyleController.java`：`GET /emp/factoryStyle/sampleList`，参数 `factoryId`、`styleNumber`、`currentPage`、`pageSize` 全部可选。
+- 前端：
+  - `network/factory.js` 增加 `queryStyleSampleList(factoryId, styleNumber, currentPage, pageSize)`。
+  - 新增 `view/Home/StyleSamples.vue`：顶部导航同款外壳 + 标题「压花图片」；筛选卡（成衣厂下拉、款式编号输入、查询/重置）；图片网格（列宽 `minmax(196px, 1fr)`，图片高 172px，点图可放大预览，卡片下方显示款式编号与成衣厂名）；分页默认 12 条/页；≤640px 时网格改 `minmax(148px, 1fr)`、图片高 126px。
+  - `FrontShell.vue` 导航在「认领工单」后加「压花图片」（`/samples`）；`router/router.js` 增加 `{ path: '/samples', component: StyleSamples.vue }`。
+  - 图片地址沿用款式接口：`/lemonLedgerImages/...` → `/admin/factoryStyle/imageView/...`（与 Home/JobWorkOrder 一致）。
+- 验证：`/emp/factoryStyle/sampleList?currentPage=1&pageSize=50` → total 139（与库里「有图片的款式数」一致）；`factoryId=12&styleNumber=1054` → 1 条；`factoryId=16`（该厂款式都没图）→ 0 条，页面显示空态；图片接口 200 / image/png / 470,614 字节；桌面 1440 与手机 390 截图正常。
+- 部署镜像 2.23（compose 同步），前端 dist 重建由 nginx 直接生效。

@@ -57,7 +57,27 @@ public class FactoryStyleServiceImpl extends LedgerServiceImpl<FactoryStyleMappe
         Page<FactoryStyleDto> page = new Page<>(
                 currentPage == null || currentPage < 1 ? 1 : currentPage,
                 pageSize == null || pageSize < 1 ? 10 : pageSize);
-        return Result.ok(factoryStyleMapper.selectFactoryStyleListByCondition(page, factoryId, styleNumber, flag));
+        return Result.ok(factoryStyleMapper.selectFactoryStyleListByCondition(page, factoryId, styleNumber, flag, false));
+    }
+
+    /**
+     * 员工端样板图片列表：按成衣厂和款式编号筛选，只返回已经有图片的款式
+     *
+     * @param factoryId   成衣厂ID
+     * @param styleNumber 款式编号
+     * @param currentPage 当前页
+     * @param pageSize    每页条数
+     * @return result
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Result<Object> querySampleStyleList(Integer factoryId, String styleNumber,
+                                               Integer currentPage, Integer pageSize) {
+        Page<FactoryStyleDto> page = new Page<>(
+                currentPage == null || currentPage < 1 ? 1 : currentPage,
+                pageSize == null || pageSize < 1 ? 12 : pageSize);
+        return Result.ok(factoryStyleMapper.selectFactoryStyleListByCondition(
+                page, factoryId, styleNumber, 0, true));
     }
 
     /**

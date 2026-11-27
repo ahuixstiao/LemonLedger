@@ -25,6 +25,9 @@
         <if test="styleNumber != null and styleNumber != ''">
             and fs.style_number like CONCAT('%', #{styleNumber}, '%')
         </if>
+        <if test="onlyWithImage != null and onlyWithImage">
+            and fs.image_path is not null and fs.image_path != ''
+        </if>
         order by factory.factory_name desc, fs.style_number asc
     </select>
 

@@ -38,7 +38,8 @@ const route = useRoute()
 
 const navItems = [
   { label: '工单总览', path: '/' },
-  { label: '认领工单', path: '/workOrder' }
+  { label: '认领工单', path: '/workOrder' },
+  { label: '压花图片', path: '/samples' }
 ]
 
 const currentPath = computed(() => route.path)

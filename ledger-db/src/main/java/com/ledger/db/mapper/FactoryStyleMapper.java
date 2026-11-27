@@ -27,14 +27,16 @@ public interface FactoryStyleMapper extends BaseMapper<FactoryStyle> {
      * @param page        分页对象
      * @param factoryId   成衣厂ID
      * @param styleNumber 款式编号（模糊匹配）
-     * @param flag        删除状态 0否 1是
+     * @param flag          删除状态 0否 1是
+     * @param onlyWithImage 是否只查有样板图片的款式
      * @return page
      */
     Page<FactoryStyleDto> selectFactoryStyleListByCondition(
             Page<FactoryStyleDto> page,
             @Param("factoryId") Integer factoryId,
             @Param("styleNumber") String styleNumber,
-            @Param("flag") Integer flag);
+            @Param("flag") Integer flag,
+            @Param("onlyWithImage") Boolean onlyWithImage);
 
     /**
      * 按成衣厂查款式下拉列表

@@ -47,6 +47,18 @@ public interface IFactoryStyleService extends IService<FactoryStyle> {
     Result<Object> querySampleListByStyleNumber(String styleNumber, Integer flag);
 
     /**
+     * 员工端样板图片列表：按成衣厂和款式编号筛选，只返回已经有图片的款式
+     *
+     * @param factoryId   成衣厂ID（可为空）
+     * @param styleNumber 款式编号（模糊，可为空）
+     * @param currentPage 当前页
+     * @param pageSize    每页条数
+     * @return result
+     */
+    Result<Object> querySampleStyleList(Integer factoryId, String styleNumber,
+                                        Integer currentPage, Integer pageSize);
+
+    /**
      * 新增成衣厂款式
      *
      * @param factoryStyle 款式实体
