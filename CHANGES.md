@@ -966,3 +966,12 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 - 用户确认后执行 `DROP TABLE factory_job_category_bak;`。这张表是 0.0.4 第 0.5 步把旧 `factory_job_category` 改名留下的快照，共 9 行（8 个有效名字 + 1 条已软删的「模具」）。
 - 删前核对：这 8 个有效名字（前袋/后袋/前袋+后袋/机头/裤页/机头+后袋/裤页+后袋/裤页+前袋）全部已存在于 `job_category`（15 行），唯一没对上的是已软删的「模具」，本来就无需保留。
 - 代码与 `ledger.sql` 都没有引用这张表，删除后首页、计件单价、款式、工作类型接口均 200。回滚路径改为从 `backups/` 的备份恢复旧表。
+
+## 39. 修复三张新表的中文注释乱码（2026-11-27）
+
+- 现象：Navicat 里 `factory_bill_settlement`、`factory_bill_settlement_item`、`factory_style` 三张表的表注释和字段注释是乱码（例如「主键」显示成「ä¸»é”®」）。
+- 原因：这三张表是 0.0.6 / 0.0.7 迁移脚本执行时建的。脚本本身是 UTF-8，但当时是用 `docker exec … mysql < 脚本` 管道进去的，客户端默认字符集是 latin1，UTF-8 字节被当成 latin1 再转存成 utf8mb4，于是就成了「双重编码」的乱码。业务数据不受影响（只涉及 COMMENT），`ledger.sql` 里自带的 `SET NAMES utf8mb4` 所以其它表的注释是正常的。
+- 修复：
+  1. 用 `mysql --default-character-set=utf8mb4` 重发 42 条 `ALTER TABLE … MODIFY COLUMN … COMMENT '…'` 与 3 条 `ALTER TABLE … COMMENT='…'`，把注释写回正确的中文（列类型、默认值、索引都没动）；
+  2. 给 `deploy/migrate-0.0.2 ~ 0.0.7`（含 backfill 脚本）统一在开头加 `SET NAMES utf8mb4;`，以后无论用什么客户端执行都不会再出现这个问题。
+- 验证：重新 `SHOW CREATE TABLE` 三张表，注释均为正常中文；首页与款式/单价/结算接口 200。
