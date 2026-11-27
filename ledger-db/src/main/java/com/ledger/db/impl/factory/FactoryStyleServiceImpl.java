@@ -75,7 +75,7 @@ public class FactoryStyleServiceImpl extends LedgerServiceImpl<FactoryStyleMappe
                                                Integer currentPage, Integer pageSize) {
         Page<FactoryStyleDto> page = new Page<>(
                 currentPage == null || currentPage < 1 ? 1 : currentPage,
-                pageSize == null || pageSize < 1 ? 12 : pageSize);
+                pageSize == null || pageSize < 1 ? 10 : pageSize);
         return Result.ok(factoryStyleMapper.selectFactoryStyleListByCondition(
                 page, factoryId, styleNumber, 0, true));
     }

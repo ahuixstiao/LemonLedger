@@ -70,21 +70,21 @@
           {{ data.loading ? '正在加载…' : '没有符合条件的样板图片，换个成衣厂或款式编号试试' }}
         </div>
         </div>
+      </div>
 
-        <div v-if="data.total > 0" class="pager-row front-pager">
-          <el-pagination
-            background
-            :total="data.total"
-            :current-page="data.currentPage"
-            :page-size="data.pageSize"
-            :page-sizes="[12, 24, 48, 96]"
-            :layout="data.isNarrow ? 'prev, pager, next' : 'total, sizes, prev, pager, next'"
-            @update:current-page="val => (data.currentPage = val)"
-            @update:page-size="val => (data.pageSize = val)"
-            @current-change="fetchSampleList"
-            @size-change="fetchSampleList"
-          />
-        </div>
+      <div v-if="data.total > 0" class="pager-row front-pager">
+        <el-pagination
+          background
+          :total="data.total"
+          :current-page="data.currentPage"
+          :page-size="data.pageSize"
+          :page-sizes="[10, 20, 50]"
+          :layout="data.isNarrow ? 'prev, pager, next' : 'total, sizes, prev, pager, next'"
+          @update:current-page="val => (data.currentPage = val)"
+          @update:page-size="val => (data.pageSize = val)"
+          @current-change="fetchSampleList"
+          @size-change="fetchSampleList"
+        />
       </div>
     </div>
   </FrontShell>
@@ -101,7 +101,7 @@ const data = reactive({
   tableData: [],
   total: 0,
   currentPage: 1,
-  pageSize: 12,
+  pageSize: 10,
   factoryId: '',
   styleNumber: '',
   factoryList: [],
