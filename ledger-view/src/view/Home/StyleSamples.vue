@@ -48,6 +48,7 @@
       </div>
 
       <div class="table-card">
+        <div class="sample-body">
         <div v-if="data.tableData.length" class="sample-grid">
           <div v-for="item in data.tableData" :key="item.id" class="sample-card">
             <el-image
@@ -67,6 +68,7 @@
         </div>
         <div v-else class="sample-empty">
           {{ data.loading ? '正在加载…' : '没有符合条件的样板图片，换个成衣厂或款式编号试试' }}
+        </div>
         </div>
 
         <div v-if="data.total > 0" class="pager-row front-pager">
@@ -224,6 +226,14 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* 图片区在卡片内部滚动，分页固定贴在卡片底部，不随数据多少上下浮动 */
+.sample-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 2px 0;
+}
+
 .sample-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
@@ -270,6 +280,14 @@ onBeforeUnmount(() => {
   color: var(--admin-text-secondary);
   text-align: center;
   word-break: break-all;
+}
+
+@media (max-width: 768px) {
+  .sample-body {
+    flex: 0 0 auto;
+    overflow: visible;
+    padding: 0;
+  }
 }
 
 @media (max-width: 640px) {
