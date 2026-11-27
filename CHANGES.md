@@ -221,7 +221,7 @@ ALTER TABLE job_work_order DROP INDEX job_work_order_date_index, DROP INDEX job_
 ALTER TABLE employee DROP COLUMN updated_date;  -- 其余九张表同理
 ```
 
-（执行前先把 `flag = 1` 的重名记录处理掉，否则加不回去；退 `mode_id NOT NULL` 之前先把空的填上。`factory_job_category` 旧表**没有删**，被 0.0.4 第 0.5 步改名成 `factory_job_category_bak` 留着了，想退回去执行 `RENAME TABLE factory_job_category_bak TO factory_job_category;` 就行——但注意 `job_category` 里后来补进去的那几行要自己挑出来删掉。）
+（执行前先把 `flag = 1` 的重名记录处理掉，否则加不回去；退 `mode_id NOT NULL` 之前先把空的填上。`factory_job_category` 旧表在 0.0.4 第 0.5 步被改名成 `factory_job_category_bak` 保留，**已于 2026-11-27 按用户要求删除**（见第 37 节），要退回合并前的字典得靠备份恢复，再把名字手工对回去。）
 
 ---
 
@@ -435,7 +435,7 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 
 - 这一批的风险集中在**迁移脚本**，不在代码：代码是编译通过的。（**2026-11-07 已在真实库上执行过一遍，记录见第 10 节**）
 - 迁移脚本做四件事：改名（表/列）、合并字典（旧表改名 `_bak` 保留）、建 `batch` 表、加列加索引并回填 `batch_id`；**不删数据、不改金额、不改历史业务字段**。改名用 `RENAME TABLE` / `RENAME COLUMN`，是原子的。
-- 真出问题回滚：代码 `git revert` 到这个提交之前；库上按第 6 节的 SQL 反向操作（`DROP TABLE batch`、删 `batch_id` 列、表名列名改回去、`factory_job_category_bak` 改回原名）。反向语句在本文第 6 节，**不在迁移脚本里**，跑之前先把第 6 节存一份出来。
+- 真出问题回滚：代码 `git revert` 到这个提交之前；库上按第 6 节的 SQL 反向操作（`DROP TABLE batch`、删 `batch_id` 列、表名列名改回去）。反向语句在本文第 6 节，**不在迁移脚本里**，跑之前先把第 6 节存一份出来。注意 `factory_job_category_bak` 已在 2026-11-27 删除，字典那一步的回滚要改成从备份里捞旧表（见第 37 节）。
 - 唯一不可逆的一点：如果老库里 `factory_job_category` 和 `job_category` 有同名不同 id 的行，两边的记录会按名字合成一条（旧表仍在 `_bak` 里可查），但原来挂在旧 id 上的单据已经被改指向新 id 了，再拆回去要手工对。
 
 ---
@@ -960,3 +960,9 @@ ledger-api/src/main/java/com/ledger/api/controller/admin/batch/BatchController.j
 ### 镜像
 
 - `794862853/lemonledger:2.22`，digest `sha256:645e3261dacb2c7713e0dd8095924fd731a6c97e68fd208b028003b8cca61a22`（与 `latest` 一致）。
+
+## 38. 删除工作类型合并时留下的旧表（2026-11-27）
+
+- 用户确认后执行 `DROP TABLE factory_job_category_bak;`。这张表是 0.0.4 第 0.5 步把旧 `factory_job_category` 改名留下的快照，共 9 行（8 个有效名字 + 1 条已软删的「模具」）。
+- 删前核对：这 8 个有效名字（前袋/后袋/前袋+后袋/机头/裤页/机头+后袋/裤页+后袋/裤页+前袋）全部已存在于 `job_category`（15 行），唯一没对上的是已软删的「模具」，本来就无需保留。
+- 代码与 `ledger.sql` 都没有引用这张表，删除后首页、计件单价、款式、工作类型接口均 200。回滚路径改为从 `backups/` 的备份恢复旧表。
